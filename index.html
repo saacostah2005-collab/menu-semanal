@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menú de la semana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #FBF7EF;
+    --paper: #FFFDF9;
+    --ink: #2E2A24;
+    --ink-soft: #6B6355;
+    --line: #E4DCC9;
+    --sage: #6E7A57;
+    --mustard: #C99A3A;
+    --rust: #A6452E;
+    --rust-tint: #F5E4DD;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    min-height:100%;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:32px 20px 64px;
+  }
+  header{
+    margin-bottom:28px;
+  }
+  .eyebrow{
+    font-size:13px;
+    color:var(--sage);
+    margin:0 0 4px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:34px;
+    line-height:1.1;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:var(--ink-soft);
+    font-size:14px;
+    margin:0;
+  }
+  .status{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--sage);
+    flex:none;
+  }
+  .dot.err{background:var(--rust);}
+
+  .day{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:2px;
+    margin-bottom:14px;
+    padding:18px 20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .day.today{
+    border-color:var(--rust);
+    background:var(--rust-tint);
+  }
+  .day.today::before{
+    content:"HOY";
+    position:absolute;
+    top:0; right:0;
+    background:var(--rust);
+    color:#fff;
+    font-size:11px;
+    letter-spacing:.06em;
+    padding:4px 10px;
+    border-bottom-left-radius:3px;
+  }
+  .day-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:12px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:10px;
+  }
+  .day.today .day-head{border-color:rgba(166,69,46,0.25);}
+  .day-name{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:22px;
+  }
+  .day-date{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .meals{
+    display:grid;
+    grid-template-columns:88px 1fr;
+    row-gap:9px;
+    column-gap:14px;
+    font-size:15px;
+  }
+  .meal-label{
+    color:var(--ink-soft);
+    font-size:12.5px;
+    text-transform:lowercase;
+    padding-top:2px;
+  }
+  .meal-label::first-letter{text-transform:uppercase;}
+  .meal-value{
+    color:var(--ink);
+  }
+  .meal-value.empty{
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+
+  .state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+  }
+  .state h2{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    color:var(--ink);
+    font-size:20px;
+    margin:0 0 8px;
+  }
+  .state code{
+    background:var(--paper);
+    border:1px solid var(--line);
+    padding:2px 6px;
+    border-radius:3px;
+    font-size:13px;
+  }
+  .state a{color:var(--sage);}
+
+  footer{
+    margin-top:24px;
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .day{transition:transform .15s ease;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Semana</p>
+    <h1>Menú de la semana</h1>
+    <p class="subtitle">Desayuno, media mañana, almuerzo y cena.</p>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">Cargando…</span></div>
+  </header>
+
+  <main id="app">
+    <div class="state"><h2>Cargando el menú…</h2></div>
+  </main>
+
+  <footer id="footer" style="display:none">Actualizado desde tu hoja de cálculo · <span id="updatedAt"></span></footer>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN — pega aquí el link de tu Google Sheet publicado
+   ============================================================
+   1. En Google Sheets: Archivo → Compartir → Publicar en la Web
+   2. Elige la hoja correcta y el formato "Valores separados por comas (.csv)"
+   3. Pulsa "Publicar" y copia el enlace que te dan
+   4. Pégalo abajo, entre las comillas
+   ============================================================ */
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-0io3KEPeid20oEtEDmNwBGnYJHTSOnVsq3V8wUEmOGeMSMe_nfazhJb4HbhOXOjJfQfqbSNlMKbl/pub?output=csv";
+
+const MEAL_COLUMNS = [
+  { key: "Desayuno", label: "Desayuno" },
+  { key: "Med/Mañ",  label: "Media mañana" },
+  { key: "Almuerzo", label: "Almuerzo" },
+  { key: "Cena",     label: "Cena" }
+];
+
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(inQuotes){
+      if(c === '"'){
+        if(text[i+1] === '"'){ field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if(c === '"') inQuotes = true;
+      else if(c === ','){ row.push(field); field = ""; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; }
+      else if(c === '\r'){ /* skip */ }
+      else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(f => f.trim() !== ""));
+}
+
+function parseFecha(str){
+  const m = str.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+}
+
+function isSameDay(a, b){
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate();
+}
+
+function render(rows){
+  const app = document.getElementById('app');
+  const header = rows[0].map(h => h.trim());
+  const body = rows.slice(1);
+
+  const idx = {};
+  header.forEach((h, i) => idx[h] = i);
+
+  if(idx['Fecha'] === undefined || idx['Nom_Dia'] === undefined){
+    showError("No encuentro las columnas <code>Fecha</code> y <code>Nom_Dia</code> en la hoja. Revisa que los encabezados coincidan.");
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  app.innerHTML = "";
+  body.forEach(r => {
+    const fechaStr = (r[idx['Fecha']] || "").trim();
+    const fecha = parseFecha(fechaStr);
+    const nombreDia = (r[idx['Nom_Dia']] || "").trim();
+    if(!nombreDia) return;
+
+    const card = document.createElement('div');
+    card.className = 'day';
+    if(fecha && isSameDay(fecha, today)) card.classList.add('today');
+
+    const headDiv = document.createElement('div');
+    headDiv.className = 'day-head';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'day-name';
+    nameSpan.textContent = nombreDia;
+    headDiv.appendChild(nameSpan);
+    if(fechaStr){
+      const dateSpan = document.createElement('span');
+      dateSpan.className = 'day-date';
+      dateSpan.textContent = fechaStr;
+      headDiv.appendChild(dateSpan);
+    }
+    card.appendChild(headDiv);
+
+    const mealsDiv = document.createElement('div');
+    mealsDiv.className = 'meals';
+    MEAL_COLUMNS.forEach(col => {
+      if(idx[col.key] === undefined) return;
+      const value = (r[idx[col.key]] || "").trim();
+      const label = document.createElement('div');
+      label.className = 'meal-label';
+      label.textContent = col.label;
+      const val = document.createElement('div');
+      val.className = 'meal-value' + (value ? '' : ' empty');
+      val.textContent = value || 'Sin definir';
+      mealsDiv.appendChild(label);
+      mealsDiv.appendChild(val);
+    });
+    card.appendChild(mealsDiv);
+
+    app.appendChild(card);
+  });
+
+  if(!app.children.length){
+    showError("La hoja no tiene filas de menú todavía.");
+    return;
+  }
+
+  document.getElementById('statusText').textContent = 'Menú actualizado';
+  document.querySelector('.dot').classList.remove('err');
+  const footer = document.getElementById('footer');
+  footer.style.display = 'block';
+  document.getElementById('updatedAt').textContent = today.toLocaleString('es-PE', { dateStyle:'medium', timeStyle:'short' });
+}
+
+function showError(message){
+  document.getElementById('statusText').textContent = 'No se pudo cargar';
+  document.querySelector('.dot').classList.add('err');
+  document.getElementById('app').innerHTML =
+    '<div class="state"><h2>No se pudo cargar el menú</h2><p>' + message + '</p></div>';
+}
+
+function loadMenu(){
+  if(!SHEET_CSV_URL || SHEET_CSV_URL.indexOf('http') !== 0){
+    showError('Todavía no configuraste el enlace de tu hoja. Abre este archivo, busca <code>SHEET_CSV_URL</code> y pega ahí el enlace CSV publicado de tu Google Sheet.');
+    return;
+  }
+  fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now())
+    .then(res => {
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      return res.text();
+    })
+    .then(text => {
+      const rows = parseCSV(text);
+      if(!rows.length) throw new Error('vacío');
+      render(rows);
+    })
+    .catch(err => {
+      showError('Hubo un problema al conectar con la hoja (' + err.message + '). Verifica que esté publicada en la Web como CSV y que el enlace sea correcto.');
+    });
+}
+
+loadMenu();
+</script>
+</body>
+</html>
