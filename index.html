@@ -265,37 +265,6 @@
   }
   .benefit.clickable:hover{border-color:var(--brand-light); box-shadow:var(--shadow);}
 
-  /* ---------- Modal lista de compras ---------- */
-  .modal-overlay{
-    position:fixed; inset:0; z-index:50; background:rgba(10,14,10,0.45);
-    display:none; align-items:flex-start; justify-content:center;
-    padding:24px 16px; overflow-y:auto;
-  }
-  .modal-overlay.open{display:flex;}
-  .modal-box{
-    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
-    max-width:520px; width:100%; box-shadow:var(--shadow); padding:22px; margin-top:40px;
-  }
-  .modal-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:6px;}
-  .modal-head h3{font-family:'Fraunces', serif; font-weight:600; font-size:19px; margin:0;}
-  .modal-close{background:none; border:none; cursor:pointer; color:var(--ink-soft); padding:4px; border-radius:8px; flex:none;}
-  .modal-close:hover{color:var(--ink); background:var(--brand-tint);}
-  .modal-close svg{width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8;}
-  .modal-sub{font-size:13px; color:var(--ink-soft); margin:0 0 16px;}
-  .shopping-list{list-style:none; margin:0 0 18px; padding:0; display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto;}
-  .shopping-list li{display:flex; align-items:center; gap:10px; padding:9px 11px; border:1px solid var(--line); border-radius:10px; font-size:13.5px;}
-  .shopping-list li input[type="checkbox"]{width:16px; height:16px; accent-color:var(--brand); flex:none;}
-  .shopping-list li span{flex:1;}
-  .shopping-empty{font-size:13.5px; color:var(--ink-soft); font-style:italic; padding:10px 0;}
-  .modal-actions{display:flex; gap:10px; flex-wrap:wrap;}
-  .btn{font-family:'Work Sans', sans-serif; font-weight:600; font-size:13.5px; padding:10px 16px; border-radius:999px; cursor:pointer; border:1px solid var(--line); background:var(--paper); color:var(--ink);}
-  .btn:hover{border-color:var(--brand-light);}
-  .btn.primary{background:var(--brand); color:#fff; border-color:var(--brand);}
-  .btn.primary:hover{background:var(--brand-deep); border-color:var(--brand-deep);}
-  .btn:disabled{opacity:.5; cursor:not-allowed;}
-  .modal-status{font-size:12.5px; color:var(--ink-soft); margin-top:10px; min-height:16px;}
-  .modal-status.ok{color:var(--brand);}
-  .modal-status.err{color:var(--coral);}
 </style>
 </head>
 <body>
@@ -378,25 +347,6 @@
     Actualizado desde tu hoja de cálculo · <span id="updatedAt"></span>
   </footer>
 
-</div>
-
-<!-- ---------- Modal: lista de compras de la semana ---------- -->
-<div class="modal-overlay" id="shoppingOverlay">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3>Lista de compras</h3>
-      <button class="modal-close" id="shoppingClose" type="button" aria-label="Cerrar">
-        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-    <p class="modal-sub" id="shoppingRange">Ingredientes detectados en el menú de la semana.</p>
-    <ul class="shopping-list" id="shoppingList"></ul>
-    <div class="modal-actions">
-      <button class="btn primary" id="shoppingSave" type="button">Guardar en historial</button>
-      <button class="btn" id="shoppingCopy" type="button">Copiar lista</button>
-    </div>
-    <div class="modal-status" id="shoppingStatus"></div>
-  </div>
 </div>
 
 <script>
@@ -704,131 +654,37 @@ function loadMenu(){
 loadMenu();
 
 /* ============================================================
-   LISTA DE COMPRAS — botón "Ahorra tiempo"
+   LISTA DE COMPRAS — botón "Ahorra tiempo" (abre pestaña nueva)
    ============================================================ */
 
-function splitIngredients(text){
-  if(!text) return [];
-  return text
-    .split(/[\/,+]|(?:\by\b)/i)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-}
-
-function normalizeKey(s){
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
-function extractShoppingList(week){
-  const seen = new Map();
-  week.days.forEach(dayRow => {
-    MEAL_COLUMNS.forEach(col => {
-      const raw = dayRow.values[col.key];
-      splitIngredients(raw).forEach(item => {
-        const key = normalizeKey(item);
-        if(STOPWORDS.indexOf(key) !== -1) return;
-        if(!seen.has(key)) seen.set(key, item);
-      });
-    });
-  });
-  return Array.from(seen.values()).sort((a,b) => a.localeCompare(b, 'es'));
-}
-
-function openShoppingModal(){
+document.getElementById('btnAhorraTiempo').addEventListener('click', function(){
   const week = WEEKS[CURRENT_INDEX];
-  if(!week){ return; }
+  if(!week) return;
 
-  const list = extractShoppingList(week);
-  const listEl = document.getElementById('shoppingList');
-  listEl.innerHTML = '';
-
-  if(!list.length){
-    listEl.innerHTML = '<li class="shopping-empty">No se detectaron ingredientes en el menú de esta semana.</li>';
-  } else {
-    list.forEach((item, i) => {
-      const li = document.createElement('li');
-      const id = 'sh_' + i;
-      li.innerHTML = '<input type="checkbox" id="' + id + '"><span>' + item + '</span>';
-      listEl.appendChild(li);
-    });
-  }
-
-  document.getElementById('shoppingRange').textContent =
-    'Ingredientes detectados · semana del ' + fmtRange(week.monday);
-  document.getElementById('shoppingStatus').textContent = '';
-  document.getElementById('shoppingStatus').className = 'modal-status';
-  document.getElementById('shoppingOverlay').classList.add('open');
-}
-
-function closeShoppingModal(){
-  document.getElementById('shoppingOverlay').classList.remove('open');
-}
-
-document.getElementById('btnAhorraTiempo').addEventListener('click', openShoppingModal);
-document.getElementById('shoppingClose').addEventListener('click', closeShoppingModal);
-document.getElementById('shoppingOverlay').addEventListener('click', function(e){
-  if(e.target === this) closeShoppingModal();
-});
-
-document.getElementById('shoppingCopy').addEventListener('click', function(){
-  const week = WEEKS[CURRENT_INDEX];
-  const list = extractShoppingList(week);
-  const text = list.map(i => '- ' + i).join('\n');
-  const statusEl = document.getElementById('shoppingStatus');
-  navigator.clipboard.writeText(text).then(function(){
-    statusEl.textContent = 'Lista copiada al portapapeles.';
-    statusEl.className = 'modal-status ok';
-  }).catch(function(){
-    statusEl.textContent = 'No se pudo copiar automáticamente. Selecciona el texto manualmente.';
-    statusEl.className = 'modal-status err';
-  });
-});
-
-document.getElementById('shoppingSave').addEventListener('click', function(){
-  const statusEl = document.getElementById('shoppingStatus');
-  const saveBtn = document.getElementById('shoppingSave');
-
-  if(!HISTORIAL_SCRIPT_URL || HISTORIAL_SCRIPT_URL.indexOf('http') !== 0){
-    statusEl.textContent = 'Falta configurar HISTORIAL_SCRIPT_URL con el enlace de tu Google Apps Script.';
-    statusEl.className = 'modal-status err';
-    return;
-  }
-
-  const week = WEEKS[CURRENT_INDEX];
-  const list = extractShoppingList(week);
   const sunday = new Date(week.monday);
   sunday.setDate(sunday.getDate() + 6);
 
   const payload = {
-    fechaGenerado: new Date().toISOString(),
-    semanaInicio: week.monday.toISOString().slice(0,10),
-    semanaFin: sunday.toISOString().slice(0,10),
-    ingredientes: list.join(', ')
+    weekLabel: fmtRange(week.monday),
+    monday: week.monday.toISOString().slice(0,10),
+    sunday: sunday.toISOString().slice(0,10),
+    days: week.days.map(d => ({
+      nombreDia: d.nombreDia,
+      fechaStr: d.fechaStr,
+      desayuno: d.values['Desayuno'] || '',
+      media: d.values['Med/Mañ'] || '',
+      almuerzo: d.values['Almuerzo'] || '',
+      cena: d.values['Cena'] || ''
+    })),
+    historialScriptUrl: HISTORIAL_SCRIPT_URL,
+    generatedAt: new Date().toISOString()
   };
 
-  saveBtn.disabled = true;
-  statusEl.textContent = 'Guardando…';
-  statusEl.className = 'modal-status';
+  try{
+    localStorage.setItem('menuSmartShoppingWeek', JSON.stringify(payload));
+  }catch(e){}
 
-  fetch(HISTORIAL_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  })
-  .then(res => res.json())
-  .then(data => {
-    if(data && data.ok){
-      statusEl.textContent = 'Guardado en tu Historial_Compras.';
-      statusEl.className = 'modal-status ok';
-    } else {
-      throw new Error((data && data.error) || 'respuesta inesperada');
-    }
-  })
-  .catch(err => {
-    statusEl.textContent = 'No se pudo guardar (' + err.message + ').';
-    statusEl.className = 'modal-status err';
-  })
-  .finally(() => { saveBtn.disabled = false; });
+  window.open('lista-compras.html', '_blank');
 });
 </script>
 </body>
