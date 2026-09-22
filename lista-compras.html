@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ingredientes de la semana — Menu Smart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,560;9..144,650&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F5F6F0;
+    --paper: #FFFFFF;
+    --ink: #1B2A1F;
+    --ink-soft: #667065;
+    --line: #E3E7DA;
+    --brand: #1F5C3F;
+    --brand-deep: #143D29;
+    --brand-light: #4C8A67;
+    --brand-tint: #E5F0E7;
+    --shadow: 0 1px 2px rgba(20,30,20,0.04), 0 8px 20px rgba(20,30,20,0.06);
+    --radius: 16px;
+  }
+  :root[data-theme="dark"]{
+    --bg: #12160F; --paper: #191F17; --ink: #EDEFE7; --ink-soft: #98A28E; --line: #2A3226;
+    --brand: #4C8A67; --brand-deep: #16241A; --brand-light: #6FAE86; --brand-tint: #1D2E22;
+    --shadow: 0 1px 2px rgba(0,0,0,0.25), 0 10px 24px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .wrap{max-width:720px; margin:0 auto; padding:0 18px;}
+
+  .topbar{padding:16px 0; border-bottom:1px solid var(--line);}
+  .topbar .wrap{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{width:32px; height:32px; border-radius:9px; background:var(--brand); display:flex; align-items:center; justify-content:center; flex:none;}
+  .brand-mark svg{width:17px; height:17px; stroke:#fff; fill:none;}
+  .brand-name{font-family:'Fraunces', serif; font-weight:650; font-size:16px;}
+  .back-link{
+    font-size:13px; font-weight:600; color:var(--brand); text-decoration:none;
+    display:flex; align-items:center; gap:5px;
+  }
+  .back-link svg{width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2;}
+  .theme-toggle{
+    display:flex; align-items:center; gap:7px;
+    background:var(--paper); border:1px solid var(--line); color:var(--ink);
+    font-size:12.5px; font-weight:500; padding:7px 12px; border-radius:999px; cursor:pointer;
+  }
+  .theme-toggle svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:1.8;}
+
+  .hero{
+    background:linear-gradient(135deg, var(--brand-tint), var(--bg));
+    padding:28px 0; border-bottom:1px solid var(--line);
+  }
+  .hero-inner{display:flex; align-items:center; gap:12px;}
+  .hero-icon{
+    width:46px; height:46px; border-radius:14px; background:var(--paper);
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .hero-icon svg{width:22px; height:22px; stroke:var(--brand); fill:none; stroke-width:1.8;}
+  .hero h1{font-family:'Fraunces', serif; font-weight:600; font-size:22px; margin:0 0 3px; color:var(--brand);}
+  .hero p{margin:0; font-size:13px; color:var(--ink-soft);}
+  .hero-range{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
+
+  .content{padding:22px 0 40px;}
+
+  .day-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    box-shadow:var(--shadow); padding:16px; margin-bottom:12px;
+    display:flex; gap:14px; align-items:flex-start;
+  }
+  .day-badge{
+    width:52px; height:52px; border-radius:12px; background:var(--brand); color:#fff; flex:none;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  }
+  .day-badge svg{width:16px; height:16px; stroke:#fff; fill:none; stroke-width:1.8;}
+  .day-badge span{font-size:10.5px; font-weight:700; letter-spacing:.03em;}
+  .day-info{min-width:0; flex:1;}
+  .day-title{font-family:'Fraunces', serif; font-weight:600; font-size:15.5px; margin:0 0 5px;}
+  .day-ingredients{font-size:13px; color:var(--ink-soft); line-height:1.45; margin:0;}
+  .day-empty{font-size:13px; color:var(--ink-soft); font-style:italic;}
+
+  .actions{
+    display:flex; gap:10px; flex-wrap:wrap; margin:20px 0 8px;
+  }
+  .btn{
+    font-family:'Work Sans', sans-serif; font-weight:600; font-size:13.5px;
+    padding:11px 18px; border-radius:999px; cursor:pointer; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink);
+  }
+  .btn:hover{border-color:var(--brand-light);}
+  .btn.primary{background:var(--brand); color:#fff; border-color:var(--brand);}
+  .btn.primary:hover{background:var(--brand-deep); border-color:var(--brand-deep);}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+  .action-status{font-size:12.5px; color:var(--ink-soft); min-height:16px; margin-bottom:16px;}
+  .action-status.ok{color:var(--brand);}
+  .action-status.err{color:#BD5A3F;}
+
+  .tip-banner{
+    background:var(--brand-tint); border:1px solid var(--line); border-radius:14px;
+    padding:16px; display:flex; align-items:center; gap:14px; margin-top:8px;
+  }
+  .tip-icon{
+    width:38px; height:38px; border-radius:10px; background:var(--paper); flex:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .tip-icon svg{width:19px; height:19px; stroke:var(--brand); fill:none; stroke-width:1.8;}
+  .tip-title{font-size:13.5px; font-weight:700; color:var(--brand); margin:0 0 2px;}
+  .tip-sub{font-size:12.5px; color:var(--ink-soft); margin:0;}
+
+  .state{text-align:center; padding:60px 20px; color:var(--ink-soft);}
+  .state h2{font-family:'Fraunces', serif; font-weight:560; color:var(--ink); font-size:19px; margin:0 0 8px;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7a3 3 0 0 0 6 0V3"/><path d="M9 10v11"/><path d="M18 3c-1.5 1.5-2 3-2 6s.5 4.5 2 6"/><path d="M18 3v18"/></svg></span>
+      <span class="brand-name">Menu Smart</span>
+    </div>
+    <button class="theme-toggle" id="themeToggle" type="button">
+      <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      <span id="themeLabel">Modo oscuro</span>
+    </button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-inner">
+    <span class="hero-icon"><svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></span>
+    <div>
+      <h1>Ingredientes de la semana</h1>
+      <p>Todo lo que necesitas para tus comidas</p>
+      <div class="hero-range" id="weekRangeLabel">&nbsp;</div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap content">
+  <div id="daysContainer">
+    <div class="state"><h2>Cargando…</h2></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" id="btnSave" type="button">Guardar en historial</button>
+    <button class="btn" id="btnCopy" type="button">Copiar lista completa</button>
+    <a class="btn" href="menu-semanal_v7.html" style="text-decoration:none; display:inline-flex; align-items:center;">Volver al menú</a>
+  </div>
+  <div class="action-status" id="actionStatus"></div>
+
+  <div class="tip-banner">
+    <span class="tip-icon"><svg viewBox="0 0 24 24"><path d="M12 21c-4-3-8-6.5-8-11a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 4.5-4 8-8 11a1 1 0 0 1-2 0Z"/></svg></span>
+    <div>
+      <p class="tip-title">Consejo saludable</p>
+      <p class="tip-sub">Elige ingredientes frescos y de temporada para comidas más nutritivas y deliciosas.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Diccionario de ingredientes típicos por plato.
+   Se busca por coincidencia de palabras clave dentro del texto
+   del plato (insensible a mayúsculas/acentos). Si ningún plato
+   coincide, se usa un respaldo simple (separar por / , +).
+   ============================================================ */
+const DISH_INGREDIENTS = [
+  { keys: ["pollo horno", "pollo al horno"], items: ["Pollo", "papa", "zanahoria", "cebolla", "ajo", "comino", "aceite de oliva", "sal", "pimienta", "orégano"] },
+  { keys: ["filete pollo", "filete de pollo"], items: ["Filete de pollo", "papa", "limón", "ajo", "sal", "pimienta", "aceite"] },
+  { keys: ["pollo"], items: ["Pollo", "cebolla", "ajo", "sal", "pimienta", "aceite"] },
+  { keys: ["arroz con pollo"], items: ["Pollo", "arroz", "arvejas", "zanahoria", "pimiento", "ajo", "cebolla", "culantro", "cerveza", "aceite", "sal", "pimienta"] },
+  { keys: ["lomo saltado"], items: ["Carne de res", "tomate", "cebolla", "ají amarillo", "sillao", "vinagre", "papas fritas", "arroz", "sal", "pimienta"] },
+  { keys: ["estofado"], items: ["Carne o pollo", "papa", "arveja", "zanahoria", "cebolla", "tomate", "ajo", "sal", "pimienta", "aceite"] },
+  { keys: ["pescado frito"], items: ["Pescado", "harina", "huevo", "ajo", "limón", "sal", "pimienta", "aceite", "ensalada (lechuga, tomate, cebolla)"] },
+  { keys: ["pescado"], items: ["Pescado", "papa", "limón", "sal", "aceite"] },
+  { keys: ["pavita"], items: ["Pavita (pechuga de pavo)", "camote", "sal", "pimienta", "aceite"] },
+  { keys: ["camote"], items: ["Camote"] },
+  { keys: ["oyuco", "olluco"], items: ["Olluco", "carne o charqui", "cebolla", "ajo", "ají amarillo", "culantro", "sal", "aceite"] },
+  { keys: ["alverja", "arveja"], items: ["Arveja", "cebolla", "ajo", "zanahoria", "sal", "aceite"] },
+  { keys: ["ensalada"], items: ["Lechuga", "tomate", "cebolla", "sal", "aceite", "limón"] },
+  { keys: ["huevo revuelto", "huevo rev"], items: ["Huevo", "cebolla", "tomate", "sal", "aceite"] },
+  { keys: ["huevo sanc", "sancochado"], items: ["Huevo"] },
+  { keys: ["huevo frito"], items: ["Huevo", "aceite", "sal"] },
+  { keys: ["tortilla"], items: ["Huevo", "cebolla", "sal", "aceite"] },
+  { keys: ["sopo verdura", "sopa de verdura", "sopa criolla"], items: ["Fideo cabello de ángel", "papa", "verduras variadas (zanahoria, apio, zapallo)", "huevo", "leche", "sal", "pimienta"] },
+  { keys: ["tallarines verdes"], items: ["Tallarines", "espinaca", "albahaca", "ajo", "leche evaporada", "queso parmesano", "aceite de oliva", "sal", "pimienta"] },
+  { keys: ["pachamanca"], items: ["Carne de res, cerdo y pollo", "papa", "camote", "habas", "maíz", "huacatay", "ají panca", "sal"] },
+  { keys: ["choclo"], items: ["Choclo"] },
+  { keys: ["queso"], items: ["Queso fresco"] },
+  { keys: ["atun", "atún"], items: ["Atún en lata", "cebolla", "limón", "sal"] },
+  { keys: ["pan"], items: ["Pan"] },
+  { keys: ["mandarina", "manzana", "fruta"], items: [] } // la fruta se muestra tal cual, sin expandir
+];
+
+function normalize(s){
+  return (s || "").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+function splitRaw(text){
+  if(!text) return [];
+  return text.split(/[\/,+]|(?:\by\b)/i).map(s => s.trim()).filter(Boolean);
+}
+
+/* Expande un texto de plato (p.ej. "Filete Pollo / Papa") en una
+   lista de ingredientes, combinando coincidencias del diccionario
+   para cada componente y usando el texto tal cual si no hay match. */
+function expandDish(text){
+  const parts = splitRaw(text);
+  if(!parts.length) return [];
+  const result = [];
+  const seen = new Set();
+
+  parts.forEach(part => {
+    const normPart = normalize(part);
+    let matched = null;
+    for(const entry of DISH_INGREDIENTS){
+      if(entry.keys.some(k => normPart.includes(normalize(k)))){
+        matched = entry;
+        break;
+      }
+    }
+    if(matched){
+      if(matched.items.length){
+        matched.items.forEach(item => {
+          const key = normalize(item);
+          if(!seen.has(key)){ seen.add(key); result.push(item); }
+        });
+      } else {
+        const key = normPart;
+        if(!seen.has(key)){ seen.add(key); result.push(part); }
+      }
+    } else {
+      const key = normPart;
+      if(!seen.has(key)){ seen.add(key); result.push(part); }
+    }
+  });
+
+  return result;
+}
+
+const DAY_ABBR = {
+  "lunes":"LUN", "martes":"MAR", "miercoles":"MIÉ", "miércoles":"MIÉ",
+  "jueves":"JUE", "viernes":"VIE", "sabado":"SÁB", "sábado":"SÁB", "domingo":"DOM"
+};
+
+function buildDayCard(day){
+  const abbr = DAY_ABBR[normalize(day.nombreDia)] || day.nombreDia.slice(0,3).toUpperCase();
+
+  // Plato principal = Almuerzo; si está "Libre" o vacío, usa la Cena
+  let mainText = day.almuerzo;
+  if(!mainText || normalize(mainText) === 'libre'){
+    mainText = day.cena;
+  }
+  const dishTitle = (mainText && normalize(mainText) !== 'libre' && mainText.trim())
+    ? mainText.trim() : 'Sin plato definido';
+
+  // Ingredientes: se expande el plato principal + desayuno + media mañana + cena
+  const allIngredients = [];
+  const seen = new Set();
+  [day.almuerzo, day.cena, day.desayuno, day.media].forEach(text => {
+    if(!text || normalize(text) === 'libre') return;
+    expandDish(text).forEach(item => {
+      const key = normalize(item);
+      if(!seen.has(key)){ seen.add(key); allIngredients.push(item); }
+    });
+  });
+
+  const card = document.createElement('div');
+  card.className = 'day-card';
+  card.innerHTML =
+    '<div class="day-badge"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>' + abbr + '</span></div>' +
+    '<div class="day-info">' +
+      '<p class="day-title">' + day.nombreDia + ' — ' + dishTitle + '</p>' +
+      (allIngredients.length
+        ? '<p class="day-ingredients">' + allIngredients.join(', ') + '</p>'
+        : '<p class="day-empty">No hay ingredientes detectados.</p>') +
+    '</div>';
+  return card;
+}
+
+function getAllIngredientsFlat(data){
+  const seen = new Set();
+  const out = [];
+  data.days.forEach(day => {
+    [day.almuerzo, day.cena, day.desayuno, day.media].forEach(text => {
+      if(!text || normalize(text) === 'libre') return;
+      expandDish(text).forEach(item => {
+        const key = normalize(item);
+        if(!seen.has(key)){ seen.add(key); out.push(item); }
+      });
+    });
+  });
+  return out.sort((a,b) => a.localeCompare(b, 'es'));
+}
+
+function init(){
+  let data = null;
+  try{
+    const raw = localStorage.getItem('menuSmartShoppingWeek');
+    if(raw) data = JSON.parse(raw);
+  }catch(e){}
+
+  const container = document.getElementById('daysContainer');
+
+  if(!data || !data.days || !data.days.length){
+    container.innerHTML = '<div class="state"><h2>No hay datos del menú</h2><p>Vuelve a la página principal y presiona "Ahorra tiempo" de nuevo.</p></div>';
+    document.getElementById('btnSave').disabled = true;
+    document.getElementById('btnCopy').disabled = true;
+    return;
+  }
+
+  document.getElementById('weekRangeLabel').textContent = 'Semana del ' + data.weekLabel;
+  container.innerHTML = '';
+  data.days.forEach(day => container.appendChild(buildDayCard(day)));
+
+  document.getElementById('btnCopy').addEventListener('click', function(){
+    const list = getAllIngredientsFlat(data);
+    const text = list.map(i => '- ' + i).join('\n');
+    const statusEl = document.getElementById('actionStatus');
+    navigator.clipboard.writeText(text).then(function(){
+      statusEl.textContent = 'Lista copiada al portapapeles.';
+      statusEl.className = 'action-status ok';
+    }).catch(function(){
+      statusEl.textContent = 'No se pudo copiar automáticamente.';
+      statusEl.className = 'action-status err';
+    });
+  });
+
+  document.getElementById('btnSave').addEventListener('click', function(){
+    const statusEl = document.getElementById('actionStatus');
+    const saveBtn = document.getElementById('btnSave');
+    const url = data.historialScriptUrl;
+
+    if(!url || url.indexOf('http') !== 0){
+      statusEl.textContent = 'Falta configurar el enlace de Google Apps Script.';
+      statusEl.className = 'action-status err';
+      return;
+    }
+
+    const list = getAllIngredientsFlat(data);
+    const payload = {
+      fechaGenerado: new Date().toISOString(),
+      semanaInicio: data.monday,
+      semanaFin: data.sunday,
+      ingredientes: list.join(', ')
+    };
+
+    saveBtn.disabled = true;
+    statusEl.textContent = 'Guardando…';
+    statusEl.className = 'action-status';
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(resData => {
+      if(resData && resData.ok){
+        statusEl.textContent = 'Guardado en tu Historial_Compras.';
+        statusEl.className = 'action-status ok';
+      } else {
+        throw new Error((resData && resData.error) || 'respuesta inesperada');
+      }
+    })
+    .catch(err => {
+      statusEl.textContent = 'No se pudo guardar (' + err.message + ').';
+      statusEl.className = 'action-status err';
+    })
+    .finally(() => { saveBtn.disabled = false; });
+  });
+}
+
+/* ---------- theme ---------- */
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeLabel').textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
+  document.getElementById('themeIcon').innerHTML = theme === 'dark'
+    ? '<circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'
+    : '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>';
+  try{ localStorage.setItem('menuSemanalTheme', theme); }catch(e){}
+}
+(function initTheme(){
+  let saved = null;
+  try{ saved = localStorage.getItem('menuSemanalTheme'); }catch(e){}
+  const preferDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (preferDark ? 'dark' : 'light'));
+})();
+document.getElementById('themeToggle').addEventListener('click', function(){
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+init();
+</script>
+</body>
+</html>
