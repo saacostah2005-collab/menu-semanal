@@ -4,6 +4,43 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Menu Smart — Menú de la semana</title>
+<meta name="description" content="Tu menú semanal inteligente: desayuno, media mañana, almuerzo y cena de cada día, con lista de compras de la semana.">
+
+<!-- Ícono de pestaña y app -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1F5C3F" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12160F" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Menu Smart">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<!-- Vista previa al compartir (WhatsApp, Facebook, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Menu Smart">
+<meta property="og:locale" content="es_PE">
+<meta property="og:title" content="Menu Smart — Menú de la semana">
+<meta property="og:description" content="Planifica tus comidas. Come mejor. Vive saludable.">
+<meta property="og:url" content="https://saacostah2005-collab.github.io/menu-semanal/">
+<meta property="og:image" content="https://saacostah2005-collab.github.io/menu-semanal/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Menu Smart, tu menú inteligente">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- Aplica el tema guardado antes de pintar (evita el parpadeo claro/oscuro) -->
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem('menuSemanalTheme');
+    if(!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  }catch(e){}
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,560;9..144,650&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
