@@ -255,7 +255,7 @@
   }
   .check .ico{width:15px; height:15px; color:#fff; stroke-width:3; opacity:0; transform:scale(.5); transition:opacity .15s ease, transform .2s var(--ease-out);}
   .item label:active .check{transform:scale(.88);}
-  .item label.fixed{cursor:default;}
+  .item label.fixed{cursor:default; touch-action:manipulation;}
   .item label.fixed:active .check{transform:none;}
   .item input:checked + .check{background:var(--leaf); border-color:var(--leaf);}
   .item input:checked + .check .ico{opacity:1; transform:scale(1);}
@@ -788,6 +788,8 @@ function buildRow(item){
   // Con la lista bloqueada se puede marcar, pero no quitar el check
   const lockDone = () => { cb.disabled = true; label.classList.add('fixed'); };
   if(LOCKED && item.done) lockDone();
+  // Segunda protección (Safari y otros): se ignora el toque sobre algo ya marcado
+  label.addEventListener('click', ev => { if(ev.target !== cb && LOCKED && cb.checked) ev.preventDefault(); });
   cb.addEventListener('change', () => {
     if(LOCKED && !cb.checked){ cb.checked = true; return; }
     commit({ type:'update', id:item.id, fields:{ done: cb.checked } }, { renderAll:false });
