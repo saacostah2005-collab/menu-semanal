@@ -220,6 +220,28 @@
   .sync-note{display:flex; gap:10px; align-items:flex-start; margin:0 8px 8px; padding:12px 14px; border-radius:var(--r); background:var(--sun-soft); color:var(--ink-2); font-size:13.5px; line-height:1.45;}
   .sync-note .ico{width:18px; height:18px; color:var(--sun); margin-top:1px;}
   .sync-note strong{color:var(--ink);}
+  /* Interruptor para bloquear la edición (evita cambios por accidente) */
+  .lock-bar{
+    display:flex; align-items:center; gap:12px; width:calc(100% - 16px); margin:0 8px 8px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:var(--r); background:var(--surface-2); text-align:left; cursor:pointer;
+    transition:background-color .2s ease, border-color .2s ease;
+  }
+  .lock-ico{width:36px; height:36px; border-radius:11px; display:grid; place-items:center; flex:none; background:var(--surface); color:var(--brand); transition:color .2s ease;}
+  :root[data-theme="dark"] .lock-ico{color:var(--leaf);}
+  .lock-ico .ico{width:18px; height:18px;}
+  .lock-text{flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.3;}
+  .lock-text strong{font-size:14.5px; font-weight:800; color:var(--ink);}
+  .lock-text span{font-size:12.5px; font-weight:500; color:var(--ink-2);}
+  .switch{position:relative; width:50px; height:30px; border-radius:999px; background:var(--line-strong); flex:none; transition:background-color .2s ease;}
+  .switch::after{content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .22s var(--ease-out);}
+  .lock-bar[aria-checked="true"] .switch{background:var(--leaf);}
+  .lock-bar[aria-checked="true"] .switch::after{transform:translateX(20px);}
+  .lock-bar[aria-checked="false"]{background:var(--sun-soft); border-color:transparent;}
+  .lock-bar[aria-checked="false"] .lock-ico{color:var(--sun);}
+  @media (prefers-reduced-motion:reduce){ .switch, .switch::after{transition:none;} }
+  .add.locked .add-form{opacity:.5;}
+  .add.locked .add-hint .ico{color:var(--sun);}
+
   .items{list-style:none; margin:0; padding:0;}
   .item{display:flex; align-items:center; gap:4px; border-radius:var(--r); transition:background-color .15s ease;}
   .item + .item{border-top:1px solid var(--line);}
@@ -314,7 +336,9 @@
   <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
   <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/><path d="m2 2 20 20"/></symbol>
   <symbol id="i-device" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
-  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-unlock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol>
+  <symbol id="i-leaf"viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
 </svg>
 
 <header class="hero">
@@ -363,7 +387,7 @@
           <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg><span>Agregar</span>
         </button>
       </form>
-      <p class="add-hint"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>El precio es opcional. Puedes cambiarlo después con el lápiz.</p>
+      <p class="add-hint"><svg class="ico" aria-hidden="true"><use id="addHintIcon" href="#i-leaf"/></svg><span id="addHintText">El precio es opcional. Puedes cambiarlo después con el lápiz.</span></p>
     </section>
 
     <!-- Resumen -->
@@ -393,6 +417,11 @@
         <svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>
         <span><strong>La lista aún no se comparte.</strong> No se pudo conectar con tu hoja de Google, así que por ahora se guarda solo en este celular y se enviará cuando conecte. Si todavía no instalaste el script nuevo (<em>google-apps-script.gs</em>), ese es el paso que falta.</span>
       </div>
+      <button class="lock-bar" id="lockBar" type="button" role="switch" aria-checked="true">
+        <span class="lock-ico" aria-hidden="true"><svg class="ico"><use id="lockIcon" href="#i-unlock"/></svg></span>
+        <span class="lock-text"><strong id="lockTitle">Editar lista: activado</strong><span id="lockSub">Puedes agregar, cambiar y quitar ingredientes.</span></span>
+        <span class="switch" aria-hidden="true"></span>
+      </button>
       <ul class="items" id="items"></ul>
       <div class="empty" id="empty">
         <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-basket"/></svg></span>
@@ -519,6 +548,10 @@ let QUEUE = readJSON(QUEUE_KEY, []);   // operaciones pendientes de enviar
 let EDITING = null;                    // id del ingrediente en edición
 let PENDING_RENDER = false;
 let LAST_DELETED = null;
+/* Bloqueo de edición: se recuerda en cada celular */
+const LOCK_KEY = 'menuSmartListaBloqueada';
+let LOCKED = false;
+try{ LOCKED = localStorage.getItem(LOCK_KEY) === '1'; }catch(e){}
 
 const SYNC = { ready:false, busy:false, state:'connecting', last:null };
 
@@ -700,7 +733,7 @@ function updateSummary(){
   document.getElementById('progressBar').style.width = pct + '%';
 
   document.getElementById('empty').hidden = count > 0;
-  document.getElementById('listFoot').hidden = count === 0;
+  document.getElementById('listFoot').hidden = count === 0 || LOCKED;
   document.getElementById('btnUncheck').disabled = doneCount === 0;
   document.getElementById('btnSave').disabled = count === 0;
   document.getElementById('btnCopy').disabled = count === 0;
@@ -763,7 +796,8 @@ function buildRow(item){
   del.setAttribute('aria-label', 'Quitar ' + item.name); del.appendChild(icon('i-trash'));
   del.addEventListener('click', () => removeItem(item.id));
 
-  li.append(label, edit, del);
+  li.append(label);
+  if(!LOCKED) li.append(edit, del);
   return li;
 }
 
@@ -793,6 +827,7 @@ function removeItem(id){
 
 document.getElementById('addForm').addEventListener('submit', function(ev){
   ev.preventDefault();
+  if(LOCKED) return;
   const nameInput = document.getElementById('newName');
   const priceInput = document.getElementById('newPrice');
   const name = nameInput.value.trim();
@@ -877,6 +912,33 @@ document.getElementById('btnSave').addEventListener('click', function(){
   .finally(() => { saveBtn.disabled = ITEMS.length === 0; });
 });
 
+/* ---------- bloquear / desbloquear edición ---------- */
+function applyLock(){
+  const bar = document.getElementById('lockBar');
+  bar.setAttribute('aria-checked', String(!LOCKED));
+  document.getElementById('lockIcon').setAttribute('href', LOCKED ? '#i-lock' : '#i-unlock');
+  document.getElementById('lockTitle').textContent = LOCKED ? 'Editar lista: bloqueado' : 'Editar lista: activado';
+  document.getElementById('lockSub').textContent = LOCKED
+    ? 'Solo puedes marcar lo comprado. Toca para editar.'
+    : 'Puedes agregar, cambiar y quitar ingredientes.';
+
+  const add = document.querySelector('.add');
+  add.classList.toggle('locked', LOCKED);
+  add.querySelectorAll('input, button').forEach(c => { c.disabled = LOCKED; });
+  document.getElementById('addHintIcon').setAttribute('href', LOCKED ? '#i-lock' : '#i-leaf');
+  document.getElementById('addHintText').textContent = LOCKED
+    ? 'La lista está bloqueada. Activa «Editar lista» para agregar ingredientes.'
+    : 'El precio es opcional. Puedes cambiarlo después con el lápiz.';
+
+  if(LOCKED){ EDITING = null; PENDING_RENDER = false; }
+  render();
+}
+document.getElementById('lockBar').addEventListener('click', function(){
+  LOCKED = !LOCKED;
+  try{ localStorage.setItem(LOCK_KEY, LOCKED ? '1' : '0'); }catch(e){}
+  applyLock();
+});
+
 /* ---------- tema ---------- */
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme);
@@ -899,7 +961,7 @@ document.getElementById('themeToggle').addEventListener('click', function(){
 
 /* ---------- inicio ---------- */
 document.getElementById('weekLabel').textContent = 'Lista compartida con tu familia';
-render();
+applyLock();
 setSync('connecting');
 pull();
 
