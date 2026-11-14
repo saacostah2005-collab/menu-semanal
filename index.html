@@ -903,11 +903,12 @@ function loadMenu(){
 loadMenu();
 
 /* ============================================================
-   LISTA DE COMPRAS — botón "Lista de compras" (abre pestaña nueva)
+   LISTA DE COMPRAS — botón "Lista de compras" (abre en la misma pestaña)
    ============================================================ */
 document.getElementById('btnAhorraTiempo').addEventListener('click', function(){
   const week = WEEKS[CURRENT_INDEX];
-  if(!week) return;
+  // Sin menú cargado igual se abre la lista (usa la semana actual)
+  if(!week){ window.location.href = 'lista-compras.html'; return; }
 
   const sunday = new Date(week.monday);
   sunday.setDate(sunday.getDate() + 6);
@@ -932,7 +933,7 @@ document.getElementById('btnAhorraTiempo').addEventListener('click', function(){
     localStorage.setItem('menuSmartShoppingWeek', JSON.stringify(payload));
   }catch(e){}
 
-  window.open('lista-compras.html', '_blank');
+  window.location.href = 'lista-compras.html';
 });
 </script>
 </body>

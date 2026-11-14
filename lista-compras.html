@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lista de compras — Menu Smart</title>
-<meta name="description" content="Lista de ingredientes y compras de tu menú semanal en Menu Smart.">
+<meta name="description" content="Tu lista de compras de la semana con precios, para marcar en el mercado.">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -18,7 +18,7 @@
 <meta property="og:site_name" content="Menu Smart">
 <meta property="og:locale" content="es_PE">
 <meta property="og:title" content="Lista de compras — Menu Smart">
-<meta property="og:description" content="Todo lo que necesitas para tus comidas de la semana.">
+<meta property="og:description" content="Tu lista de compras de la semana con precios.">
 <meta property="og:url" content="https://saacostah2005-collab.github.io/menu-semanal/lista-compras.html">
 <meta property="og:image" content="https://saacostah2005-collab.github.io/menu-semanal/og-image.jpg">
 <meta property="og:image:width" content="1200">
@@ -55,7 +55,8 @@
     --brand-soft:#E4F0E6;
     --leaf:#6AB04C;
     --leaf-soft:#EAF5E1;
-    --danger:#D44E2C;
+    --sun:#DB8E17;  --sun-soft:#FDF0D9;
+    --danger:#D44E2C; --danger-soft:#FCE7E0;
 
     --r-lg:20px;
     --r:14px;
@@ -81,7 +82,8 @@
     --brand-soft:#163323;
     --leaf:#8BCB5F;
     --leaf-soft:#1A2E1C;
-    --danger:#EE7C5C;
+    --sun:#F0B54D;  --sun-soft:#2E2513;
+    --danger:#EE7C5C; --danger-soft:#33201A;
 
     --shadow-sm:0 1px 2px rgba(0,0,0,.3);
     --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 30px -12px rgba(0,0,0,.6);
@@ -100,10 +102,12 @@
   }
   .wrap{max-width:1080px; margin:0 auto; padding:0 18px;}
   @media (min-width:768px){ .wrap{padding:0 32px;} }
-  button{font:inherit; color:inherit; touch-action:manipulation;}
+  button, input{font:inherit; color:inherit;}
+  button{touch-action:manipulation;}
   :focus-visible{outline:2.5px solid var(--leaf); outline-offset:2px; border-radius:10px;}
   .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
   .ico{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+  .num{font-variant-numeric:tabular-nums;}
 
   /* ---------- Banner ---------- */
   .hero{position:relative; overflow:hidden; height:clamp(190px, 22vw, 340px); background:#123D27; color:#fff;}
@@ -114,7 +118,7 @@
 
   .btn{
     display:inline-flex; align-items:center; justify-content:center; gap:8px;
-    height:44px; padding:0 18px; border-radius:999px;
+    height:46px; padding:0 18px; border-radius:999px;
     border:1px solid var(--line-strong); background:var(--surface); color:var(--ink);
     font-size:14.5px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none;
     transition:background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s var(--ease-out);
@@ -125,8 +129,8 @@
   .btn.light{background:rgba(255,255,255,.95); border-color:transparent; color:#17251C; box-shadow:0 4px 14px rgba(0,0,0,.18);}
   .btn.light .ico{color:#1E5B3A;}
   .btn.glass{background:rgba(8,30,18,.42); border-color:rgba(255,255,255,.22); color:#fff; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
-  .btn.ghost{border-color:transparent; background:transparent; color:var(--ink-2); height:40px; font-size:14px;}
-  .btn.icon{width:44px; padding:0;}
+  .btn.ghost{border-color:transparent; background:transparent; color:var(--ink-2); height:42px; font-size:14px; padding:0 12px;}
+  .btn.icon{width:46px; padding:0;}
   .btn:disabled{opacity:.45; cursor:not-allowed;}
   @media (hover:hover){
     .btn:hover:not(:disabled){background:var(--surface-2);}
@@ -136,97 +140,137 @@
   }
 
   /* ---------- Encabezado ---------- */
-  .head{padding:28px 0 22px; display:flex; align-items:center; gap:16px;}
-  @media (min-width:768px){ .head{padding:40px 0 28px;} }
+  .head{padding:26px 0 20px; display:flex; align-items:center; gap:16px;}
+  @media (min-width:768px){ .head{padding:40px 0 26px;} }
   .head-ico{width:56px; height:56px; border-radius:18px; background:linear-gradient(135deg, #1E5B3A, #2D7448); color:#B9E58F; display:grid; place-items:center; flex:none; box-shadow:var(--shadow);}
   .head-ico .ico{width:26px; height:26px;}
   .kicker{font-size:13.5px; font-weight:600; color:var(--ink-2); margin:0 0 2px;}
   h1{font-size:clamp(26px, 4vw, 36px); font-weight:800; letter-spacing:-.025em; line-height:1.1; margin:0;}
-  .lead{margin:4px 0 0; font-size:15px; color:var(--ink-2);}
 
-  /* ---------- Contenido ---------- */
-  .layout{display:grid; gap:16px; align-items:start;}
-  @media (min-width:900px){ .layout{grid-template-columns:minmax(0,1fr) 320px; gap:24px;} }
+  /* ---------- Distribución ---------- */
+  .layout{display:grid; gap:14px; grid-template-areas:"add" "sum" "list" "act";}
+  @media (min-width:900px){
+    .layout{grid-template-columns:minmax(0,1fr) 320px; grid-template-areas:"add sum" "list sum" "list act" "list ."; grid-template-rows:auto auto auto 1fr; gap:20px 24px; align-items:start;}
+  }
+  .a-add{grid-area:add;} .a-sum{grid-area:sum;} .a-list{grid-area:list;} .a-act{grid-area:act;}
 
   .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow-sm);}
+  .card-head{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+  .mini{width:36px; height:36px; border-radius:11px; background:var(--brand-soft); color:var(--brand); display:grid; place-items:center; flex:none;}
+  :root[data-theme="dark"] .mini{color:var(--leaf);}
+  .mini .ico{width:18px; height:18px;}
+  .mini.sun{background:var(--sun-soft); color:var(--sun);}
+  .card-head h2{font-size:17px; font-weight:800; letter-spacing:-.01em; margin:0;}
 
-  .list-head{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px 12px;}
-  .list-title{display:flex; align-items:center; gap:10px;}
-  .list-title .mini{width:36px; height:36px; border-radius:11px; background:var(--brand-soft); color:var(--brand); display:grid; place-items:center;}
-  :root[data-theme="dark"] .list-title .mini{color:var(--leaf);}
-  .list-title .mini .ico{width:18px; height:18px;}
-  .list-head h2{font-size:18px; font-weight:800; letter-spacing:-.01em; margin:0;}
-  .count{font-size:13.5px; font-weight:700; color:var(--brand); background:var(--leaf-soft); padding:5px 10px; border-radius:999px; font-variant-numeric:tabular-nums; white-space:nowrap;}
-  :root[data-theme="dark"] .count{color:var(--leaf);}
-  .progress{height:6px; background:var(--surface-2); margin:0 20px 8px; border-radius:6px; overflow:hidden;}
-  .progress span{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--brand), var(--leaf)); border-radius:6px; transition:width .35s var(--ease-out);}
-
-  .items{list-style:none; margin:0; padding:6px; display:grid;}
-  @media (min-width:640px){ .items{grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:4px;} }
-  .item label{
-    display:flex; align-items:center; gap:12px; min-height:48px; padding:10px 14px; border-radius:var(--r);
-    cursor:pointer; user-select:none; -webkit-user-select:none;
-    transition:background-color .15s ease;
+  /* ---------- Agregar ---------- */
+  .add{padding:18px;}
+  .add-form{display:grid; gap:10px; grid-template-columns:1fr auto;}
+  .add-form .f-name{grid-column:1 / -1;}
+  @media (min-width:560px){ .add-form{grid-template-columns:minmax(0,1fr) 150px auto;} .add-form .f-name{grid-column:auto;} }
+  .field{position:relative; display:block;}
+  .field input{
+    width:100%; height:48px; border:1.5px solid var(--line-strong); border-radius:var(--r);
+    background:var(--surface); padding:0 14px; font-size:16px; font-weight:600;
+    transition:border-color .15s ease, box-shadow .15s ease;
   }
-  @media (hover:hover){ .item label:hover{background:var(--surface-2);} }
-  .item input{position:absolute; opacity:0; pointer-events:none;}
+  .field input::placeholder{color:var(--ink-3); font-weight:500;}
+  .field input:focus{outline:none; border-color:var(--leaf); box-shadow:0 0 0 3px color-mix(in srgb, var(--leaf) 25%, transparent);}
+  .field.price input{padding-left:40px;}
+  .field.price .cur{position:absolute; left:14px; top:50%; transform:translateY(-50%); font-weight:700; color:var(--ink-3); font-size:15px; pointer-events:none;}
+  .add-form .btn{height:48px;}
+  .add-hint{margin:10px 2px 0; font-size:13px; color:var(--ink-3); display:flex; align-items:center; gap:6px;}
+  .add-hint .ico{width:15px; height:15px; color:var(--leaf);}
+
+  /* ---------- Resumen ---------- */
+  .sum{padding:18px;}
+  .stats{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px;}
+  .stat{background:var(--surface-2); border-radius:var(--r); padding:10px 12px; min-width:0;}
+  .stat-label{font-size:12px; font-weight:600; color:var(--ink-2); margin:0;}
+  .stat-value{font-size:17px; font-weight:800; letter-spacing:-.01em; margin:2px 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  @media (min-width:900px){
+    .stats{grid-template-columns:repeat(2, minmax(0,1fr));}
+    .stat.total{grid-column:1 / -1;}
+    .stat.total .stat-value{font-size:22px;}
+  }
+  .stat.total{background:var(--brand); color:#fff;}
+  .stat.total .stat-label{color:#B9E58F;}
+  .stat.done .stat-value{color:var(--brand);}
+  :root[data-theme="dark"] .stat.done .stat-value{color:var(--leaf);}
+  .prog-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; font-size:13.5px; font-weight:600; color:var(--ink-2);}
+  .progress{height:8px; background:var(--surface-2); margin-top:8px; border-radius:8px; overflow:hidden;}
+  .progress span{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--brand), var(--leaf)); border-radius:8px; transition:width .35s var(--ease-out);}
+
+  /* ---------- Lista ---------- */
+  .list{padding:8px;}
+  .list-top{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 10px 8px;}
+  .list-top h2{font-size:17px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px;}
+  .saved-note{display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--ink-3);}
+  .saved-note .ico{width:14px; height:14px; color:var(--leaf);}
+  .items{list-style:none; margin:0; padding:0;}
+  .item{display:flex; align-items:center; gap:4px; border-radius:var(--r); transition:background-color .15s ease;}
+  .item + .item{border-top:1px solid var(--line);}
+  @media (hover:hover){ .item:hover{background:var(--surface-2);} }
+  .item label{flex:1; min-width:0; display:flex; align-items:center; gap:12px; min-height:58px; padding:8px 6px 8px 10px; cursor:pointer; user-select:none; -webkit-user-select:none;}
+  .item input[type=checkbox]{position:absolute; opacity:0; pointer-events:none;}
   .check{
-    width:24px; height:24px; border-radius:8px; border:2px solid var(--line-strong); flex:none;
+    width:26px; height:26px; border-radius:8px; border:2px solid var(--line-strong); flex:none;
     display:grid; place-items:center; background:var(--surface);
     transition:background-color .15s ease, border-color .15s ease, transform .15s var(--ease-out);
   }
-  .check .ico{width:14px; height:14px; color:#fff; stroke-width:3; opacity:0; transform:scale(.5); transition:opacity .15s ease, transform .2s var(--ease-out);}
+  .check .ico{width:15px; height:15px; color:#fff; stroke-width:3; opacity:0; transform:scale(.5); transition:opacity .15s ease, transform .2s var(--ease-out);}
   .item label:active .check{transform:scale(.88);}
   .item input:checked + .check{background:var(--leaf); border-color:var(--leaf);}
   .item input:checked + .check .ico{opacity:1; transform:scale(1);}
   .item input:focus-visible + .check{outline:2.5px solid var(--leaf); outline-offset:2px;}
-  .item-name{font-size:15.5px; font-weight:600; overflow-wrap:anywhere; transition:color .15s ease;}
+  .item-name{flex:1; min-width:0; font-size:16px; font-weight:600; overflow-wrap:anywhere; transition:color .15s ease;}
+  .item-price{font-size:15px; font-weight:700; white-space:nowrap; transition:color .15s ease;}
+  .item-price.none{color:var(--ink-3); font-weight:500; font-size:13.5px;}
   .item input:checked ~ .item-name{color:var(--ink-3); font-weight:500; text-decoration:line-through; text-decoration-color:var(--line-strong);}
+  .item input:checked ~ .item-price{color:var(--ink-3);}
+  .row-btn{
+    width:40px; height:40px; border:0; border-radius:12px; background:transparent; color:var(--ink-3); cursor:pointer;
+    display:grid; place-items:center; flex:none; transition:background-color .15s ease, color .15s ease, transform .12s var(--ease-out);
+  }
+  .row-btn:active{transform:scale(.9);}
+  .row-btn .ico{width:18px; height:18px;}
+  @media (hover:hover){
+    .row-btn:hover{background:var(--surface); color:var(--ink);}
+    .row-btn.del:hover{background:var(--danger-soft); color:var(--danger);}
+  }
 
-  .list-foot{display:flex; justify-content:flex-end; padding:2px 10px 10px;}
+  /* Edición en línea */
+  .edit-form{flex:1; display:grid; grid-template-columns:minmax(0,1fr) 110px auto auto; gap:6px; align-items:center; padding:8px 4px 8px 8px;}
+  .edit-form .field input{height:42px; font-size:15px;}
+  .edit-form .field.price input{padding-left:34px;}
+  .edit-form .field.price .cur{left:11px; font-size:14px;}
+  .row-btn.save{background:var(--brand); color:#fff;}
+  @media (hover:hover){ .row-btn.save:hover{background:var(--brand-hover); color:#fff;} }
+  @media (max-width:479px){
+    .edit-form{grid-template-columns:minmax(0,1fr) auto auto;}
+    .edit-form .field:first-child{grid-column:1 / -1;}
+  }
 
-  /* Panel de acciones */
-  .side{padding:20px; display:grid; gap:10px;}
-  @media (min-width:900px){ .side-wrap{position:sticky; top:20px;} }
-  .side-top{display:flex; align-items:center; gap:12px; margin-bottom:4px;}
-  .side-top .mini{width:40px; height:40px; border-radius:12px; background:#FDF0D9; color:#DB8E17; display:grid; place-items:center; flex:none;}
-  :root[data-theme="dark"] .side-top .mini{background:#2E2513; color:#F0B54D;}
-  .side h2{font-size:16px; font-weight:800; margin:0;}
-  .side p{margin:0 0 6px; font-size:14px; color:var(--ink-2);}
-  .side .btn{width:100%;}
-  .status{display:flex; align-items:center; gap:6px; font-size:14px; font-weight:600; color:var(--ink-2); min-height:21px; margin:2px 0 0;}
+  .empty{padding:36px 20px 40px; text-align:center; color:var(--ink-2);}
+  .empty .mini{width:52px; height:52px; border-radius:16px; margin:0 auto 12px;}
+  .empty .mini .ico{width:24px; height:24px;}
+  .empty h3{font-size:17px; font-weight:800; color:var(--ink); margin:0 0 4px;}
+  .empty p{margin:0 auto; max-width:300px; font-size:14.5px;}
+
+  .list-foot{display:flex; justify-content:space-between; gap:8px; padding:6px 4px 4px; border-top:1px solid var(--line); margin-top:4px;}
+
+  /* ---------- Acciones ---------- */
+  .act{padding:18px; display:grid; gap:10px;}
+  .act p{margin:-4px 0 4px; font-size:14px; color:var(--ink-2);}
+  .act .btn{width:100%;}
+  .status{display:flex; align-items:center; flex-wrap:wrap; gap:6px; font-size:14px; font-weight:600; color:var(--ink-2); min-height:21px; margin:2px 0 0;}
   .status .ico{width:16px; height:16px;}
   .status.ok{color:var(--brand);}
   :root[data-theme="dark"] .status.ok{color:var(--leaf);}
   .status.err{color:var(--danger);}
+  .link-btn{border:0; background:none; padding:0; color:var(--brand); font-weight:800; text-decoration:underline; text-underline-offset:3px; cursor:pointer;}
+  :root[data-theme="dark"] .link-btn{color:var(--leaf);}
 
-  /* Por día */
-  .by-day{margin-top:44px;}
-  .sec-title{display:flex; align-items:center; gap:12px; margin-bottom:16px;}
-  .sec-ico{width:44px; height:44px; border-radius:14px; background:var(--brand-soft); color:var(--brand); display:grid; place-items:center; flex:none;}
-  :root[data-theme="dark"] .sec-ico{color:var(--leaf);}
-  .sec-ico .ico{width:22px; height:22px;}
-  .sec-title h2{font-size:clamp(20px, 2.6vw, 24px); font-weight:800; letter-spacing:-.02em; margin:0; line-height:1.2;}
-  .sec-title p{margin:2px 0 0; color:var(--ink-2); font-size:14px;}
-  .days{display:grid; gap:12px;}
-  @media (min-width:640px){ .days{grid-template-columns:repeat(2, minmax(0,1fr));} }
-  @media (min-width:1000px){ .days{grid-template-columns:repeat(3, minmax(0,1fr));} }
-  .day{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:16px 18px 18px; min-width:0; box-shadow:var(--shadow-sm);}
-  .day-top{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
-  .day-top .mini{width:34px; height:34px; border-radius:10px; background:#FCE7E0; color:#D44E2C; display:grid; place-items:center; flex:none;}
-  :root[data-theme="dark"] .day-top .mini{background:#33201A; color:#EE7C5C;}
-  .day-top .mini .ico{width:17px; height:17px;}
-  .day-dow{font-size:12.5px; font-weight:600; color:var(--ink-3); margin:0; line-height:1.2;}
-  .day-dish{font-size:16px; font-weight:800; line-height:1.25; margin:0; overflow-wrap:anywhere;}
-  .chips{display:flex; flex-wrap:wrap; gap:6px; margin:0; padding:0; list-style:none;}
-  .chips li{font-size:13px; font-weight:600; padding:5px 10px; border-radius:999px; background:var(--leaf-soft); color:var(--brand);}
-  :root[data-theme="dark"] .chips li{color:var(--leaf);}
-  .day-empty{font-size:14px; color:var(--ink-3); margin:0;}
-
-  .state{text-align:center; padding:44px 24px; color:var(--ink-2); border:1px dashed var(--line-strong); border-radius:var(--r-lg); background:var(--surface);}
-  .state .sec-ico{margin:0 auto 14px;}
-  .state h2{color:var(--ink); font-size:20px; font-weight:800; margin:0 0 6px;}
-  .state p{margin:0 auto 18px; max-width:420px;}
+  @media (min-width:900px){ .side-sticky{position:sticky; top:20px;} }
 
   .footer{margin-top:56px; padding:22px 0 40px; border-top:1px solid var(--line); font-size:13.5px; color:var(--ink-3); display:flex; align-items:center; gap:6px;}
   .footer .ico{width:16px; height:16px; color:var(--leaf);}
@@ -239,16 +283,19 @@
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
   <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
-  <symbol id="i-cart" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></symbol>
   <symbol id="i-basket" viewBox="0 0 24 24"><path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.98L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
-  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="m8 17 4-4 4 4"/><path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/></symbol>
-  <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
-  <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
+  <symbol id="i-sheet" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></symbol>
   <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-device" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
   <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
 </svg>
 
@@ -271,179 +318,109 @@
   <section class="head">
     <span class="head-ico" aria-hidden="true"><svg class="ico"><use href="#i-basket"/></svg></span>
     <div>
-      <p class="kicker" id="weekRangeLabel">&nbsp;</p>
+      <p class="kicker" id="weekLabel">&nbsp;</p>
       <h1>Lista de compras</h1>
-      <p class="lead" id="lead">Cargando…</p>
     </div>
   </section>
 
-  <div id="content">
-    <div class="layout">
-      <section class="card" aria-labelledby="listTitle">
-        <div class="list-head">
-          <div class="list-title">
-            <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-list"/></svg></span>
-            <h2 id="listTitle">Ingredientes</h2>
-          </div>
-          <span class="count" id="count" aria-live="polite"></span>
-        </div>
-        <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
-        <ul class="items" id="items"></ul>
-        <div class="list-foot">
-          <button class="btn ghost" id="btnReset" type="button" hidden>
-            <svg class="ico" aria-hidden="true"><use href="#i-rotate"/></svg><span>Desmarcar todo</span>
-          </button>
-        </div>
-      </section>
+  <div class="layout">
 
-      <div class="side-wrap">
-        <aside class="card side" aria-label="Acciones">
-          <div class="side-top">
-            <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-cart"/></svg></span>
-            <h2>Para ir al mercado</h2>
+    <!-- Agregar ingrediente -->
+    <section class="card add a-add" aria-labelledby="addTitle">
+      <div class="card-head">
+        <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-plus"/></svg></span>
+        <h2 id="addTitle">Agregar ingrediente</h2>
+      </div>
+      <form class="add-form" id="addForm" autocomplete="off">
+        <label class="field f-name">
+          <span class="sr-only">Ingrediente</span>
+          <input id="newName" name="name" type="text" placeholder="Ej.: Pollo 1 kg" maxlength="80" required enterkeyhint="next">
+        </label>
+        <label class="field price">
+          <span class="sr-only">Precio en soles</span>
+          <span class="cur" aria-hidden="true">S/</span>
+          <input id="newPrice" name="price" type="text" inputmode="decimal" placeholder="0.00" maxlength="9" enterkeyhint="done">
+        </label>
+        <button class="btn primary" type="submit">
+          <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg><span>Agregar</span>
+        </button>
+      </form>
+      <p class="add-hint"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>El precio es opcional. Puedes cambiarlo después con el lápiz.</p>
+    </section>
+
+    <!-- Resumen -->
+    <section class="card sum a-sum" aria-labelledby="sumTitle">
+      <div class="card-head">
+        <span class="mini sun" aria-hidden="true"><svg class="ico"><use href="#i-wallet"/></svg></span>
+        <h2 id="sumTitle">Presupuesto</h2>
+      </div>
+      <div class="stats">
+        <div class="stat total"><p class="stat-label">Total</p><p class="stat-value num" id="sTotal">S/ 0.00</p></div>
+        <div class="stat done"><p class="stat-label">Comprado</p><p class="stat-value num" id="sDone">S/ 0.00</p></div>
+        <div class="stat"><p class="stat-label">Falta</p><p class="stat-value num" id="sLeft">S/ 0.00</p></div>
+      </div>
+      <div class="prog-row"><span id="progText">0 de 0 comprados</span><span id="progPct" class="num">0%</span></div>
+      <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+    </section>
+
+    <!-- Lista / checklist -->
+    <section class="card list a-list" aria-labelledby="listTitle">
+      <div class="list-top">
+        <h2 id="listTitle"><span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-list"/></svg></span>Mi lista</h2>
+        <span class="saved-note"><svg class="ico" aria-hidden="true"><use href="#i-device"/></svg>Se guarda sola</span>
+      </div>
+      <ul class="items" id="items"></ul>
+      <div class="empty" id="empty">
+        <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-basket"/></svg></span>
+        <h3>Tu lista está vacía</h3>
+        <p>Escribe arriba lo que necesitas comprar y cuánto cuesta.</p>
+      </div>
+      <div class="list-foot" id="listFoot" hidden>
+        <button class="btn ghost" id="btnUncheck" type="button"><svg class="ico" aria-hidden="true"><use href="#i-rotate"/></svg><span>Desmarcar todo</span></button>
+        <button class="btn ghost" id="btnClear" type="button"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg><span>Vaciar lista</span></button>
+      </div>
+    </section>
+
+    <!-- Acciones -->
+    <div class="a-act">
+      <div class="side-sticky">
+        <section class="card act" aria-labelledby="actTitle">
+          <div class="card-head">
+            <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-sheet"/></svg></span>
+            <h2 id="actTitle">Guardar y compartir</h2>
           </div>
-          <p>Copia lo que te falta y pégalo en WhatsApp o en tus notas.</p>
-          <button class="btn primary" id="btnCopy" type="button">
-            <svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg>
-            <span>Copiar lo que falta</span>
+          <p>Guarda la lista con sus precios en tu hoja de Google para llevar el historial de tus gastos.</p>
+          <button class="btn primary" id="btnSave" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-sheet"/></svg><span>Guardar en Google Sheets</span>
           </button>
-          <button class="btn" id="btnSave" type="button">
-            <svg class="ico" aria-hidden="true"><use href="#i-cloud"/></svg>
-            <span>Guardar en historial</span>
+          <button class="btn" id="btnCopy" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg><span>Copiar para WhatsApp</span>
           </button>
           <p class="status" id="actionStatus" role="status" aria-live="polite"></p>
-        </aside>
+        </section>
       </div>
     </div>
 
-    <section class="by-day" aria-labelledby="byDayTitle">
-      <div class="sec-title">
-        <span class="sec-ico" aria-hidden="true"><svg class="ico"><use href="#i-calendar"/></svg></span>
-        <div>
-          <h2 id="byDayTitle">Por día</h2>
-          <p>De qué plato sale cada ingrediente.</p>
-        </div>
-      </div>
-      <div class="days" id="daysContainer"></div>
-    </section>
   </div>
 
   <footer class="footer"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>Menu Smart · Planifica tus comidas, come mejor.</footer>
 </main>
 
 <script>
-/* ============================================================
-   Diccionario de ingredientes típicos por plato.
-   Se busca por coincidencia de palabras clave dentro del texto
-   del plato (insensible a mayúsculas/acentos). Si ningún plato
-   coincide, se usa un respaldo simple (separar por / , +).
-   ============================================================ */
-const DISH_INGREDIENTS = [
-  { keys: ["pollo horno", "pollo al horno"], items: ["Pollo", "papa", "zanahoria", "cebolla", "ajo", "comino", "aceite de oliva", "sal", "pimienta", "orégano"] },
-  { keys: ["filete pollo", "filete de pollo"], items: ["Filete de pollo", "papa", "limón", "ajo", "sal", "pimienta", "aceite"] },
-  { keys: ["pollo"], items: ["Pollo", "cebolla", "ajo", "sal", "pimienta", "aceite"] },
-  { keys: ["arroz con pollo"], items: ["Pollo", "arroz", "arvejas", "zanahoria", "pimiento", "ajo", "cebolla", "culantro", "cerveza", "aceite", "sal", "pimienta"] },
-  { keys: ["lomo saltado"], items: ["Carne de res", "tomate", "cebolla", "ají amarillo", "sillao", "vinagre", "papas fritas", "arroz", "sal", "pimienta"] },
-  { keys: ["estofado"], items: ["Carne o pollo", "papa", "arveja", "zanahoria", "cebolla", "tomate", "ajo", "sal", "pimienta", "aceite"] },
-  { keys: ["pescado frito"], items: ["Pescado", "harina", "huevo", "ajo", "limón", "sal", "pimienta", "aceite", "ensalada (lechuga, tomate, cebolla)"] },
-  { keys: ["pescado"], items: ["Pescado", "papa", "limón", "sal", "aceite"] },
-  { keys: ["pavita"], items: ["Pavita (pechuga de pavo)", "camote", "sal", "pimienta", "aceite"] },
-  { keys: ["camote"], items: ["Camote"] },
-  { keys: ["oyuco", "olluco"], items: ["Olluco", "carne o charqui", "cebolla", "ajo", "ají amarillo", "culantro", "sal", "aceite"] },
-  { keys: ["alverja", "arveja"], items: ["Arveja", "cebolla", "ajo", "zanahoria", "sal", "aceite"] },
-  { keys: ["ensalada"], items: ["Lechuga", "tomate", "cebolla", "sal", "aceite", "limón"] },
-  { keys: ["huevo revuelto", "huevo rev"], items: ["Huevo", "cebolla", "tomate", "sal", "aceite"] },
-  { keys: ["huevo sanc", "sancochado"], items: ["Huevo"] },
-  { keys: ["huevo frito"], items: ["Huevo", "aceite", "sal"] },
-  { keys: ["tortilla"], items: ["Huevo", "cebolla", "sal", "aceite"] },
-  { keys: ["sopo verdura", "sopa de verdura", "sopa criolla"], items: ["Fideo cabello de ángel", "papa", "verduras variadas (zanahoria, apio, zapallo)", "huevo", "leche", "sal", "pimienta"] },
-  { keys: ["tallarines verdes"], items: ["Tallarines", "espinaca", "albahaca", "ajo", "leche evaporada", "queso parmesano", "aceite de oliva", "sal", "pimienta"] },
-  { keys: ["pachamanca"], items: ["Carne de res, cerdo y pollo", "papa", "camote", "habas", "maíz", "huacatay", "ají panca", "sal"] },
-  { keys: ["choclo"], items: ["Choclo"] },
-  { keys: ["queso"], items: ["Queso fresco"] },
-  { keys: ["atun", "atún"], items: ["Atún en lata", "cebolla", "limón", "sal"] },
-  { keys: ["pan"], items: ["Pan"] },
-  { keys: ["mandarina", "manzana", "fruta"], items: [] } // la fruta se muestra tal cual, sin expandir
-];
+/* Enlace del Google Apps Script (Web App) que guarda en la hoja.
+   Es el mismo que usa index.html. */
+const HISTORIAL_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbCbOFPrTG8yljjNXlSNPY0oR7YJOO0BKvyXfDy70Py8TJ3GJ2OAORbJh4_VFg9VG7/exec";
 
 const SVGNS = 'http://www.w3.org/2000/svg';
+const money = new Intl.NumberFormat('es-PE', { style:'currency', currency:'PEN', minimumFractionDigits:2 });
 
-function normalize(s){
-  return (s || "").toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-}
-function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
-
-function splitRaw(text){
-  if(!text) return [];
-  return text.split(/[\/,+]|(?:\by\b)/i).map(s => s.trim()).filter(Boolean);
-}
-
-/* Expande un texto de plato (p.ej. "Filete Pollo / Papa") en una
-   lista de ingredientes, combinando coincidencias del diccionario
-   para cada componente y usando el texto tal cual si no hay match. */
-function expandDish(text){
-  const parts = splitRaw(text);
-  if(!parts.length) return [];
-  const result = [];
-  const seen = new Set();
-
-  parts.forEach(part => {
-    const normPart = normalize(part);
-    let matched = null;
-    for(const entry of DISH_INGREDIENTS){
-      if(entry.keys.some(k => normPart.includes(normalize(k)))){
-        matched = entry;
-        break;
-      }
-    }
-    const add = item => {
-      const key = normalize(item);
-      if(!seen.has(key)){ seen.add(key); result.push(item); }
-    };
-    if(matched && matched.items.length) matched.items.forEach(add);
-    else add(part);
-  });
-
-  return result;
-}
-
-const DAY_NAMES = { lunes:"Lunes", martes:"Martes", miercoles:"Miércoles", jueves:"Jueves", viernes:"Viernes", sabado:"Sábado", domingo:"Domingo" };
-function displayDay(name){ return DAY_NAMES[normalize(name)] || name; }
-
-function isFree(text){ return !text || normalize(text) === 'libre'; }
-
-function dayIngredients(day){
-  const out = [];
-  const seen = new Set();
-  [day.almuerzo, day.cena, day.desayuno, day.media].forEach(text => {
-    if(isFree(text)) return;
-    expandDish(text).forEach(item => {
-      const key = normalize(item);
-      if(!seen.has(key)){ seen.add(key); out.push(item); }
-    });
-  });
-  return out;
-}
-
-function getAllIngredientsFlat(data){
-  const seen = new Set();
-  const out = [];
-  data.days.forEach(day => {
-    dayIngredients(day).forEach(item => {
-      const key = normalize(item);
-      if(!seen.has(key)){ seen.add(key); out.push(capitalize(item)); }
-    });
-  });
-  return out.sort((a,b) => a.localeCompare(b, 'es'));
-}
-
+/* ---------- utilidades ---------- */
 function el(tag, cls, text){
   const e = document.createElement(tag);
   if(cls) e.className = cls;
   if(text !== undefined) e.textContent = text;
   return e;
 }
-
 function icon(id){
   const svg = document.createElementNS(SVGNS, 'svg');
   svg.setAttribute('class', 'ico');
@@ -453,173 +430,278 @@ function icon(id){
   svg.appendChild(use);
   return svg;
 }
+function fmt(n){ return money.format(n || 0); }
+function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
-function setStatus(text, state){
+/* "12,50" o "12.50" -> 12.5 ; vacío o inválido -> null */
+function parsePrice(str){
+  const s = String(str || '').trim().replace(/^s\/\s*/i, '').replace(',', '.');
+  if(!s) return null;
+  const n = Number(s);
+  return isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
+}
+
+function getMonday(d){
+  const date = new Date(d);
+  const day = date.getDay();
+  date.setDate(date.getDate() + (day === 0 ? -6 : 1 - day));
+  date.setHours(0,0,0,0);
+  return date;
+}
+function isoDate(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function fmtRange(monday){
+  const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
+  const opts = { day:'numeric', month:'long' };
+  return monday.toLocaleDateString('es-PE', opts) + ' – ' + sunday.toLocaleDateString('es-PE', opts) + ', ' + sunday.getFullYear();
+}
+
+/* ---------- semana ----------
+   Usa la semana que estabas viendo en el menú; si abriste la lista
+   directamente, usa la semana actual. */
+const WEEK = (function(){
+  let data = null;
+  try{ data = JSON.parse(localStorage.getItem('menuSmartShoppingWeek') || 'null'); }catch(e){}
+  if(data && data.monday){
+    const [y, m, d] = data.monday.split('-').map(Number);
+    const monday = new Date(y, m - 1, d);
+    return { monday: data.monday, sunday: data.sunday, label: data.weekLabel || fmtRange(monday) };
+  }
+  const monday = getMonday(new Date());
+  const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
+  return { monday: isoDate(monday), sunday: isoDate(sunday), label: fmtRange(monday) };
+})();
+
+/* ---------- datos (se guardan en este dispositivo, por semana) ---------- */
+const STORE_KEY = 'menuSmartLista:' + WEEK.monday;
+let ITEMS = [];       // { id, name, price (número o null), done }
+let EDITING = null;   // id del ingrediente en edición
+let LAST_DELETED = null;
+
+function load(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+    ITEMS = Array.isArray(saved) ? saved.filter(i => i && i.name) : [];
+  }catch(e){ ITEMS = []; }
+}
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(ITEMS)); }catch(e){}
+}
+function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+/* ---------- estado y resumen ---------- */
+function setStatus(text, state, action){
   const s = document.getElementById('actionStatus');
   s.innerHTML = '';
   if(state === 'ok') s.appendChild(icon('i-check'));
   if(state === 'err') s.appendChild(icon('i-alert'));
   s.append(text);
+  if(action){
+    const b = el('button', 'link-btn', action.label);
+    b.type = 'button';
+    b.addEventListener('click', action.run);
+    s.append(' ', b);
+  }
   s.className = 'status' + (state ? ' ' + state : '');
 }
 
-/* ---------- tarjetas por día ---------- */
-function buildDayCard(day){
-  // Plato principal = Almuerzo; si está "Libre" o vacío, usa la Cena
-  const main = !isFree(day.almuerzo) ? day.almuerzo : (!isFree(day.cena) ? day.cena : '');
-  const items = dayIngredients(day);
+function updateSummary(){
+  const total = ITEMS.reduce((a, i) => a + (i.price || 0), 0);
+  const done = ITEMS.filter(i => i.done).reduce((a, i) => a + (i.price || 0), 0);
+  const count = ITEMS.length;
+  const doneCount = ITEMS.filter(i => i.done).length;
+  const pct = count ? Math.round(doneCount / count * 100) : 0;
 
-  const card = el('article', 'day');
-  const top = el('div', 'day-top');
-  const mini = el('span', 'mini'); mini.appendChild(icon('i-utensils'));
-  const t = el('div');
-  t.appendChild(el('p', 'day-dow', displayDay(day.nombreDia)));
-  t.appendChild(el('h3', 'day-dish', main ? main.trim() : 'Día libre'));
-  top.append(mini, t);
-  card.appendChild(top);
-  if(items.length){
-    const ul = el('ul', 'chips');
-    items.forEach(i => ul.appendChild(el('li', '', capitalize(i))));
-    card.appendChild(ul);
-  } else {
-    card.appendChild(el('p', 'day-empty', 'Sin ingredientes para este día.'));
+  document.getElementById('sTotal').textContent = fmt(total);
+  document.getElementById('sDone').textContent = fmt(done);
+  document.getElementById('sLeft').textContent = fmt(total - done);
+  document.getElementById('progText').textContent =
+    count === 0 ? 'Aún no hay ingredientes'
+    : doneCount === count ? '¡Compraste todo!'
+    : doneCount + ' de ' + count + ' comprados';
+  document.getElementById('progPct').textContent = pct + '%';
+  document.getElementById('progressBar').style.width = pct + '%';
+
+  document.getElementById('empty').hidden = count > 0;
+  document.getElementById('listFoot').hidden = count === 0;
+  document.getElementById('btnUncheck').disabled = doneCount === 0;
+  document.getElementById('btnSave').disabled = count === 0;
+  document.getElementById('btnCopy').disabled = count === 0;
+}
+
+/* ---------- filas ---------- */
+function buildRow(item){
+  const li = el('li', 'item');
+  li.dataset.id = item.id;
+
+  if(EDITING === item.id){
+    const form = el('form', 'edit-form');
+    form.autocomplete = 'off';
+    const fName = el('label', 'field');
+    fName.innerHTML = '<span class="sr-only">Ingrediente</span>';
+    const iName = el('input'); iName.type = 'text'; iName.value = item.name; iName.maxLength = 80; iName.required = true;
+    fName.appendChild(iName);
+    const fPrice = el('label', 'field price');
+    fPrice.innerHTML = '<span class="sr-only">Precio en soles</span><span class="cur" aria-hidden="true">S/</span>';
+    const iPrice = el('input'); iPrice.type = 'text'; iPrice.inputMode = 'decimal'; iPrice.placeholder = '0.00'; iPrice.maxLength = 9;
+    iPrice.value = item.price != null ? item.price.toFixed(2) : '';
+    fPrice.appendChild(iPrice);
+    const ok = el('button', 'row-btn save'); ok.type = 'submit'; ok.setAttribute('aria-label', 'Guardar cambios'); ok.appendChild(icon('i-check'));
+    const cancel = el('button', 'row-btn'); cancel.type = 'button'; cancel.setAttribute('aria-label', 'Cancelar'); cancel.appendChild(icon('i-x'));
+    cancel.addEventListener('click', () => { EDITING = null; render(); });
+    form.append(fName, fPrice, ok, cancel);
+    form.addEventListener('submit', ev => {
+      ev.preventDefault();
+      const name = iName.value.trim();
+      const price = parsePrice(iPrice.value);
+      if(!name){ iName.focus(); return; }
+      if(Number.isNaN(price)){ setStatus('El precio no es válido. Usa solo números, por ejemplo 12.50', 'err'); iPrice.focus(); return; }
+      item.name = capitalize(name);
+      item.price = price;
+      EDITING = null;
+      save(); render();
+    });
+    li.appendChild(form);
+    setTimeout(() => iName.focus(), 0);
+    return li;
   }
-  return card;
+
+  const label = el('label');
+  const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!item.done;
+  cb.addEventListener('change', () => { item.done = cb.checked; save(); updateSummary(); });
+  const box = el('span', 'check'); box.setAttribute('aria-hidden', 'true'); box.appendChild(icon('i-check'));
+  label.append(cb, box, el('span', 'item-name', item.name),
+    el('span', 'item-price num' + (item.price == null ? ' none' : ''), item.price == null ? 'Sin precio' : fmt(item.price)));
+
+  const edit = el('button', 'row-btn'); edit.type = 'button';
+  edit.setAttribute('aria-label', 'Editar ' + item.name); edit.appendChild(icon('i-pencil'));
+  edit.addEventListener('click', () => { EDITING = item.id; render(); });
+
+  const del = el('button', 'row-btn del'); del.type = 'button';
+  del.setAttribute('aria-label', 'Quitar ' + item.name); del.appendChild(icon('i-trash'));
+  del.addEventListener('click', () => removeItem(item.id));
+
+  li.append(label, edit, del);
+  return li;
 }
 
-/* ---------- lista con casillas (se recuerda por semana) ---------- */
-let CHECKED = new Set();
-let STORE_KEY = '';
-
-function saveChecked(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(Array.from(CHECKED))); }catch(e){}
-}
-
-function updateProgress(total){
-  const done = CHECKED.size;
-  document.getElementById('count').textContent = done + ' de ' + total;
-  document.getElementById('progressBar').style.width = (total ? (done / total * 100) : 0) + '%';
-  document.getElementById('btnReset').hidden = done === 0;
-}
-
-function buildChecklist(list){
+function render(){
   const ul = document.getElementById('items');
   ul.innerHTML = '';
-  list.forEach((name, i) => {
-    const key = normalize(name);
-    const li = el('li', 'item');
-    const label = el('label');
-    const input = el('input');
-    input.type = 'checkbox';
-    input.id = 'it-' + i;
-    input.checked = CHECKED.has(key);
-    input.addEventListener('change', () => {
-      if(input.checked) CHECKED.add(key); else CHECKED.delete(key);
-      saveChecked();
-      updateProgress(list.length);
-    });
-    const box = el('span', 'check');
-    box.setAttribute('aria-hidden', 'true');
-    box.appendChild(icon('i-check'));
-    label.append(input, box, el('span', 'item-name', name));
-    li.appendChild(label);
-    ul.appendChild(li);
-  });
-  updateProgress(list.length);
+  ITEMS.forEach(item => ul.appendChild(buildRow(item)));
+  updateSummary();
 }
 
-function init(){
-  let data = null;
-  try{
-    const raw = localStorage.getItem('menuSmartShoppingWeek');
-    if(raw) data = JSON.parse(raw);
-  }catch(e){}
+/* ---------- acciones ---------- */
+function removeItem(id){
+  const idx = ITEMS.findIndex(i => i.id === id);
+  if(idx < 0) return;
+  const [removed] = ITEMS.splice(idx, 1);
+  LAST_DELETED = { item: removed, idx };
+  save(); render();
+  setStatus('Quitaste «' + removed.name + '».', null, { label:'Deshacer', run: () => {
+    if(!LAST_DELETED) return;
+    ITEMS.splice(Math.min(LAST_DELETED.idx, ITEMS.length), 0, LAST_DELETED.item);
+    LAST_DELETED = null;
+    save(); render(); setStatus('');
+  }});
+}
 
-  if(!data || !data.days || !data.days.length){
-    document.getElementById('lead').textContent = 'Todavía no hay una semana seleccionada.';
-    document.getElementById('content').innerHTML =
-      '<div class="state"><span class="sec-ico"><svg class="ico" aria-hidden="true"><use href="#i-cart"/></svg></span>' +
-      '<h2>No hay datos del menú</h2><p>Abre tu menú y toca «Lista de compras» para traer los ingredientes de esa semana.</p>' +
-      '<a class="btn primary" href="./">Ir al menú</a></div>';
+document.getElementById('addForm').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  const nameInput = document.getElementById('newName');
+  const priceInput = document.getElementById('newPrice');
+  const name = nameInput.value.trim();
+  const price = parsePrice(priceInput.value);
+  if(!name){ nameInput.focus(); return; }
+  if(Number.isNaN(price)){
+    setStatus('El precio no es válido. Usa solo números, por ejemplo 12.50', 'err');
+    priceInput.focus();
     return;
   }
+  ITEMS.push({ id: newId(), name: capitalize(name), price, done: false });
+  save(); render();
+  nameInput.value = ''; priceInput.value = '';
+  setStatus('');
+  nameInput.focus();
+});
 
-  const list = getAllIngredientsFlat(data);
-  const activeDays = data.days.filter(d => dayIngredients(d).length).length;
+/* Enter en el nombre pasa al precio (más cómodo en el celular) */
+document.getElementById('newName').addEventListener('keydown', function(ev){
+  if(ev.key === 'Enter' && this.value.trim()){
+    ev.preventDefault();
+    document.getElementById('newPrice').focus();
+  }
+});
 
-  document.getElementById('weekRangeLabel').textContent = 'Semana del ' + data.weekLabel;
-  document.getElementById('lead').textContent =
-    list.length + ' ingredientes para ' + activeDays + (activeDays === 1 ? ' día' : ' días') + ' de comidas.';
+document.getElementById('btnUncheck').addEventListener('click', function(){
+  ITEMS.forEach(i => i.done = false);
+  save(); render();
+});
 
-  STORE_KEY = 'menuSmartChecked:' + (data.monday || '');
-  try{ CHECKED = new Set(JSON.parse(localStorage.getItem(STORE_KEY) || '[]')); }catch(e){ CHECKED = new Set(); }
-  // quita marcas de ingredientes que ya no están en la lista
-  const valid = new Set(list.map(normalize));
-  CHECKED.forEach(k => { if(!valid.has(k)) CHECKED.delete(k); });
+document.getElementById('btnClear').addEventListener('click', function(){
+  if(!ITEMS.length) return;
+  if(!confirm('¿Vaciar toda la lista? Se borrarán ' + ITEMS.length + ' ingredientes de este dispositivo.')) return;
+  ITEMS = []; EDITING = null;
+  save(); render();
+  setStatus('Lista vaciada.');
+});
 
-  buildChecklist(list);
-
-  const container = document.getElementById('daysContainer');
-  container.innerHTML = '';
-  data.days.forEach(day => container.appendChild(buildDayCard(day)));
-
-  document.getElementById('btnReset').addEventListener('click', function(){
-    CHECKED.clear();
-    saveChecked();
-    buildChecklist(list);
+document.getElementById('btnCopy').addEventListener('click', function(){
+  const total = ITEMS.reduce((a, i) => a + (i.price || 0), 0);
+  const lines = ITEMS.map(i => (i.done ? '✅ ' : '⬜ ') + i.name + (i.price != null ? ' — ' + fmt(i.price) : ''));
+  const text = '🛒 Lista de compras · ' + WEEK.label + '\n' + lines.join('\n') + '\n\nTotal: ' + fmt(total);
+  navigator.clipboard.writeText(text).then(function(){
+    setStatus('Lista copiada. Pégala en WhatsApp o en tus notas.', 'ok');
+  }).catch(function(){
+    setStatus('No se pudo copiar automáticamente.', 'err');
   });
+});
 
-  document.getElementById('btnCopy').addEventListener('click', function(){
-    const pending = list.filter(i => !CHECKED.has(normalize(i)));
-    const toCopy = pending.length ? pending : list;
-    const text = 'Lista de compras · ' + data.weekLabel + '\n' + toCopy.map(i => '- ' + i).join('\n');
-    navigator.clipboard.writeText(text).then(function(){
-      setStatus(pending.length
-        ? 'Copiados ' + pending.length + ' ingredientes pendientes.'
-        : 'Ya marcaste todo; se copió la lista completa.', 'ok');
-    }).catch(function(){
-      setStatus('No se pudo copiar automáticamente.', 'err');
-    });
-  });
+/* Guarda en Google Sheets.
+   - "ingredientes" y "total" funcionan con el script que ya tienes
+     (una fila por lista en Historial_Compras).
+   - "items" trae cada ingrediente por separado, para el script
+     actualizado (google-apps-script.gs) que crea una fila por ingrediente. */
+document.getElementById('btnSave').addEventListener('click', function(){
+  const saveBtn = this;
+  if(!HISTORIAL_SCRIPT_URL || HISTORIAL_SCRIPT_URL.indexOf('http') !== 0){
+    setStatus('Falta configurar el enlace de Google Apps Script.', 'err');
+    return;
+  }
+  const total = ITEMS.reduce((a, i) => a + (i.price || 0), 0);
+  const payload = {
+    fechaGenerado: new Date().toISOString(),
+    semanaInicio: WEEK.monday,
+    semanaFin: WEEK.sunday,
+    ingredientes: ITEMS.map(i => i.name + (i.price != null ? ' (' + fmt(i.price) + ')' : '')).join(', '),
+    total: Math.round(total * 100) / 100,
+    items: ITEMS.map(i => ({ nombre: i.name, precio: i.price, comprado: !!i.done }))
+  };
 
-  document.getElementById('btnSave').addEventListener('click', function(){
-    const saveBtn = document.getElementById('btnSave');
-    const url = data.historialScriptUrl;
+  saveBtn.disabled = true;
+  setStatus('Guardando en Google Sheets…');
 
-    if(!url || url.indexOf('http') !== 0){
-      setStatus('Falta configurar el enlace de Google Apps Script.', 'err');
-      return;
+  fetch(HISTORIAL_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(resData => {
+    if(resData && resData.ok){
+      const hora = new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' });
+      setStatus('Guardado en Google Sheets · ' + hora, 'ok');
+    } else {
+      throw new Error((resData && resData.error) || 'respuesta inesperada');
     }
-
-    const payload = {
-      fechaGenerado: new Date().toISOString(),
-      semanaInicio: data.monday,
-      semanaFin: data.sunday,
-      ingredientes: list.join(', ')
-    };
-
-    saveBtn.disabled = true;
-    setStatus('Guardando…');
-
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(resData => {
-      if(resData && resData.ok){
-        setStatus('Guardado en tu hoja Historial_Compras.', 'ok');
-      } else {
-        throw new Error((resData && resData.error) || 'respuesta inesperada');
-      }
-    })
-    .catch(err => {
-      setStatus('No se pudo guardar (' + err.message + ').', 'err');
-    })
-    .finally(() => { saveBtn.disabled = false; });
-  });
-}
+  })
+  .catch(err => {
+    setStatus('No se pudo guardar (' + err.message + '). Tu lista sigue guardada en este dispositivo.', 'err');
+  })
+  .finally(() => { saveBtn.disabled = ITEMS.length === 0; });
+});
 
 /* ---------- tema ---------- */
 function applyTheme(theme){
@@ -641,7 +723,10 @@ document.getElementById('themeToggle').addEventListener('click', function(){
   applyTheme(current === 'dark' ? 'light' : 'dark');
 });
 
-init();
+/* ---------- inicio ---------- */
+document.getElementById('weekLabel').textContent = 'Semana del ' + WEEK.label;
+load();
+render();
 </script>
 </body>
 </html>
