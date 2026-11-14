@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Historial de compras — Menu Smart</title>
+<meta name="description" content="Tus compras guardadas por semana y cuánto gastaste.">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#123D27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Menu Smart">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Menu Smart">
+<meta property="og:locale" content="es_PE">
+<meta property="og:title" content="Historial de compras — Menu Smart">
+<meta property="og:description" content="Tus compras guardadas por semana y cuánto gastaste.">
+<meta property="og:url" content="https://saacostah2005-collab.github.io/menu-semanal/historial.html">
+<meta property="og:image" content="https://saacostah2005-collab.github.io/menu-semanal/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem('menuSemanalTheme');
+    if(!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  }catch(e){}
+})();
+</script>
+<link rel="preload" as="image" href="banner.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Misma paleta que el menú y la lista, tomada del banner */
+  :root{
+    --bg:#F3F6F0;
+    --surface:#FFFFFF;
+    --surface-2:#EEF3EA;
+    --ink:#17251C;
+    --ink-2:#4F5E54;
+    --ink-3:#85928A;
+    --line:#E0E8DA;
+    --line-strong:#CCD8C5;
+
+    --brand:#1E5B3A;
+    --brand-hover:#174A2F;
+    --brand-soft:#E4F0E6;
+    --leaf:#6AB04C;
+    --leaf-soft:#EAF5E1;
+    --sun:#DB8E17;  --sun-soft:#FDF0D9;
+    --danger:#D44E2C;
+
+    --bar:#1E5B3A;          /* barras del gráfico */
+    --bar-hover:#2D7448;
+
+    --r-lg:20px;
+    --r:14px;
+    --shadow-sm:0 1px 2px rgba(18,61,39,.05);
+    --shadow:0 1px 2px rgba(18,61,39,.05), 0 10px 28px -10px rgba(18,61,39,.16);
+
+    --font:'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ease-out:cubic-bezier(.22,1,.36,1);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0C1711;
+    --surface:#12211A;
+    --surface-2:#182B21;
+    --ink:#E8F0E6;
+    --ink-2:#A8B8AC;
+    --ink-3:#718276;
+    --line:#1F3328;
+    --line-strong:#2A4234;
+
+    --brand:#2E7A4F;
+    --brand-hover:#38895B;
+    --brand-soft:#163323;
+    --leaf:#8BCB5F;
+    --leaf-soft:#1A2E1C;
+    --sun:#F0B54D;  --sun-soft:#2E2513;
+    --danger:#EE7C5C;
+
+    --bar:#6FB389;
+    --bar-hover:#8BCB5F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 30px -12px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  html{-webkit-text-size-adjust:100%; color-scheme:light;}
+  :root[data-theme="dark"]{color-scheme:dark;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font); font-size:16px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 18px;}
+  @media (min-width:768px){ .wrap{padding:0 32px;} }
+  button, input{font:inherit; color:inherit;}
+  button{touch-action:manipulation;}
+  :focus-visible{outline:2.5px solid var(--leaf); outline-offset:2px; border-radius:10px;}
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+  .ico{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+  .num{font-variant-numeric:tabular-nums;}
+
+  /* ---------- Banner ---------- */
+  .hero{position:relative; overflow:hidden; height:clamp(190px, 22vw, 340px); background:#123D27; color:#fff;}
+  .hero-img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:left top; display:block;}
+  .hero::after{content:""; position:absolute; inset:auto 0 0 0; height:45%; background:linear-gradient(to top, rgba(10,36,22,.45), rgba(10,36,22,0)); pointer-events:none;}
+  .hero-bar{position:absolute; left:0; right:0; bottom:0; z-index:1; padding-bottom:16px; display:flex; align-items:flex-end; justify-content:flex-end; gap:8px;}
+  @media (min-width:768px){ .hero-bar{padding-bottom:24px;} }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    height:46px; padding:0 18px; border-radius:999px;
+    border:1px solid var(--line-strong); background:var(--surface); color:var(--ink);
+    font-size:14.5px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none;
+    transition:background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s var(--ease-out);
+  }
+  .btn:active:not(:disabled){transform:scale(.96);}
+  .btn .ico{width:18px; height:18px;}
+  .btn.light{background:rgba(255,255,255,.95); border-color:transparent; color:#17251C; box-shadow:0 4px 14px rgba(0,0,0,.18);}
+  .btn.light .ico{color:#1E5B3A;}
+  .btn.glass{background:rgba(8,30,18,.42); border-color:rgba(255,255,255,.22); color:#fff; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+  .btn.icon{width:46px; padding:0;}
+  @media (hover:hover){
+    .btn:hover:not(:disabled){background:var(--surface-2);}
+    .btn.light:hover:not(:disabled){background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.22);}
+    .btn.glass:hover:not(:disabled){background:rgba(8,30,18,.6);}
+  }
+
+  /* ---------- Encabezado ---------- */
+  .head{padding:26px 0 20px; display:flex; align-items:center; gap:16px;}
+  @media (min-width:768px){ .head{padding:40px 0 26px;} }
+  .head-ico{width:56px; height:56px; border-radius:18px; background:linear-gradient(135deg, #1E5B3A, #2D7448); color:#B9E58F; display:grid; place-items:center; flex:none; box-shadow:var(--shadow);}
+  .head-ico .ico{width:26px; height:26px;}
+  .kicker{font-size:13.5px; font-weight:600; color:var(--ink-2); margin:0 0 2px;}
+  h1{font-size:clamp(26px, 4vw, 36px); font-weight:800; letter-spacing:-.025em; line-height:1.1; margin:0;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow-sm);}
+  .card-head{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+  .card-head h2{font-size:17px; font-weight:800; letter-spacing:-.01em; margin:0;}
+  .mini{width:36px; height:36px; border-radius:11px; background:var(--brand-soft); color:var(--brand); display:grid; place-items:center; flex:none;}
+  :root[data-theme="dark"] .mini{color:var(--leaf);}
+  .mini .ico{width:18px; height:18px;}
+  .mini.sun{background:var(--sun-soft); color:var(--sun);}
+
+  /* ---------- Filtros ---------- */
+  .filters{padding:16px 18px 18px; margin-bottom:14px;}
+  .chips{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:0 -4px 14px; padding:2px 4px;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{
+    height:38px; padding:0 14px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface);
+    font-size:14px; font-weight:700; color:var(--ink-2); cursor:pointer; white-space:nowrap; flex:none;
+    transition:background-color .15s ease, color .15s ease, border-color .15s ease, transform .12s var(--ease-out);
+  }
+  .chip:active{transform:scale(.95);}
+  .chip[aria-pressed="true"]{background:var(--brand); border-color:var(--brand); color:#fff;}
+  @media (hover:hover){ .chip:hover:not([aria-pressed="true"]){background:var(--surface-2);} }
+  .filter-row{display:grid; gap:10px; grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+  .filter-row .field{min-width:0;}
+  .filter-row input{min-width:0; max-width:100%;}
+  .filter-row input[type=date]{padding:0 8px 0 10px; font-size:15px;}
+  .filter-row .f-search{grid-column:1 / -1;}
+  @media (min-width:720px){ .filter-row{grid-template-columns:170px 170px minmax(0,1fr);} .filter-row .f-search{grid-column:auto;} }
+  .field{display:block; position:relative;}
+  .field-label{display:block; font-size:12.5px; font-weight:700; color:var(--ink-2); margin:0 0 5px 2px;}
+  .field input{
+    width:100%; height:46px; border:1.5px solid var(--line-strong); border-radius:var(--r);
+    background:var(--surface); padding:0 12px; font-size:15.5px; font-weight:600;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input::placeholder{color:var(--ink-3); font-weight:500;}
+  .field input:focus{outline:none; border-color:var(--leaf); box-shadow:0 0 0 3px color-mix(in srgb, var(--leaf) 25%, transparent);}
+  .field.search input{padding-left:40px;}
+  .field.search .ico{position:absolute; left:13px; bottom:14px; width:18px; height:18px; color:var(--ink-3); pointer-events:none;}
+  .filter-note{margin:10px 2px 0; font-size:13px; color:var(--ink-3);}
+
+  /* ---------- Resumen ---------- */
+  .stats{display:grid; gap:10px; grid-template-columns:repeat(2, minmax(0,1fr)); margin-bottom:14px;}
+  @media (min-width:860px){ .stats{grid-template-columns:1.4fr 1fr 1fr 1fr;} }
+  .stat{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:14px 16px; min-width:0; box-shadow:var(--shadow-sm);}
+  .stat-label{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--ink-2); margin:0;}
+  .stat-label .ico{width:15px; height:15px;}
+  .stat-value{font-size:20px; font-weight:800; letter-spacing:-.015em; margin:4px 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .stat-sub{font-size:12.5px; color:var(--ink-3); margin:2px 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .stat.wide-sm{grid-column:1 / -1;}
+  @media (min-width:860px){ .stat.wide-sm{grid-column:auto;} }
+  .stat.hero-stat{grid-column:1 / -1; background:linear-gradient(120deg, #123D27 0%, #1E5B3A 60%, #2D7448 100%); border-color:transparent; color:#fff;}
+  @media (min-width:860px){ .stat.hero-stat{grid-column:auto;} }
+  .stat.hero-stat .stat-label{color:#B9E58F;}
+  .stat.hero-stat .stat-value{font-size:30px;}
+  .stat.hero-stat .stat-sub{color:rgba(255,255,255,.75);}
+
+  /* ---------- Gráfico ---------- */
+  .chart-card{padding:18px 18px 14px; margin-bottom:24px;}
+  .chart-scroll{overflow-x:auto; scrollbar-width:thin; margin:0 -6px; padding:0 6px;}
+  .chart{position:relative; height:200px; display:flex; align-items:flex-end; gap:6px; padding-top:28px; padding-left:46px; border-bottom:1px solid var(--line-strong); min-width:100%;}
+  .chart .gridline{position:absolute; left:46px; right:0; border-top:1px dashed var(--line); pointer-events:none;}
+  .chart .gridline span{position:absolute; right:100%; top:-9px; margin-right:6px; font-size:11.5px; font-weight:600; color:var(--ink-3); white-space:nowrap;}
+  .bar-col{flex:1 1 0; min-width:34px; max-width:72px; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; position:relative;}
+  .bar{
+    width:100%; max-width:40px; border:0; padding:0; cursor:pointer; position:relative;
+    background:var(--bar); border-radius:4px 4px 0 0; min-height:3px;
+    transition:background-color .15s ease, height .45s var(--ease-out);
+  }
+  .bar:focus-visible{outline-offset:3px;}
+  @media (hover:hover){ .bar:hover{background:var(--bar-hover);} }
+  .bar.is-max::after{
+    content:attr(data-label); position:absolute; left:50%; bottom:100%; transform:translate(-50%, -4px);
+    font-size:11.5px; font-weight:700; color:var(--ink-2); white-space:nowrap;
+  }
+  .x-labels{display:flex; gap:6px; min-width:100%; padding-left:46px;}
+  .x-labels span{flex:1 1 0; min-width:34px; max-width:72px; text-align:center; font-size:11.5px; font-weight:700; color:var(--ink-3); padding-top:6px; white-space:nowrap;}
+  .x-labels span.cur{color:var(--brand);}
+  :root[data-theme="dark"] .x-labels span.cur{color:var(--leaf);}
+  .tooltip{
+    position:fixed; z-index:20; pointer-events:none; transform:translate(-50%, calc(-100% - 10px));
+    background:var(--ink); color:var(--bg); border-radius:10px; padding:8px 11px; font-size:13px; line-height:1.35;
+    box-shadow:0 8px 24px rgba(0,0,0,.2); white-space:nowrap;
+  }
+  .tooltip strong{display:block; font-size:15px;}
+  .chart-hint{margin:10px 2px 0; font-size:12.5px; color:var(--ink-3);}
+
+  /* ---------- Semanas ---------- */
+  .weeks-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 2px 12px;}
+  .weeks-head h2{font-size:20px; font-weight:800; letter-spacing:-.015em; margin:0;}
+  .weeks-head span{font-size:13.5px; font-weight:600; color:var(--ink-3);}
+  .weeks{display:grid; gap:12px;}
+  @media (min-width:760px){ .weeks{grid-template-columns:repeat(2, minmax(0,1fr)); align-items:start;} }
+  .week{padding:16px 18px; scroll-margin-top:16px; transition:box-shadow .2s ease, border-color .2s ease;}
+  .week.flash{border-color:var(--leaf); box-shadow:0 0 0 2px var(--leaf), var(--shadow);}
+  .week-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .week-num{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--brand); background:var(--leaf-soft); padding:4px 9px; border-radius:999px; margin-bottom:6px;}
+  :root[data-theme="dark"] .week-num{color:var(--leaf);}
+  .week-range{font-size:16.5px; font-weight:800; letter-spacing:-.01em; margin:0;}
+  .week-meta{font-size:13px; color:var(--ink-3); margin:3px 0 0;}
+  .week-total{text-align:right; flex:none;}
+  .week-total strong{display:block; font-size:21px; font-weight:800; letter-spacing:-.015em; white-space:nowrap;}
+  .week-total span{font-size:12.5px; color:var(--ink-3); white-space:nowrap;}
+  details.week-items{margin-top:12px; border-top:1px solid var(--line); padding-top:4px;}
+  details.week-items summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px;
+    min-height:44px; font-size:14px; font-weight:700; color:var(--ink-2);
+  }
+  details.week-items summary::-webkit-details-marker{display:none;}
+  details.week-items summary .ico{width:18px; height:18px; transition:transform .2s var(--ease-out);}
+  details.week-items[open] summary .ico{transform:rotate(180deg);}
+  .rows{list-style:none; margin:0; padding:0 0 4px;}
+  .rows li{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px dashed var(--line); font-size:15px;}
+  .rows li:first-child{border-top:0;}
+  .rows .r-name{font-weight:600; min-width:0; overflow-wrap:anywhere;}
+  .rows .r-price{font-weight:700; white-space:nowrap;}
+  .rows .r-price.none{color:var(--ink-3); font-weight:500; font-size:13.5px;}
+  .rows .r-tag{font-size:11.5px; font-weight:700; color:var(--sun); background:var(--sun-soft); padding:2px 7px; border-radius:999px; margin-left:6px; white-space:nowrap;}
+  .rows mark{background:var(--leaf-soft); color:inherit; border-radius:4px; padding:0 2px;}
+  .old-text{font-size:14px; color:var(--ink-2); margin:6px 0 8px;}
+
+  /* ---------- Estados ---------- */
+  .state{padding:36px 22px; text-align:center; color:var(--ink-2);}
+  .state .mini{width:52px; height:52px; border-radius:16px; margin:0 auto 12px;}
+  .state .mini .ico{width:24px; height:24px;}
+  .state h3{font-size:17px; font-weight:800; color:var(--ink); margin:0 0 6px;}
+  .state p{margin:0 auto; max-width:420px; font-size:14.5px;}
+  .note{display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:var(--r); background:var(--sun-soft); color:var(--ink-2); font-size:13.5px; line-height:1.45; margin-bottom:14px;}
+  .note .ico{width:18px; height:18px; color:var(--sun); margin-top:1px;}
+  .note strong{color:var(--ink);}
+  .skeleton{display:grid; gap:12px;}
+  .skeleton div{height:92px; border-radius:var(--r-lg); background:linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2)); background-size:200% 100%; animation:shimmer 1.4s infinite linear;}
+  @keyframes shimmer{to{background-position:-200% 0;}}
+  @media (prefers-reduced-motion:reduce){ .skeleton div{animation:none;} .bar{transition:none;} }
+
+  .footer{margin-top:56px; padding:22px 0 40px; border-top:1px solid var(--line); font-size:13.5px; color:var(--ink-3); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+  .footer .brandline{display:flex; align-items:center; gap:6px;}
+  .footer .ico{width:16px; height:16px; color:var(--leaf);}
+  .link-btn{border:0; background:none; padding:0; color:var(--brand); font-weight:800; text-decoration:underline; text-underline-offset:3px; cursor:pointer; font-size:13.5px;}
+  :root[data-theme="dark"] .link-btn{color:var(--leaf);}
+</style>
+</head>
+<body>
+
+<!-- Iconos (estilo Lucide, licencia ISC) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M10 20a1 1 0 0 0 .55.9l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .52-1.34L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.74 1.67l7.22 7.99A2 2 0 0 1 10 14z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="m5 7-3 7a3 3 0 0 0 6 0Z"/><path d="m19 7-3 7a3 3 0 0 0 6 0Z"/><path d="M8 21h8"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-basket" viewBox="0 0 24 24"><path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
+</svg>
+
+<header class="hero">
+  <img class="hero-img" src="banner.jpg" width="1432" height="459" fetchpriority="high"
+       alt="Menu Smart — Tu menú inteligente. Planifica tus comidas. Come mejor. Vive saludable.">
+  <div class="hero-bar wrap">
+    <button class="btn glass icon" id="themeToggle" type="button">
+      <svg class="ico" aria-hidden="true"><use id="themeIcon" href="#i-moon"/></svg>
+      <span class="sr-only" id="themeLabel">Modo oscuro</span>
+    </button>
+    <a class="btn light" href="lista-compras.html">
+      <svg class="ico" aria-hidden="true"><use href="#i-left"/></svg>
+      <span>Volver a la lista</span>
+    </a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="head">
+    <span class="head-ico" aria-hidden="true"><svg class="ico"><use href="#i-chart"/></svg></span>
+    <div>
+      <p class="kicker">Lo que gastaste cada semana</p>
+      <h1>Historial de compras</h1>
+    </div>
+  </section>
+
+  <div class="note" id="note" hidden>
+    <svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>
+    <span id="noteText"></span>
+  </div>
+
+  <!-- Filtros -->
+  <section class="card filters" aria-labelledby="filtersTitle">
+    <div class="card-head">
+      <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-filter"/></svg></span>
+      <h2 id="filtersTitle">Filtrar</h2>
+    </div>
+    <div class="chips" role="group" aria-label="Periodo">
+      <button class="chip" type="button" data-range="all" aria-pressed="true">Todo</button>
+      <button class="chip" type="button" data-range="4w" aria-pressed="false">Últimas 4 semanas</button>
+      <button class="chip" type="button" data-range="month" aria-pressed="false">Este mes</button>
+      <button class="chip" type="button" data-range="lastmonth" aria-pressed="false">Mes pasado</button>
+      <button class="chip" type="button" data-range="3m" aria-pressed="false">Últimos 3 meses</button>
+      <button class="chip" type="button" data-range="year" aria-pressed="false">Este año</button>
+    </div>
+    <div class="filter-row">
+      <label class="field">
+        <span class="field-label">Desde</span>
+        <input type="date" id="fFrom">
+      </label>
+      <label class="field">
+        <span class="field-label">Hasta</span>
+        <input type="date" id="fTo">
+      </label>
+      <label class="field search f-search">
+        <span class="field-label">Buscar ingrediente</span>
+        <input type="search" id="fQuery" placeholder="Ej.: pollo" autocomplete="off" enterkeyhint="search">
+        <svg class="ico" aria-hidden="true"><use href="#i-search"/></svg>
+      </label>
+    </div>
+    <p class="filter-note">Las fechas filtran por la semana de cada compra. Con «Buscar ingrediente» ves cuánto gastaste solo en eso.</p>
+  </section>
+
+  <div id="results">
+    <div class="skeleton" aria-hidden="true"><div></div><div></div><div></div></div>
+  </div>
+
+  <footer class="footer">
+    <span class="brandline"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>Menu Smart · Planifica tus comidas, come mejor.</span>
+    <span id="updated"></span>
+  </footer>
+</main>
+
+<div class="tooltip" id="tooltip" role="presentation" hidden></div>
+
+<script>
+/* Enlace del Google Apps Script (Web App) conectado a tu Google Sheet */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbCbOFPrTG8yljjNXlSNPY0oR7YJOO0BKvyXfDy70Py8TJ3GJ2OAORbJh4_VFg9VG7/exec";
+const CACHE_KEY = 'menuSmartHistorialCache';
+
+const SVGNS = 'http://www.w3.org/2000/svg';
+const money = new Intl.NumberFormat('es-PE', { style:'currency', currency:'PEN', minimumFractionDigits:2 });
+const moneyShort = new Intl.NumberFormat('es-PE', { style:'currency', currency:'PEN', maximumFractionDigits:0 });
+
+/* ---------- utilidades ---------- */
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(text !== undefined) e.textContent = text;
+  return e;
+}
+function icon(id){
+  const svg = document.createElementNS(SVGNS, 'svg');
+  svg.setAttribute('class', 'ico');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS(SVGNS, 'use');
+  use.setAttribute('href', '#' + id);
+  svg.appendChild(use);
+  return svg;
+}
+function fmt(n){ return money.format(n || 0); }
+function normalize(s){ return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); }
+function readJSON(key, fallback){ try{ const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }catch(e){ return fallback; } }
+function writeJSON(key, v){ try{ localStorage.setItem(key, JSON.stringify(v)); }catch(e){} }
+
+function parseISO(s){ const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, (m || 1) - 1, d || 1); }
+function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function getMonday(d){ const x = new Date(d); const day = x.getDay(); x.setDate(x.getDate() + (day === 0 ? -6 : 1 - day)); x.setHours(0,0,0,0); return x; }
+
+/* Número de semana ISO (lunes a domingo; la semana 1 contiene el primer jueves del año) */
+function isoWeek(date){
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return { week: Math.ceil(((d - yearStart) / 864e5 + 1) / 7), year: d.getUTCFullYear() };
+}
+function fmtRange(monday){
+  const sunday = addDays(monday, 6);
+  const sameMonth = monday.getMonth() === sunday.getMonth();
+  const a = monday.toLocaleDateString('es-PE', sameMonth ? { day:'numeric' } : { day:'numeric', month:'short' }).replace('.', '');
+  const b = sunday.toLocaleDateString('es-PE', { day:'numeric', month:'short', year:'numeric' }).replace('.', '');
+  return a + ' – ' + b;
+}
+
+/* ---------- datos ---------- */
+let WEEKS = [];      // una entrada por semana (el último guardado de esa semana)
+const FILTER = { range:'all', from:null, to:null, query:'' };
+
+/* Agrupa los guardados por semana; si una semana se guardó varias veces,
+   cuenta el último (es el más completo) para no sumar dos veces. */
+function buildWeeks(registros){
+  const map = new Map();
+  (registros || []).forEach(r => {
+    const fecha = new Date(r.fecha);
+    const start = r.semanaInicio && /^\d{4}-\d{2}-\d{2}$/.test(r.semanaInicio)
+      ? r.semanaInicio : isoDate(getMonday(isNaN(fecha) ? new Date() : fecha));
+    const items = Array.isArray(r.items) ? r.items.filter(i => i && i.nombre) : [];
+    const sumItems = items.reduce((a, i) => a + (Number(i.precio) || 0), 0);
+    const total = (r.total != null && !isNaN(r.total)) ? Number(r.total) : (items.length ? sumItems : null);
+    const entry = { start, fecha: isNaN(fecha) ? null : fecha, items, texto: r.ingredientes || '', total, saves: 1 };
+    const prev = map.get(start);
+    if(!prev) map.set(start, entry);
+    else{
+      entry.saves = prev.saves + 1;
+      if(!prev.fecha || (entry.fecha && entry.fecha >= prev.fecha)) map.set(start, entry);
+      else prev.saves = entry.saves;
+    }
+  });
+  return Array.from(map.values()).map(w => {
+    const monday = parseISO(w.start);
+    const wk = isoWeek(monday);
+    return Object.assign(w, { monday, end: isoDate(addDays(monday, 6)), week: wk.week, year: wk.year });
+  }).sort((a, b) => b.monday - a.monday);
+}
+
+/* ---------- filtros ---------- */
+function rangeFor(key){
+  const today = new Date(); today.setHours(0,0,0,0);
+  switch(key){
+    case '4w': return { from: isoDate(addDays(getMonday(today), -21)), to: isoDate(addDays(getMonday(today), 6)) };
+    case 'month': return { from: isoDate(new Date(today.getFullYear(), today.getMonth(), 1)), to: isoDate(new Date(today.getFullYear(), today.getMonth() + 1, 0)) };
+    case 'lastmonth': return { from: isoDate(new Date(today.getFullYear(), today.getMonth() - 1, 1)), to: isoDate(new Date(today.getFullYear(), today.getMonth(), 0)) };
+    case '3m': return { from: isoDate(new Date(today.getFullYear(), today.getMonth() - 3, today.getDate())), to: isoDate(today) };
+    case 'year': return { from: today.getFullYear() + '-01-01', to: today.getFullYear() + '-12-31' };
+    default: return { from: null, to: null };
+  }
+}
+
+function applyFilter(){
+  const q = normalize(FILTER.query);
+  return WEEKS
+    .filter(w => (!FILTER.from || w.end >= FILTER.from) && (!FILTER.to || w.start <= FILTER.to))
+    .map(w => {
+      if(!q) return Object.assign({}, w, { shown: w.items, amount: w.total });
+      const matches = w.items.filter(i => normalize(i.nombre).includes(q));
+      const textMatch = !w.items.length && normalize(w.texto).includes(q);
+      if(!matches.length && !textMatch) return null;
+      return Object.assign({}, w, { shown: matches, amount: matches.length ? matches.reduce((a, i) => a + (Number(i.precio) || 0), 0) : null });
+    })
+    .filter(Boolean);
+}
+
+/* ---------- vista ---------- */
+function highlight(text, q){
+  const span = el('span', 'r-name');
+  if(!q){ span.textContent = text; return span; }
+  const n = normalize(text), i = n.indexOf(q);
+  if(i < 0){ span.textContent = text; return span; }
+  span.append(text.slice(0, i), el('mark', '', text.slice(i, i + q.length)), text.slice(i + q.length));
+  return span;
+}
+
+function renderStats(list){
+  const q = FILTER.query.trim();
+  const withAmount = list.filter(w => w.amount != null);
+  const total = withAmount.reduce((a, w) => a + w.amount, 0);
+  const avg = withAmount.length ? total / withAmount.length : 0;
+  const max = withAmount.reduce((m, w) => (!m || w.amount > m.amount) ? w : m, null);
+
+  const box = el('div', 'stats');
+  const stat = (cls, iconId, label, value, sub) => {
+    const s = el('div', 'stat' + (cls ? ' ' + cls : ''));
+    const l = el('p', 'stat-label'); l.append(icon(iconId), label);
+    s.append(l, el('p', 'stat-value num', value));
+    if(sub) s.appendChild(el('p', 'stat-sub', sub));
+    return s;
+  };
+  box.append(
+    stat('hero-stat', 'i-wallet', q ? 'Gastado en «' + q + '»' : 'Total gastado', fmt(total),
+      withAmount.length ? 'En ' + withAmount.length + (withAmount.length === 1 ? ' semana' : ' semanas') : 'Sin montos en este periodo'),
+    stat('', 'i-calendar', 'Semanas', String(list.length), 'guardadas'),
+    stat('', 'i-scale', 'Promedio semanal', fmt(avg), withAmount.length ? 'por semana' : '—'),
+    stat('wide-sm', 'i-up', 'Semana más alta', max ? fmt(max.amount) : '—', max ? 'Semana ' + max.week + ' · ' + fmtRange(max.monday) : '—')
+  );
+  return box;
+}
+
+function renderChart(list){
+  const data = list.filter(w => w.amount != null).slice().sort((a, b) => a.monday - b.monday);
+  if(data.length < 2) return null;
+  const card = el('section', 'card chart-card');
+  card.setAttribute('aria-labelledby', 'chartTitle');
+  const head = el('div', 'card-head');
+  const mini = el('span', 'mini sun'); mini.appendChild(icon('i-chart'));
+  const h2 = el('h2', '', FILTER.query.trim() ? 'Gasto por semana en «' + FILTER.query.trim() + '»' : 'Gasto por semana');
+  h2.id = 'chartTitle';
+  head.append(mini, h2);
+  card.appendChild(head);
+
+  const maxVal = Math.max(...data.map(d => d.amount), 1);
+  // línea guía en un número redondo
+  const step = maxVal > 400 ? 200 : maxVal > 150 ? 100 : maxVal > 60 ? 50 : 20;
+  const top = Math.ceil(maxVal / step) * step;
+
+  const scroll = el('div', 'chart-scroll');
+  const chart = el('div', 'chart');
+  chart.setAttribute('role', 'list');
+  chart.setAttribute('aria-label', 'Gasto por semana');
+  [top / 2, top].forEach(v => {
+    const g = el('div', 'gridline');
+    g.style.bottom = (v / top * (200 - 28)) + 'px';
+    g.appendChild(el('span', 'num', moneyShort.format(v)));
+    chart.appendChild(g);
+  });
+  const labels = el('div', 'x-labels');
+  const nowWeek = isoWeek(new Date());
+  let maxShown = false;
+  data.forEach(d => {
+    const col = el('div', 'bar-col'); col.setAttribute('role', 'listitem');
+    const b = el('button', 'bar');
+    b.type = 'button';
+    b.style.height = Math.max(2, d.amount / top * 100) + '%';
+    const text = 'Semana ' + d.week + ', ' + fmtRange(d.monday) + ': ' + fmt(d.amount);
+    b.setAttribute('aria-label', text);
+    b.dataset.label = moneyShort.format(d.amount);
+    if(!maxShown && d.amount === maxVal){ b.classList.add('is-max'); maxShown = true; }
+    const show = () => showTip(b, d);
+    b.addEventListener('mouseenter', show);
+    b.addEventListener('focus', show);
+    b.addEventListener('mouseleave', hideTip);
+    b.addEventListener('blur', hideTip);
+    b.addEventListener('click', () => { show(); goToWeek(d.start); });
+    col.appendChild(b);
+    chart.appendChild(col);
+    labels.appendChild(el('span', (d.week === nowWeek.week && d.year === nowWeek.year) ? 'cur' : '', 'S' + d.week));
+  });
+  scroll.append(chart, labels);
+  card.appendChild(scroll);
+  const lastW = data[data.length - 1].week;
+  card.appendChild(el('p', 'chart-hint', 'Toca una barra para ver el detalle de esa semana. «S' + lastW + '» = semana ' + lastW + ' del año.'));
+  // muestra primero las semanas más recientes si no entran todas
+  requestAnimationFrame(() => { scroll.scrollLeft = scroll.scrollWidth; });
+  return card;
+}
+
+function showTip(bar, d){
+  const tip = document.getElementById('tooltip');
+  tip.innerHTML = '';
+  tip.append(el('strong', 'num', fmt(d.amount)), 'Semana ' + d.week + ' · ' + fmtRange(d.monday));
+  const r = bar.getBoundingClientRect();
+  tip.style.left = Math.min(Math.max(r.left + r.width / 2, 90), window.innerWidth - 90) + 'px';
+  tip.style.top = r.top + 'px';
+  tip.hidden = false;
+}
+function hideTip(){ document.getElementById('tooltip').hidden = true; }
+window.addEventListener('scroll', hideTip, { passive:true });
+
+function goToWeek(start){
+  const card = document.getElementById('w-' + start);
+  if(!card) return;
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  card.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block:'start' });
+  card.classList.add('flash');
+  setTimeout(() => card.classList.remove('flash'), 1400);
+}
+
+function renderWeek(w, q){
+  const card = el('article', 'card week');
+  card.id = 'w-' + w.start;
+  const top = el('div', 'week-top');
+  const left = el('div');
+  const num = el('span', 'week-num'); num.append(icon('i-calendar'), 'Semana ' + w.week);
+  num.firstChild.style.cssText = 'width:13px;height:13px';
+  left.append(num, el('p', 'week-range', fmtRange(w.monday)));
+  const bought = w.items.filter(i => i.comprado).length;
+  const meta = [];
+  if(w.fecha) meta.push('Guardado el ' + w.fecha.toLocaleDateString('es-PE', { weekday:'short', day:'numeric', month:'short' }).replace('.', ''));
+  if(w.items.length) meta.push(w.items.length + (w.items.length === 1 ? ' ingrediente' : ' ingredientes'));
+  if(w.saves > 1) meta.push('guardada ' + w.saves + ' veces, se muestra la última');
+  left.appendChild(el('p', 'week-meta', meta.join(' · ')));
+  const right = el('div', 'week-total');
+  right.appendChild(el('strong', 'num', w.amount != null ? fmt(w.amount) : '—'));
+  right.appendChild(el('span', '', q ? 'en «' + FILTER.query.trim() + '»' : (w.items.length && bought < w.items.length ? bought + ' de ' + w.items.length + ' comprados' : 'total')));
+  top.append(left, right);
+  card.appendChild(top);
+
+  const det = el('details', 'week-items');
+  if(q) det.open = true;
+  const sum = el('summary');
+  const shown = w.shown || [];
+  sum.append(shown.length ? (q ? shown.length + (shown.length === 1 ? ' coincidencia' : ' coincidencias') : 'Ver ingredientes') : 'Ver lo comprado', icon('i-down'));
+  det.appendChild(sum);
+  if(shown.length){
+    const ul = el('ul', 'rows');
+    shown.forEach(i => {
+      const li = el('li');
+      const name = highlight(i.nombre, q);
+      if(i.comprado === false) name.appendChild(el('span', 'r-tag', 'No comprado'));
+      const price = el('span', 'r-price num' + (i.precio == null ? ' none' : ''), i.precio == null ? 'Sin precio' : fmt(i.precio));
+      li.append(name, price);
+      ul.appendChild(li);
+    });
+    det.appendChild(ul);
+  } else {
+    det.appendChild(el('p', 'old-text', w.texto || 'Sin detalle guardado.'));
+  }
+  card.appendChild(det);
+  return card;
+}
+
+function state(iconId, title, text){
+  const s = el('div', 'card state');
+  const m = el('span', 'mini'); m.appendChild(icon(iconId));
+  s.append(m, el('h3', '', title), el('p', '', text));
+  return s;
+}
+
+function render(){
+  const box = document.getElementById('results');
+  box.innerHTML = '';
+  hideTip();
+  if(!WEEKS.length){
+    box.appendChild(state('i-basket', 'Aún no hay compras guardadas',
+      'Cuando termines de comprar, toca «Guardar en historial» en tu lista de compras y aparecerá aquí.'));
+    return;
+  }
+  const list = applyFilter();
+  const q = normalize(FILTER.query);
+  box.appendChild(renderStats(list));
+  if(!list.length){
+    box.appendChild(state('i-search', 'No hay compras con este filtro',
+      q ? 'No encontramos «' + FILTER.query.trim() + '» en las fechas elegidas.' : 'No hay compras guardadas en estas fechas. Prueba con «Todo».'));
+    return;
+  }
+  const chart = renderChart(list);
+  if(chart) box.appendChild(chart);
+  const head = el('div', 'weeks-head');
+  head.append(el('h2', '', 'Semanas'), el('span', '', list.length + (list.length === 1 ? ' semana' : ' semanas')));
+  box.appendChild(head);
+  const grid = el('div', 'weeks');
+  list.forEach(w => grid.appendChild(renderWeek(w, q)));
+  box.appendChild(grid);
+}
+
+/* ---------- eventos de filtros ---------- */
+function setRange(key){
+  FILTER.range = key;
+  const r = rangeFor(key);
+  FILTER.from = r.from; FILTER.to = r.to;
+  document.getElementById('fFrom').value = r.from || '';
+  document.getElementById('fTo').value = r.to || '';
+  document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.range === key)));
+  render();
+}
+document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => setRange(c.dataset.range)));
+['fFrom', 'fTo'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+  FILTER.from = document.getElementById('fFrom').value || null;
+  FILTER.to = document.getElementById('fTo').value || null;
+  FILTER.range = 'custom';
+  document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(!FILTER.from && !FILTER.to && c.dataset.range === 'all')));
+  render();
+}));
+let qTimer = null;
+document.getElementById('fQuery').addEventListener('input', function(){
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => { FILTER.query = this.value; render(); }, 200);
+});
+
+/* ---------- carga ---------- */
+function showNote(html){
+  const n = document.getElementById('note');
+  document.getElementById('noteText').innerHTML = html;
+  n.hidden = !html;
+}
+
+function setUpdated(date, fromCache){
+  const u = document.getElementById('updated');
+  u.innerHTML = '';
+  if(!date) return;
+  u.append((fromCache ? 'Guardado en este celular · ' : 'Actualizado · ') +
+    new Date(date).toLocaleString('es-PE', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' }).replace('.', '') + ' · ');
+  const b = el('button', 'link-btn', 'Actualizar'); b.type = 'button'; b.addEventListener('click', load);
+  u.appendChild(b);
+}
+
+async function load(){
+  const cache = readJSON(CACHE_KEY, null);
+  if(cache && Array.isArray(cache.registros) && !WEEKS.length){
+    WEEKS = buildWeeks(cache.registros);
+    render();
+    setUpdated(cache.at, true);
+  }
+  try{
+    const res = await fetch(SCRIPT_URL + '?action=historial&t=' + Date.now());
+    const data = JSON.parse(await res.text());
+    if(!data || !data.ok || !Array.isArray(data.registros)) throw new Error('no-historial');
+    WEEKS = buildWeeks(data.registros);
+    writeJSON(CACHE_KEY, { at: Date.now(), registros: data.registros });
+    showNote('');
+    render();
+    setUpdated(Date.now(), false);
+  }catch(e){
+    if(cache){
+      showNote('<strong>No se pudo actualizar.</strong> Te mostramos el historial que quedó guardado en este celular.');
+    } else {
+      WEEKS = [];
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('results').appendChild(state('i-alert', 'No se pudo cargar el historial',
+        'Revisa tu conexión. Si es la primera vez, actualiza el script de tu hoja de Google con el archivo google-apps-script.gs (Implementar → Nueva versión).'));
+    }
+  }
+}
+
+/* ---------- tema ---------- */
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const label = theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+  document.getElementById('themeLabel').textContent = label;
+  document.getElementById('themeToggle').title = label;
+  document.getElementById('themeIcon').setAttribute('href', theme === 'dark' ? '#i-sun' : '#i-moon');
+  try{ localStorage.setItem('menuSemanalTheme', theme); }catch(e){}
+}
+(function initTheme(){
+  let saved = null;
+  try{ saved = localStorage.getItem('menuSemanalTheme'); }catch(e){}
+  const preferDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (preferDark ? 'dark' : 'light'));
+})();
+document.getElementById('themeToggle').addEventListener('click', function(){
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+load();
+</script>
+</body>
+</html>

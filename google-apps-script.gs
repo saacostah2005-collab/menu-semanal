@@ -10,6 +10,7 @@
  *   • Hoja "Historial_Detalle": el detalle de ese guardado, un ingrediente por fila
  *       Fecha | Semana inicio | Semana fin | Ingrediente | Precio (S/) | Comprado
  *   Si alguna hoja no existe, se crea sola con sus encabezados.
+ *   La página historial.html lee estas dos hojas para mostrar lo gastado por semana.
  *
  * Cómo instalarlo (una sola vez):
  *   1. Abre tu Google Sheet → Extensiones → Apps Script.
@@ -24,11 +25,13 @@ const HOJA_LISTA = 'Lista_Actual';
 const HOJA_HISTORIAL = 'Historial_Compras';
 const HOJA_DETALLE = 'Historial_Detalle';
 
-/* Leer la lista:  .../exec?action=lista */
+/* Leer la lista:      .../exec?action=lista
+   Leer el historial:  .../exec?action=historial */
 function doGet(e) {
   try {
     const accion = (e && e.parameter && e.parameter.action) || 'lista';
     if (accion === 'lista') return respuesta({ ok: true, items: leerLista() });
+    if (accion === 'historial') return respuesta({ ok: true, registros: leerHistorial() });
     return respuesta({ ok: false, error: 'Acción desconocida: ' + accion });
   } catch (err) {
     return respuesta({ ok: false, error: String(err) });
@@ -174,6 +177,62 @@ function guardarHistorial(data) {
     detalle.getRange(inicio, 1, filas.length, 6).setValues(filas);
     detalle.getRange(inicio, 5, filas.length, 1).setNumberFormat('"S/ "#,##0.00');
   }
+}
+
+/* Devuelve cada guardado del historial con su detalle por ingrediente.
+   El resumen y el detalle de un mismo guardado comparten la misma Fecha. */
+function leerHistorial() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const tz = ss.getSpreadsheetTimeZone();
+  const clave = function (v) {
+    return v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd HH:mm:ss') : String(v);
+  };
+  const dia = function (v) {
+    if (v instanceof Date) return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+    const s = String(v || '').trim();
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+    return s.slice(0, 10);
+  };
+  const numero = function (v) {
+    if (v === '' || v === null || v === undefined) return null;
+    const n = Number(v);
+    return isNaN(n) ? null : n;
+  };
+
+  // Detalle agrupado por guardado
+  const detallePorFecha = {};
+  const hojaDet = ss.getSheetByName(HOJA_DETALLE);
+  if (hojaDet && hojaDet.getLastRow() > 1) {
+    hojaDet.getRange(2, 1, hojaDet.getLastRow() - 1, 6).getValues().forEach(function (r) {
+      if (!r[3]) return;
+      const k = clave(r[0]);
+      (detallePorFecha[k] = detallePorFecha[k] || []).push({
+        nombre: String(r[3]),
+        precio: numero(r[4]),
+        comprado: String(r[5]).toLowerCase() === 'sí' || String(r[5]).toLowerCase() === 'si' || r[5] === true
+      });
+    });
+  }
+
+  const registros = [];
+  const hojaHist = ss.getSheetByName(HOJA_HISTORIAL);
+  if (hojaHist && hojaHist.getLastRow() > 1) {
+    const ancho = Math.min(5, hojaHist.getLastColumn());
+    hojaHist.getRange(2, 1, hojaHist.getLastRow() - 1, ancho).getValues().forEach(function (r) {
+      if (!r[0]) return;
+      const fecha = r[0] instanceof Date ? r[0] : new Date(r[0]);
+      registros.push({
+        fecha: isNaN(fecha) ? String(r[0]) : fecha.toISOString(),
+        semanaInicio: dia(r[1]),
+        semanaFin: dia(r[2]),
+        ingredientes: String(r[3] || ''),
+        total: ancho >= 5 ? numero(r[4]) : null,
+        items: detallePorFecha[clave(r[0])] || []
+      });
+    });
+  }
+  return registros;
 }
 
 function obtenerHoja(ss, nombre, encabezados) {
