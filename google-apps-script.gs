@@ -3,12 +3,12 @@
  *
  * La lista vive en tu Google Sheet, así todos los celulares ven la misma:
  *   • Hoja "Lista_Actual": la lista de compras de ahora
- *       ID (oculta) | Ingrediente | Precio (S/) | Comprado
+ *       ID (oculta) | Ingrediente | Precio (S/) | Comprado | Categoría
  *     Tú y tu familia agregan, quitan y marcan desde la página, y se ve en todos.
  *   • Hoja "Historial_Compras": un resumen cada vez que tocas "Guardar en historial"
  *       Fecha | Semana inicio | Semana fin | Ingredientes | Total (S/)
  *   • Hoja "Historial_Detalle": el detalle de ese guardado, un ingrediente por fila
- *       Fecha | Semana inicio | Semana fin | Ingrediente | Precio (S/) | Comprado
+ *       Fecha | Semana inicio | Semana fin | Ingrediente | Precio (S/) | Comprado | Categoría
  *   Si alguna hoja no existe, se crea sola con sus encabezados.
  *   • Bloqueo de la lista ("Editar lista" apagado): se guarda en el script y vale
  *     para todos los dispositivos. Mientras está bloqueada, el script no acepta
@@ -95,10 +95,13 @@ function hojaLista() {
   let hoja = ss.getSheetByName(HOJA_LISTA);
   if (!hoja) {
     hoja = ss.insertSheet(HOJA_LISTA);
-    hoja.getRange(1, 1, 1, 4).setValues([['ID', 'Ingrediente', 'Precio (S/)', 'Comprado']]).setFontWeight('bold');
+    hoja.getRange(1, 1, 1, 5).setValues([['ID', 'Ingrediente', 'Precio (S/)', 'Comprado', 'Categoría']]).setFontWeight('bold');
     hoja.setFrozenRows(1);
     hoja.hideColumns(1);
     hoja.setColumnWidth(2, 220);
+  } else if (hoja.getRange(1, 5).getValue() === '') {
+    // hoja creada con la versión anterior: se agrega la columna Categoría
+    hoja.getRange(1, 5).setValue('Categoría').setFontWeight('bold');
   }
   return hoja;
 }
@@ -107,14 +110,15 @@ function leerLista() {
   const hoja = hojaLista();
   const ultima = hoja.getLastRow();
   if (ultima < 2) return [];
-  return hoja.getRange(2, 1, ultima - 1, 4).getValues()
+  return hoja.getRange(2, 1, ultima - 1, 5).getValues()
     .map(function (r) {
       const precio = (r[2] === '' || r[2] === null) ? null : Number(r[2]);
       return {
         id: String(r[0]),
         name: String(r[1]),
         price: (precio === null || isNaN(precio)) ? null : precio,
-        done: r[3] === true || String(r[3]).toLowerCase() === 'sí' || String(r[3]).toLowerCase() === 'si'
+        done: r[3] === true || String(r[3]).toLowerCase() === 'sí' || String(r[3]).toLowerCase() === 'si',
+        category: limpiarCategoria(r[4])
       };
     })
     .filter(function (it) { return it.id && it.name; });
@@ -123,12 +127,12 @@ function leerLista() {
 function escribirLista(items) {
   const hoja = hojaLista();
   const ultima = hoja.getLastRow();
-  if (ultima > 1) hoja.getRange(2, 1, ultima - 1, 4).clearContent();
+  if (ultima > 1) hoja.getRange(2, 1, ultima - 1, 5).clearContent();
   if (!items.length) return;
   const filas = items.map(function (it) {
-    return [it.id, it.name, it.price === null || it.price === undefined ? '' : Number(it.price), it.done ? 'Sí' : 'No'];
+    return [it.id, it.name, it.price === null || it.price === undefined ? '' : Number(it.price), it.done ? 'Sí' : 'No', it.category || ''];
   });
-  hoja.getRange(2, 1, filas.length, 4).setValues(filas);
+  hoja.getRange(2, 1, filas.length, 5).setValues(filas);
   hoja.getRange(2, 3, filas.length, 1).setNumberFormat('"S/ "#,##0.00');
 }
 
@@ -140,7 +144,7 @@ function aplicarOp(items, op) {
       const it = op.item || {};
       if (!it.id || !it.name) return items;
       if (items.some(function (x) { return x.id === it.id; })) return items;
-      const nuevo = { id: String(it.id), name: String(it.name).slice(0, 80), price: limpiarPrecio(it.price), done: !!it.done };
+      const nuevo = { id: String(it.id), name: String(it.name).slice(0, 80), price: limpiarPrecio(it.price), done: !!it.done, category: limpiarCategoria(it.category) };
       const copia = items.slice();
       const i = (typeof op.index === 'number') ? Math.max(0, Math.min(op.index, copia.length)) : copia.length;
       copia.splice(i, 0, nuevo);
@@ -154,18 +158,29 @@ function aplicarOp(items, op) {
           id: x.id,
           name: f.name !== undefined ? String(f.name).slice(0, 80) : x.name,
           price: f.price !== undefined ? limpiarPrecio(f.price) : x.price,
-          done: f.done !== undefined ? !!f.done : x.done
+          done: f.done !== undefined ? !!f.done : x.done,
+          category: f.category !== undefined ? limpiarCategoria(f.category) : x.category
         };
       });
     case 'delete':
       return items.filter(function (x) { return x.id !== op.id; });
     case 'uncheckAll':
-      return items.map(function (x) { return { id: x.id, name: x.name, price: x.price, done: false }; });
+      return items.map(function (x) { return { id: x.id, name: x.name, price: x.price, done: false, category: x.category }; });
     case 'clear':
       return [];
     default:
       return items;
   }
+}
+
+const CATEGORIAS = ['Fruta', 'Verdura', 'Pollo', 'Carne', 'Abarrotes', 'Limpieza'];
+
+function limpiarCategoria(c) {
+  const s = String(c || '').trim().toLowerCase();
+  for (let i = 0; i < CATEGORIAS.length; i++) {
+    if (CATEGORIAS[i].toLowerCase() === s) return CATEGORIAS[i];
+  }
+  return '';
 }
 
 function limpiarPrecio(p) {
@@ -191,13 +206,15 @@ function guardarHistorial(data) {
   historial.getRange(historial.getLastRow(), 5).setNumberFormat('"S/ "#,##0.00');
 
   if (Array.isArray(data.items) && data.items.length) {
-    const detalle = obtenerHoja(ss, HOJA_DETALLE, ['Fecha', 'Semana inicio', 'Semana fin', 'Ingrediente', 'Precio (S/)', 'Comprado']);
+    const detalle = obtenerHoja(ss, HOJA_DETALLE, ['Fecha', 'Semana inicio', 'Semana fin', 'Ingrediente', 'Precio (S/)', 'Comprado', 'Categoría']);
+    if (detalle.getRange(1, 7).getValue() === '') detalle.getRange(1, 7).setValue('Categoría').setFontWeight('bold');
     const filas = data.items.map(function (it) {
       return [ahora, data.semanaInicio || '', data.semanaFin || '', it.nombre || '',
-              limpiarPrecio(it.precio) === null ? '' : limpiarPrecio(it.precio), it.comprado ? 'Sí' : 'No'];
+              limpiarPrecio(it.precio) === null ? '' : limpiarPrecio(it.precio), it.comprado ? 'Sí' : 'No',
+              limpiarCategoria(it.categoria)];
     });
     const inicio = detalle.getLastRow() + 1;
-    detalle.getRange(inicio, 1, filas.length, 6).setValues(filas);
+    detalle.getRange(inicio, 1, filas.length, 7).setValues(filas);
     detalle.getRange(inicio, 5, filas.length, 1).setNumberFormat('"S/ "#,##0.00');
   }
 }
@@ -227,13 +244,15 @@ function leerHistorial() {
   const detallePorFecha = {};
   const hojaDet = ss.getSheetByName(HOJA_DETALLE);
   if (hojaDet && hojaDet.getLastRow() > 1) {
-    hojaDet.getRange(2, 1, hojaDet.getLastRow() - 1, 6).getValues().forEach(function (r) {
+    const anchoDet = Math.max(6, Math.min(7, hojaDet.getLastColumn()));
+    hojaDet.getRange(2, 1, hojaDet.getLastRow() - 1, anchoDet).getValues().forEach(function (r) {
       if (!r[3]) return;
       const k = clave(r[0]);
       (detallePorFecha[k] = detallePorFecha[k] || []).push({
         nombre: String(r[3]),
         precio: numero(r[4]),
-        comprado: String(r[5]).toLowerCase() === 'sí' || String(r[5]).toLowerCase() === 'si' || r[5] === true
+        comprado: String(r[5]).toLowerCase() === 'sí' || String(r[5]).toLowerCase() === 'si' || r[5] === true,
+        categoria: limpiarCategoria(r[6])
       });
     });
   }

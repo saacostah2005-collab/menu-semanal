@@ -164,10 +164,21 @@
 
   /* ---------- Agregar ---------- */
   .add{padding:18px;}
-  .add-form{display:grid; gap:10px; grid-template-columns:1fr auto;}
+  .add-form{display:grid; gap:10px; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;}
   .add-form .f-name{grid-column:1 / -1;}
-  @media (min-width:560px){ .add-form{grid-template-columns:minmax(0,1fr) 150px auto;} .add-form .f-name{grid-column:auto;} }
+  @media (max-width:419px){ .add-form{grid-template-columns:minmax(0,1fr) auto;} .add-form .f-cat{grid-column:1 / -1;} }
+  @media (min-width:640px){ .add-form{grid-template-columns:minmax(0,1fr) 160px 130px auto;} .add-form .f-name{grid-column:auto;} }
   .field{position:relative; display:block;}
+  .field select{
+    width:100%; height:48px; border:1.5px solid var(--line-strong); border-radius:var(--r);
+    background:var(--surface); padding:0 34px 0 14px; font:inherit; font-size:16px; font-weight:600; color:var(--ink);
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .field select:invalid{color:var(--ink-3); font-weight:500;}
+  .field select option{color:var(--ink); font-weight:600;}
+  .field select:focus{outline:none; border-color:var(--leaf); box-shadow:0 0 0 3px color-mix(in srgb, var(--leaf) 25%, transparent);}
+  .field.select::after{content:""; position:absolute; right:15px; top:50%; width:8px; height:8px; border-right:2px solid var(--ink-3); border-bottom:2px solid var(--ink-3); transform:translateY(-70%) rotate(45deg); pointer-events:none;}
   .field input{
     width:100%; height:48px; border:1.5px solid var(--line-strong); border-radius:var(--r);
     background:var(--surface); padding:0 14px; font-size:16px; font-weight:600;
@@ -198,6 +209,20 @@
   .prog-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; font-size:13.5px; font-weight:600; color:var(--ink-2);}
   .progress{height:8px; background:var(--surface-2); margin-top:8px; border-radius:8px; overflow:hidden;}
   .progress span{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--brand), var(--leaf)); border-radius:8px; transition:width .35s var(--ease-out);}
+
+  /* Gasto por categoría */
+  .cats{margin-top:18px; padding-top:14px; border-top:1px solid var(--line);}
+  .cats-title{font-size:13.5px; font-weight:700; color:var(--ink-2); margin:0 0 8px;}
+  .cat-list{list-style:none; margin:0; padding:0; display:grid; gap:4px;}
+  .cat-row{display:grid; grid-template-columns:34px minmax(0,1fr) auto; align-items:center; column-gap:10px; padding:6px 0;}
+  .cat-emo{width:34px; height:34px; border-radius:10px; background:var(--surface-2); display:grid; place-items:center; font-size:18px; line-height:1; grid-row:span 2;}
+  .cat-name{font-size:14.5px; font-weight:700; min-width:0;}
+  .cat-name small{font-size:12px; font-weight:500; color:var(--ink-3); margin-left:4px;}
+  .cat-amt{font-size:15px; font-weight:800; white-space:nowrap; text-align:right;}
+  .cat-row.zero .cat-amt, .cat-row.zero .cat-name{color:var(--ink-3);}
+  .cat-row.zero .cat-emo{opacity:.55;}
+  .cat-bar{grid-column:2 / -1; height:5px; border-radius:5px; background:var(--surface-2); overflow:hidden; margin-top:5px;}
+  .cat-bar span{display:block; height:100%; width:0; background:var(--leaf); border-radius:5px; transition:width .35s var(--ease-out);}
 
   /* ---------- Lista ---------- */
   .list{padding:8px;}
@@ -260,10 +285,13 @@
   .item input:checked + .check{background:var(--leaf); border-color:var(--leaf);}
   .item input:checked + .check .ico{opacity:1; transform:scale(1);}
   .item input:focus-visible + .check{outline:2.5px solid var(--leaf); outline-offset:2px;}
-  .item-name{flex:1; min-width:0; font-size:16px; font-weight:600; overflow-wrap:anywhere; transition:color .15s ease;}
+  .item-text{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;}
+  .item-name{min-width:0; font-size:16px; font-weight:600; overflow-wrap:anywhere; transition:color .15s ease;}
+  .item-cat{font-size:12.5px; font-weight:600; color:var(--ink-3);}
+  .item-cat.none{color:var(--sun);}
   .item-price{font-size:15px; font-weight:700; white-space:nowrap; transition:color .15s ease;}
   .item-price.none{color:var(--ink-3); font-weight:500; font-size:13.5px;}
-  .item input:checked ~ .item-name{color:var(--ink-3); font-weight:500; text-decoration:line-through; text-decoration-color:var(--line-strong);}
+  .item input:checked ~ .item-text .item-name{color:var(--ink-3); font-weight:500; text-decoration:line-through; text-decoration-color:var(--line-strong);}
   .item input:checked ~ .item-price{color:var(--ink-3);}
   .row-btn{
     width:40px; height:40px; border:0; border-radius:12px; background:transparent; color:var(--ink-3); cursor:pointer;
@@ -277,14 +305,14 @@
   }
 
   /* Edición en línea */
-  .edit-form{flex:1; display:grid; grid-template-columns:minmax(0,1fr) 110px auto auto; gap:6px; align-items:center; padding:8px 4px 8px 8px;}
-  .edit-form .field input{height:42px; font-size:15px;}
+  .edit-form{flex:1; display:grid; grid-template-columns:minmax(0,1fr) 140px 110px auto auto; gap:6px; align-items:center; padding:8px 4px 8px 8px;}
+  .edit-form .field input, .edit-form .field select{height:42px; font-size:15px;}
   .edit-form .field.price input{padding-left:34px;}
   .edit-form .field.price .cur{left:11px; font-size:14px;}
   .row-btn.save{background:var(--brand); color:#fff;}
   @media (hover:hover){ .row-btn.save:hover{background:var(--brand-hover); color:#fff;} }
-  @media (max-width:479px){
-    .edit-form{grid-template-columns:minmax(0,1fr) auto auto;}
+  @media (max-width:699px){
+    .edit-form{grid-template-columns:minmax(0,1fr) 96px auto auto;}
     .edit-form .field:first-child{grid-column:1 / -1;}
   }
 
@@ -380,6 +408,10 @@
           <span class="sr-only">Ingrediente</span>
           <input id="newName" name="name" type="text" placeholder="Ej.: Pollo 1 kg" maxlength="80" required enterkeyhint="next">
         </label>
+        <label class="field select f-cat">
+          <span class="sr-only">Categoría</span>
+          <select id="newCat" name="category" required></select>
+        </label>
         <label class="field price">
           <span class="sr-only">Precio en soles</span>
           <span class="cur" aria-hidden="true">S/</span>
@@ -405,6 +437,10 @@
       </div>
       <div class="prog-row"><span id="progText">0 de 0 comprados</span><span id="progPct" class="num">0%</span></div>
       <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+      <div class="cats">
+        <p class="cats-title">Total por categoría</p>
+        <ul class="cat-list" id="catList"></ul>
+      </div>
     </section>
 
     <!-- Lista / checklist -->
@@ -492,6 +528,35 @@ function icon(id){
   return svg;
 }
 function fmt(n){ return money.format(n || 0); }
+
+/* ---------- categorías ---------- */
+const CATEGORIES = [
+  { id:'Fruta',     label:'Frutas',     emoji:'🍎' },
+  { id:'Verdura',   label:'Verduras',   emoji:'🥬' },
+  { id:'Pollo',     label:'Pollo',      emoji:'🍗' },
+  { id:'Carne',     label:'Carne',      emoji:'🥩' },
+  { id:'Abarrotes', label:'Abarrotes',  emoji:'🥫' },
+  { id:'Limpieza',  label:'Limpieza',   emoji:'🧽' }
+];
+function cleanCat(c){
+  const s = String(c || '').trim().toLowerCase();
+  const found = CATEGORIES.find(x => x.id.toLowerCase() === s || x.label.toLowerCase() === s);
+  return found ? found.id : '';
+}
+function catInfo(c){ return CATEGORIES.find(x => x.id === c) || null; }
+/* Llena un <select> con las categorías */
+function fillCatSelect(select, value, placeholder){
+  select.innerHTML = '';
+  const ph = el('option', null, placeholder || 'Categoría');
+  ph.value = ''; ph.disabled = true; ph.hidden = true;
+  select.appendChild(ph);
+  CATEGORIES.forEach(c => {
+    const o = el('option', null, c.emoji + ' ' + c.id);
+    o.value = c.id;
+    select.appendChild(o);
+  });
+  select.value = value || '';
+}
 function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function readJSON(key, fallback){
   try{ const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }catch(e){ return fallback; }
@@ -588,7 +653,7 @@ function applyOp(items, op){
       if(!it || !it.id || items.some(x => x.id === it.id)) return items;
       const copy = items.slice();
       const i = typeof op.index === 'number' ? Math.max(0, Math.min(op.index, copy.length)) : copy.length;
-      copy.splice(i, 0, { id: it.id, name: it.name, price: it.price == null ? null : it.price, done: !!it.done });
+      copy.splice(i, 0, { id: it.id, name: it.name, price: it.price == null ? null : it.price, done: !!it.done, category: cleanCat(it.category) });
       return copy;
     }
     case 'update':
@@ -607,7 +672,7 @@ function applyOp(items, op){
 function cleanItems(list){
   return (Array.isArray(list) ? list : [])
     .filter(i => i && i.id && i.name)
-    .map(i => ({ id: String(i.id), name: String(i.name), price: i.price == null || i.price === '' ? null : Number(i.price), done: !!i.done }));
+    .map(i => ({ id: String(i.id), name: String(i.name), price: i.price == null || i.price === '' ? null : Number(i.price), done: !!i.done, category: cleanCat(i.category) }));
 }
 
 /* Aplica un cambio aquí y lo manda a la hoja */
@@ -754,6 +819,25 @@ function updateSummary(){
   document.getElementById('progPct').textContent = pct + '%';
   document.getElementById('progressBar').style.width = pct + '%';
 
+  // Total por categoría (y "Sin categoría" solo si hay alguno sin asignar)
+  const groups = CATEGORIES.map(c => ({ c, items: ITEMS.filter(i => i.category === c.id) }));
+  const sinCat = ITEMS.filter(i => !catInfo(i.category));
+  if(sinCat.length) groups.push({ c:{ id:'', label:'Sin categoría', emoji:'❔' }, items: sinCat });
+  const catList = document.getElementById('catList');
+  catList.innerHTML = '';
+  groups.forEach(g => {
+    const sum = g.items.reduce((a, i) => a + (i.price || 0), 0);
+    const li = el('li', 'cat-row' + (g.items.length ? '' : ' zero'));
+    const emo = el('span', 'cat-emo', g.c.emoji); emo.setAttribute('aria-hidden', 'true');
+    const name = el('span', 'cat-name', g.c.label);
+    if(g.items.length) name.appendChild(el('small', null, '· ' + g.items.length));
+    const bar = el('span', 'cat-bar'); bar.setAttribute('aria-hidden', 'true');
+    const fill = el('span'); fill.style.width = (total ? Math.round(sum / total * 100) : 0) + '%';
+    bar.appendChild(fill);
+    li.append(emo, name, el('span', 'cat-amt num', fmt(sum)), bar);
+    catList.appendChild(li);
+  });
+
   document.getElementById('empty').hidden = count > 0;
   document.getElementById('listFoot').hidden = count === 0 || LOCKED;
   document.getElementById('btnUncheck').disabled = doneCount === 0;
@@ -784,19 +868,27 @@ function buildRow(item){
     const iPrice = el('input'); iPrice.type = 'text'; iPrice.inputMode = 'decimal'; iPrice.placeholder = '0.00'; iPrice.maxLength = 9;
     iPrice.value = item.price != null ? Number(item.price).toFixed(2) : '';
     fPrice.appendChild(iPrice);
+    const fCat = el('label', 'field select');
+    fCat.innerHTML = '<span class="sr-only">Categoría</span>';
+    const iCat = el('select'); iCat.required = true;
+    fillCatSelect(iCat, item.category, 'Categoría');
+    fCat.appendChild(iCat);
     const ok = el('button', 'row-btn save'); ok.type = 'submit'; ok.setAttribute('aria-label', 'Guardar cambios'); ok.appendChild(icon('i-check'));
     const cancel = el('button', 'row-btn'); cancel.type = 'button'; cancel.setAttribute('aria-label', 'Cancelar'); cancel.appendChild(icon('i-x'));
     cancel.addEventListener('click', finishEditing);
-    form.append(fName, fPrice, ok, cancel);
+    form.append(fName, fCat, fPrice, ok, cancel);
     form.addEventListener('submit', ev => {
       ev.preventDefault();
       const name = iName.value.trim();
       const price = parsePrice(iPrice.value);
+      const category = cleanCat(iCat.value);
       if(!name){ iName.focus(); return; }
+      if(!category){ setStatus('Elige a qué categoría pertenece.', 'err'); iCat.focus(); return; }
       if(Number.isNaN(price)){ setStatus('El precio no es válido. Usa solo números, por ejemplo 12.50', 'err'); iPrice.focus(); return; }
       EDITING = null;
       PENDING_RENDER = false;
-      commit({ type:'update', id:item.id, fields:{ name: capitalize(name), price } });
+      setStatus('');
+      commit({ type:'update', id:item.id, fields:{ name: capitalize(name), price, category } });
     });
     li.appendChild(form);
     setTimeout(() => iName.focus(), 0);
@@ -814,7 +906,11 @@ function buildRow(item){
     commit({ type:'update', id:item.id, fields:{ done: cb.checked } }, { renderAll:false });
   });
   const box = el('span', 'check'); box.setAttribute('aria-hidden', 'true'); box.appendChild(icon('i-check'));
-  label.append(cb, box, el('span', 'item-name', item.name),
+  const info = catInfo(item.category);
+  const text = el('span', 'item-text');
+  text.append(el('span', 'item-name', item.name),
+    el('span', 'item-cat' + (info ? '' : ' none'), info ? info.emoji + ' ' + info.id : 'Sin categoría'));
+  label.append(cb, box, text,
     el('span', 'item-price num' + (item.price == null ? ' none' : ''), item.price == null ? 'Sin precio' : fmt(item.price)));
 
   const edit = el('button', 'row-btn'); edit.type = 'button';
@@ -860,14 +956,18 @@ document.getElementById('addForm').addEventListener('submit', function(ev){
   const nameInput = document.getElementById('newName');
   const priceInput = document.getElementById('newPrice');
   const name = nameInput.value.trim();
+  const catInput = document.getElementById('newCat');
   const price = parsePrice(priceInput.value);
+  const category = cleanCat(catInput.value);
   if(!name){ nameInput.focus(); return; }
+  if(!category){ setStatus('Elige a qué categoría pertenece.', 'err'); catInput.focus(); return; }
   if(Number.isNaN(price)){
     setStatus('El precio no es válido. Usa solo números, por ejemplo 12.50', 'err');
     priceInput.focus();
     return;
   }
-  commit({ type:'add', item:{ id: newId(), name: capitalize(name), price, done:false } });
+  commit({ type:'add', item:{ id: newId(), name: capitalize(name), price, done:false, category } });
+  // La categoría se queda elegida: útil al anotar varias frutas seguidas
   nameInput.value = ''; priceInput.value = '';
   setStatus('');
   nameInput.focus();
@@ -877,9 +977,11 @@ document.getElementById('addForm').addEventListener('submit', function(ev){
 document.getElementById('newName').addEventListener('keydown', function(ev){
   if(ev.key === 'Enter' && this.value.trim()){
     ev.preventDefault();
-    document.getElementById('newPrice').focus();
+    const cat = document.getElementById('newCat');
+    (cat.value ? document.getElementById('newPrice') : cat).focus();
   }
 });
+fillCatSelect(document.getElementById('newCat'), '', 'Categoría');
 
 document.getElementById('btnUncheck').addEventListener('click', function(){
   commit({ type:'uncheckAll' });
@@ -915,7 +1017,7 @@ document.getElementById('btnSave').addEventListener('click', function(){
     semanaFin: WEEK.sunday,
     ingredientes: ITEMS.map(i => i.name + (i.price != null ? ' (' + fmt(i.price) + ')' : '')).join(', '),
     total: Math.round(total * 100) / 100,
-    items: ITEMS.map(i => ({ nombre: i.name, precio: i.price, comprado: !!i.done }))
+    items: ITEMS.map(i => ({ nombre: i.name, precio: i.price, comprado: !!i.done, categoria: i.category || '' }))
   };
 
   saveBtn.disabled = true;
@@ -955,7 +1057,7 @@ function applyLock(){
 
   const add = document.querySelector('.add');
   add.classList.toggle('locked', LOCKED);
-  add.querySelectorAll('input, button').forEach(c => { c.disabled = LOCKED; });
+  add.querySelectorAll('input, select, button').forEach(c => { c.disabled = LOCKED; });
   document.getElementById('addHintIcon').setAttribute('href', LOCKED ? '#i-lock' : '#i-leaf');
   document.getElementById('addHintText').textContent = LOCKED
     ? 'La lista está bloqueada. Activa «Editar lista» para agregar ingredientes.'
