@@ -183,15 +183,14 @@
 
   /* ---------- Resumen ---------- */
   .sum{padding:18px;}
-  .stats{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px;}
+  /* Total en su propia fila (entra completo aunque sea S/ 1,250.00) y debajo Comprado / Falta */
+  .stats{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px;}
   .stat{background:var(--surface-2); border-radius:var(--r); padding:10px 12px; min-width:0;}
   .stat-label{font-size:12px; font-weight:600; color:var(--ink-2); margin:0;}
-  .stat-value{font-size:17px; font-weight:800; letter-spacing:-.01em; margin:2px 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  @media (min-width:900px){
-    .stats{grid-template-columns:repeat(2, minmax(0,1fr));}
-    .stat.total{grid-column:1 / -1;}
-    .stat.total .stat-value{font-size:22px;}
-  }
+  .stat-value{font-size:18px; font-weight:800; letter-spacing:-.01em; margin:2px 0 0; white-space:nowrap;}
+  .stat.total{grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px;}
+  .stat.total .stat-label{font-size:13px;}
+  .stat.total .stat-value{font-size:24px; margin:0;}
   .stat.total{background:var(--brand); color:#fff;}
   .stat.total .stat-label{color:#B9E58F;}
   .stat.done .stat-value{color:var(--brand);}
@@ -203,9 +202,24 @@
   /* ---------- Lista ---------- */
   .list{padding:8px;}
   .list-top{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 10px 8px;}
-  .list-top h2{font-size:17px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px;}
-  .saved-note{display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--ink-3);}
-  .saved-note .ico{width:14px; height:14px; color:var(--leaf);}
+  .list-top h2{font-size:17px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px; white-space:nowrap;}
+  /* Estado de sincronización (también es el botón para actualizar) */
+  .sync-pill{
+    display:inline-flex; align-items:center; gap:6px; min-height:34px; padding:0 12px; border:0; border-radius:999px;
+    background:var(--surface-2); color:var(--ink-2); font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;
+    transition:background-color .15s ease, transform .12s var(--ease-out);
+  }
+  .sync-pill:active{transform:scale(.95);}
+  .sync-pill .ico{width:15px; height:15px;}
+  .sync-pill.ok{background:var(--leaf-soft); color:var(--brand);}
+  :root[data-theme="dark"] .sync-pill.ok{color:var(--leaf);}
+  .sync-pill.offline{background:var(--sun-soft); color:var(--sun);}
+  .sync-pill.busy .ico{animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (prefers-reduced-motion:reduce){ .sync-pill.busy .ico{animation:none;} }
+  .sync-note{display:flex; gap:10px; align-items:flex-start; margin:0 8px 8px; padding:12px 14px; border-radius:var(--r); background:var(--sun-soft); color:var(--ink-2); font-size:13.5px; line-height:1.45;}
+  .sync-note .ico{width:18px; height:18px; color:var(--sun); margin-top:1px;}
+  .sync-note strong{color:var(--ink);}
   .items{list-style:none; margin:0; padding:0;}
   .item{display:flex; align-items:center; gap:4px; border-radius:var(--r); transition:background-color .15s ease;}
   .item + .item{border-top:1px solid var(--line);}
@@ -295,6 +309,9 @@
   <symbol id="i-sheet" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></symbol>
   <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/><path d="m2 2 20 20"/></symbol>
   <symbol id="i-device" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
   <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
 </svg>
@@ -366,8 +383,14 @@
     <!-- Lista / checklist -->
     <section class="card list a-list" aria-labelledby="listTitle">
       <div class="list-top">
-        <h2 id="listTitle"><span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-list"/></svg></span>Mi lista</h2>
-        <span class="saved-note"><svg class="ico" aria-hidden="true"><use href="#i-device"/></svg>Se guarda sola</span>
+        <h2 id="listTitle"><span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-list"/></svg></span>Nuestra lista</h2>
+        <button class="sync-pill" id="syncPill" type="button" title="Actualizar ahora">
+          <svg class="ico" aria-hidden="true"><use id="syncIcon" href="#i-refresh"/></svg><span id="syncText">Conectando…</span>
+        </button>
+      </div>
+      <div class="sync-note" id="syncNote" hidden>
+        <svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>
+        <span><strong>La lista aún no se comparte.</strong> No se pudo conectar con tu hoja de Google, así que por ahora se guarda solo en este celular y se enviará cuando conecte. Si todavía no instalaste el script nuevo (<em>google-apps-script.gs</em>), ese es el paso que falta.</span>
       </div>
       <ul class="items" id="items"></ul>
       <div class="empty" id="empty">
@@ -387,11 +410,11 @@
         <section class="card act" aria-labelledby="actTitle">
           <div class="card-head">
             <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-sheet"/></svg></span>
-            <h2 id="actTitle">Guardar y compartir</h2>
+            <h2 id="actTitle">Historial de gastos</h2>
           </div>
-          <p>Guarda la lista con sus precios en tu hoja de Google para llevar el historial de tus gastos.</p>
+          <p>Cuando termines de comprar, guarda la lista con sus precios en tu hoja de Google para llevar la cuenta de lo que gastas cada semana.</p>
           <button class="btn primary" id="btnSave" type="button">
-            <svg class="ico" aria-hidden="true"><use href="#i-sheet"/></svg><span>Guardar en Google Sheets</span>
+            <svg class="ico" aria-hidden="true"><use href="#i-sheet"/></svg><span>Guardar en historial</span>
           </button>
           <button class="btn" id="btnCopy" type="button">
             <svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg><span>Copiar para WhatsApp</span>
@@ -407,9 +430,12 @@
 </main>
 
 <script>
-/* Enlace del Google Apps Script (Web App) que guarda en la hoja.
+/* Enlace del Google Apps Script (Web App) conectado a tu Google Sheet.
    Es el mismo que usa index.html. */
-const HISTORIAL_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbCbOFPrTG8yljjNXlSNPY0oR7YJOO0BKvyXfDy70Py8TJ3GJ2OAORbJh4_VFg9VG7/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbCbOFPrTG8yljjNXlSNPY0oR7YJOO0BKvyXfDy70Py8TJ3GJ2OAORbJh4_VFg9VG7/exec";
+
+/* Cada cuánto se revisan los cambios de los otros celulares (ms) */
+const REFRESH_MS = 15000;
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const money = new Intl.NumberFormat('es-PE', { style:'currency', currency:'PEN', minimumFractionDigits:2 });
@@ -432,8 +458,14 @@ function icon(id){
 }
 function fmt(n){ return money.format(n || 0); }
 function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function readJSON(key, fallback){
+  try{ const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }catch(e){ return fallback; }
+}
+function writeJSON(key, value){
+  try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){}
+}
 
-/* "12,50" o "12.50" -> 12.5 ; vacío o inválido -> null */
+/* "12,50" o "12.50" -> 12.5 ; vacío -> null ; inválido -> NaN */
 function parsePrice(str){
   const s = String(str || '').trim().replace(/^s\/\s*/i, '').replace(',', '.');
   if(!s) return null;
@@ -457,38 +489,178 @@ function fmtRange(monday){
   return monday.toLocaleDateString('es-PE', opts) + ' – ' + sunday.toLocaleDateString('es-PE', opts) + ', ' + sunday.getFullYear();
 }
 
-/* ---------- semana ----------
-   Usa la semana que estabas viendo en el menú; si abriste la lista
-   directamente, usa la semana actual. */
+/* Semana para el historial: la que estabas viendo en el menú, o la actual */
 const WEEK = (function(){
-  let data = null;
-  try{ data = JSON.parse(localStorage.getItem('menuSmartShoppingWeek') || 'null'); }catch(e){}
-  if(data && data.monday){
-    const [y, m, d] = data.monday.split('-').map(Number);
-    const monday = new Date(y, m - 1, d);
-    return { monday: data.monday, sunday: data.sunday, label: data.weekLabel || fmtRange(monday) };
-  }
+  const data = readJSON('menuSmartShoppingWeek', null);
+  if(data && data.monday) return { monday: data.monday, sunday: data.sunday, label: data.weekLabel || '' };
   const monday = getMonday(new Date());
   const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
   return { monday: isoDate(monday), sunday: isoDate(sunday), label: fmtRange(monday) };
 })();
 
-/* ---------- datos (se guardan en este dispositivo, por semana) ---------- */
-const STORE_KEY = 'menuSmartLista:' + WEEK.monday;
-let ITEMS = [];       // { id, name, price (número o null), done }
-let EDITING = null;   // id del ingrediente en edición
+/* ============================================================
+   LISTA COMPARTIDA
+   - La lista "oficial" vive en la hoja Lista_Actual de tu Google Sheet.
+   - Cada cambio (agregar, editar, marcar, quitar) se guarda al instante en
+     este celular y se envía a la hoja como una "operación".
+   - Si no hay señal, las operaciones esperan en cola y se envían solas
+     cuando vuelve la conexión.
+   - Cada 15 s (y al volver a la página) se leen los cambios de los demás.
+   ============================================================ */
+const CACHE_KEY = 'menuSmartListaCompartida';
+const QUEUE_KEY = 'menuSmartListaCola';
+
+let ITEMS = readJSON(CACHE_KEY, []);   // { id, name, price, done }
+let QUEUE = readJSON(QUEUE_KEY, []);   // operaciones pendientes de enviar
+let EDITING = null;                    // id del ingrediente en edición
+let PENDING_RENDER = false;
 let LAST_DELETED = null;
 
-function load(){
+const SYNC = { ready:false, busy:false, state:'connecting', last:null };
+
+function saveLocal(){ writeJSON(CACHE_KEY, ITEMS); writeJSON(QUEUE_KEY, QUEUE); }
+function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+/* Pasa la lista de la versión anterior (guardada por semana en este
+   celular) a la lista compartida, una sola vez. */
+(function migrateLegacy(){
+  if(localStorage.getItem('menuSmartListaMigrada')) return;
+  try{ localStorage.setItem('menuSmartListaMigrada', '1'); }catch(e){}
+  if(ITEMS.length || QUEUE.length) return;
+  const keys = Object.keys(localStorage).filter(k => k.indexOf('menuSmartLista:') === 0).sort().reverse();
+  for(const k of keys){
+    const old = readJSON(k, []);
+    if(Array.isArray(old) && old.length){
+      ITEMS = old.filter(i => i && i.name).map(i => ({ id: i.id || newId(), name: String(i.name), price: i.price == null ? null : Number(i.price), done: !!i.done }));
+      QUEUE = ITEMS.map(i => ({ type:'add', item: i }));
+      saveLocal();
+      return;
+    }
+  }
+})();
+
+/* Misma lógica que el script de Google (aplicarOp) */
+function applyOp(items, op){
+  if(!op || !op.type) return items;
+  switch(op.type){
+    case 'add': {
+      const it = op.item;
+      if(!it || !it.id || items.some(x => x.id === it.id)) return items;
+      const copy = items.slice();
+      const i = typeof op.index === 'number' ? Math.max(0, Math.min(op.index, copy.length)) : copy.length;
+      copy.splice(i, 0, { id: it.id, name: it.name, price: it.price == null ? null : it.price, done: !!it.done });
+      return copy;
+    }
+    case 'update':
+      return items.map(x => x.id === op.id ? Object.assign({}, x, op.fields) : x);
+    case 'delete':
+      return items.filter(x => x.id !== op.id);
+    case 'uncheckAll':
+      return items.map(x => Object.assign({}, x, { done:false }));
+    case 'clear':
+      return [];
+    default:
+      return items;
+  }
+}
+
+function cleanItems(list){
+  return (Array.isArray(list) ? list : [])
+    .filter(i => i && i.id && i.name)
+    .map(i => ({ id: String(i.id), name: String(i.name), price: i.price == null || i.price === '' ? null : Number(i.price), done: !!i.done }));
+}
+
+/* Aplica un cambio aquí y lo manda a la hoja */
+function commit(op, opts){
+  ITEMS = applyOp(ITEMS, op);
+  QUEUE.push(op);
+  saveLocal();
+  if(opts && opts.renderAll === false) updateSummary(); else render();
+  flush();
+}
+
+/* Lo que vino de la hoja + lo que aún no se envió desde aquí */
+function applyServer(serverItems){
+  const next = QUEUE.reduce(applyOp, cleanItems(serverItems));
+  const changed = JSON.stringify(next) !== JSON.stringify(ITEMS);
+  ITEMS = next;
+  saveLocal();
+  if(changed){
+    if(EDITING) PENDING_RENDER = true;
+    else render();
+  }
+}
+
+async function flush(){
+  if(!SYNC.ready || SYNC.busy || !QUEUE.length) return;
+  SYNC.busy = true;
+  setSync('busy');
+  const batch = QUEUE.slice();
+  let ok = false;
   try{
-    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
-    ITEMS = Array.isArray(saved) ? saved.filter(i => i && i.name) : [];
-  }catch(e){ ITEMS = []; }
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action:'ops', ops: batch })
+    });
+    const data = await res.json();
+    if(!data || !data.ok || !Array.isArray(data.items)) throw new Error((data && data.error) || 'respuesta inesperada');
+    QUEUE = QUEUE.slice(batch.length);
+    applyServer(data.items);
+    ok = true;
+    setSync('ok');
+  }catch(e){
+    setSync('offline');
+  }finally{
+    SYNC.busy = false;
+  }
+  if(ok && QUEUE.length) flush();
 }
-function save(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(ITEMS)); }catch(e){}
+
+/* Lee la lista de la hoja. Solo después de una lectura correcta se envían
+   cambios: así nunca se escribe en la hoja con un script antiguo. */
+async function pull(){
+  if(SYNC.busy) return;
+  if(SYNC.ready && QUEUE.length) return flush();
+  SYNC.busy = true;
+  if(!SYNC.ready) setSync('busy');
+  let notReady = false, ok = false;
+  try{
+    const res = await fetch(SCRIPT_URL + '?action=lista&t=' + Date.now());
+    const text = await res.text();
+    let data = null;
+    try{ data = JSON.parse(text); }catch(e){ notReady = true; }
+    if(!data || !data.ok || !Array.isArray(data.items)){ notReady = true; throw new Error('sin lista'); }
+    SYNC.ready = true;
+    applyServer(data.items);
+    ok = true;
+    setSync('ok');
+  }catch(e){
+    // Nunca conectó con la hoja teniendo internet: lo más probable es que
+    // falte instalar el script nuevo (el antiguo no permite leer la lista).
+    setSync(SYNC.ready ? 'offline' : ((notReady || navigator.onLine !== false) ? 'off' : 'offline'));
+  }finally{
+    SYNC.busy = false;
+  }
+  if(ok && QUEUE.length) flush();
 }
-function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+function setSync(state){
+  SYNC.state = state;
+  if(state === 'ok') SYNC.last = new Date();
+  const pill = document.getElementById('syncPill');
+  const text = document.getElementById('syncText');
+  const ico = document.getElementById('syncIcon');
+  pill.className = 'sync-pill ' + state;
+  document.getElementById('syncNote').hidden = state !== 'off';
+  const hora = SYNC.last ? SYNC.last.toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' }) : '';
+  if(state === 'busy'){ ico.setAttribute('href', '#i-refresh'); text.textContent = 'Sincronizando…'; }
+  else if(state === 'ok'){ ico.setAttribute('href', '#i-users'); text.textContent = 'Compartida · ' + hora; }
+  else if(state === 'offline'){ ico.setAttribute('href', '#i-wifi-off'); text.textContent = QUEUE.length ? 'Sin conexión · se enviará' : 'Sin conexión'; }
+  else if(state === 'off'){ ico.setAttribute('href', '#i-device'); text.textContent = 'Solo en este celular'; }
+  else { ico.setAttribute('href', '#i-refresh'); text.textContent = 'Conectando…'; }
+  pill.title = state === 'ok' ? 'Actualizada a las ' + hora + '. Toca para actualizar.' : 'Toca para actualizar';
+}
 
 /* ---------- estado y resumen ---------- */
 function setStatus(text, state, action){
@@ -518,7 +690,7 @@ function updateSummary(){
   document.getElementById('sLeft').textContent = fmt(total - done);
   document.getElementById('progText').textContent =
     count === 0 ? 'Aún no hay ingredientes'
-    : doneCount === count ? '¡Compraste todo!'
+    : doneCount === count ? '¡Compraron todo!'
     : doneCount + ' de ' + count + ' comprados';
   document.getElementById('progPct').textContent = pct + '%';
   document.getElementById('progressBar').style.width = pct + '%';
@@ -531,6 +703,12 @@ function updateSummary(){
 }
 
 /* ---------- filas ---------- */
+function finishEditing(){
+  EDITING = null;
+  PENDING_RENDER = false;
+  render();
+}
+
 function buildRow(item){
   const li = el('li', 'item');
   li.dataset.id = item.id;
@@ -545,11 +723,11 @@ function buildRow(item){
     const fPrice = el('label', 'field price');
     fPrice.innerHTML = '<span class="sr-only">Precio en soles</span><span class="cur" aria-hidden="true">S/</span>';
     const iPrice = el('input'); iPrice.type = 'text'; iPrice.inputMode = 'decimal'; iPrice.placeholder = '0.00'; iPrice.maxLength = 9;
-    iPrice.value = item.price != null ? item.price.toFixed(2) : '';
+    iPrice.value = item.price != null ? Number(item.price).toFixed(2) : '';
     fPrice.appendChild(iPrice);
     const ok = el('button', 'row-btn save'); ok.type = 'submit'; ok.setAttribute('aria-label', 'Guardar cambios'); ok.appendChild(icon('i-check'));
     const cancel = el('button', 'row-btn'); cancel.type = 'button'; cancel.setAttribute('aria-label', 'Cancelar'); cancel.appendChild(icon('i-x'));
-    cancel.addEventListener('click', () => { EDITING = null; render(); });
+    cancel.addEventListener('click', finishEditing);
     form.append(fName, fPrice, ok, cancel);
     form.addEventListener('submit', ev => {
       ev.preventDefault();
@@ -557,10 +735,9 @@ function buildRow(item){
       const price = parsePrice(iPrice.value);
       if(!name){ iName.focus(); return; }
       if(Number.isNaN(price)){ setStatus('El precio no es válido. Usa solo números, por ejemplo 12.50', 'err'); iPrice.focus(); return; }
-      item.name = capitalize(name);
-      item.price = price;
       EDITING = null;
-      save(); render();
+      PENDING_RENDER = false;
+      commit({ type:'update', id:item.id, fields:{ name: capitalize(name), price } });
     });
     li.appendChild(form);
     setTimeout(() => iName.focus(), 0);
@@ -569,7 +746,7 @@ function buildRow(item){
 
   const label = el('label');
   const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!item.done;
-  cb.addEventListener('change', () => { item.done = cb.checked; save(); updateSummary(); });
+  cb.addEventListener('change', () => commit({ type:'update', id:item.id, fields:{ done: cb.checked } }, { renderAll:false }));
   const box = el('span', 'check'); box.setAttribute('aria-hidden', 'true'); box.appendChild(icon('i-check'));
   label.append(cb, box, el('span', 'item-name', item.name),
     el('span', 'item-price num' + (item.price == null ? ' none' : ''), item.price == null ? 'Sin precio' : fmt(item.price)));
@@ -587,6 +764,8 @@ function buildRow(item){
 }
 
 function render(){
+  // si el ingrediente en edición fue borrado desde otro celular, se cierra la edición
+  if(EDITING && !ITEMS.some(i => i.id === EDITING)) EDITING = null;
   const ul = document.getElementById('items');
   ul.innerHTML = '';
   ITEMS.forEach(item => ul.appendChild(buildRow(item)));
@@ -597,14 +776,14 @@ function render(){
 function removeItem(id){
   const idx = ITEMS.findIndex(i => i.id === id);
   if(idx < 0) return;
-  const [removed] = ITEMS.splice(idx, 1);
+  const removed = ITEMS[idx];
   LAST_DELETED = { item: removed, idx };
-  save(); render();
+  commit({ type:'delete', id });
   setStatus('Quitaste «' + removed.name + '».', null, { label:'Deshacer', run: () => {
     if(!LAST_DELETED) return;
-    ITEMS.splice(Math.min(LAST_DELETED.idx, ITEMS.length), 0, LAST_DELETED.item);
+    commit({ type:'add', item: LAST_DELETED.item, index: LAST_DELETED.idx });
     LAST_DELETED = null;
-    save(); render(); setStatus('');
+    setStatus('');
   }});
 }
 
@@ -620,8 +799,7 @@ document.getElementById('addForm').addEventListener('submit', function(ev){
     priceInput.focus();
     return;
   }
-  ITEMS.push({ id: newId(), name: capitalize(name), price, done: false });
-  save(); render();
+  commit({ type:'add', item:{ id: newId(), name: capitalize(name), price, done:false } });
   nameInput.value = ''; priceInput.value = '';
   setStatus('');
   nameInput.focus();
@@ -636,22 +814,21 @@ document.getElementById('newName').addEventListener('keydown', function(ev){
 });
 
 document.getElementById('btnUncheck').addEventListener('click', function(){
-  ITEMS.forEach(i => i.done = false);
-  save(); render();
+  commit({ type:'uncheckAll' });
 });
 
 document.getElementById('btnClear').addEventListener('click', function(){
   if(!ITEMS.length) return;
-  if(!confirm('¿Vaciar toda la lista? Se borrarán ' + ITEMS.length + ' ingredientes de este dispositivo.')) return;
-  ITEMS = []; EDITING = null;
-  save(); render();
+  if(!confirm('¿Vaciar toda la lista? Se borrarán ' + ITEMS.length + ' ingredientes en todos los celulares.')) return;
+  EDITING = null;
+  commit({ type:'clear' });
   setStatus('Lista vaciada.');
 });
 
 document.getElementById('btnCopy').addEventListener('click', function(){
   const total = ITEMS.reduce((a, i) => a + (i.price || 0), 0);
   const lines = ITEMS.map(i => (i.done ? '✅ ' : '⬜ ') + i.name + (i.price != null ? ' — ' + fmt(i.price) : ''));
-  const text = '🛒 Lista de compras · ' + WEEK.label + '\n' + lines.join('\n') + '\n\nTotal: ' + fmt(total);
+  const text = '🛒 Lista de compras\n' + lines.join('\n') + '\n\nTotal: ' + fmt(total);
   navigator.clipboard.writeText(text).then(function(){
     setStatus('Lista copiada. Pégala en WhatsApp o en tus notas.', 'ok');
   }).catch(function(){
@@ -659,19 +836,12 @@ document.getElementById('btnCopy').addEventListener('click', function(){
   });
 });
 
-/* Guarda en Google Sheets.
-   - "ingredientes" y "total" funcionan con el script que ya tienes
-     (una fila por lista en Historial_Compras).
-   - "items" trae cada ingrediente por separado, para el script
-     actualizado (google-apps-script.gs) que crea una fila por ingrediente. */
+/* Guarda una copia de la lista con precios en el historial de la hoja */
 document.getElementById('btnSave').addEventListener('click', function(){
   const saveBtn = this;
-  if(!HISTORIAL_SCRIPT_URL || HISTORIAL_SCRIPT_URL.indexOf('http') !== 0){
-    setStatus('Falta configurar el enlace de Google Apps Script.', 'err');
-    return;
-  }
   const total = ITEMS.reduce((a, i) => a + (i.price || 0), 0);
   const payload = {
+    action: 'historial',
     fechaGenerado: new Date().toISOString(),
     semanaInicio: WEEK.monday,
     semanaFin: WEEK.sunday,
@@ -681,9 +851,9 @@ document.getElementById('btnSave').addEventListener('click', function(){
   };
 
   saveBtn.disabled = true;
-  setStatus('Guardando en Google Sheets…');
+  setStatus('Guardando en el historial…');
 
-  fetch(HISTORIAL_SCRIPT_URL, {
+  fetch(SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
@@ -692,13 +862,13 @@ document.getElementById('btnSave').addEventListener('click', function(){
   .then(resData => {
     if(resData && resData.ok){
       const hora = new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' });
-      setStatus('Guardado en Google Sheets · ' + hora, 'ok');
+      setStatus('Guardado en tu historial de Google Sheets · ' + hora, 'ok');
     } else {
       throw new Error((resData && resData.error) || 'respuesta inesperada');
     }
   })
   .catch(err => {
-    setStatus('No se pudo guardar (' + err.message + '). Tu lista sigue guardada en este dispositivo.', 'err');
+    setStatus('No se pudo guardar (' + err.message + '). Revisa tu conexión e inténtalo otra vez.', 'err');
   })
   .finally(() => { saveBtn.disabled = ITEMS.length === 0; });
 });
@@ -724,9 +894,15 @@ document.getElementById('themeToggle').addEventListener('click', function(){
 });
 
 /* ---------- inicio ---------- */
-document.getElementById('weekLabel').textContent = 'Semana del ' + WEEK.label;
-load();
+document.getElementById('weekLabel').textContent = 'Lista compartida con tu familia';
 render();
+setSync('connecting');
+pull();
+
+document.getElementById('syncPill').addEventListener('click', () => pull());
+setInterval(() => { if(document.visibilityState === 'visible') pull(); }, REFRESH_MS);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') pull(); });
+window.addEventListener('online', () => pull());
 </script>
 </body>
 </html>
