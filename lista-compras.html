@@ -255,6 +255,8 @@
   }
   .check .ico{width:15px; height:15px; color:#fff; stroke-width:3; opacity:0; transform:scale(.5); transition:opacity .15s ease, transform .2s var(--ease-out);}
   .item label:active .check{transform:scale(.88);}
+  .item label.fixed{cursor:default;}
+  .item label.fixed:active .check{transform:none;}
   .item input:checked + .check{background:var(--leaf); border-color:var(--leaf);}
   .item input:checked + .check .ico{opacity:1; transform:scale(1);}
   .item input:focus-visible + .check{outline:2.5px solid var(--leaf); outline-offset:2px;}
@@ -783,7 +785,14 @@ function buildRow(item){
 
   const label = el('label');
   const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!item.done;
-  cb.addEventListener('change', () => commit({ type:'update', id:item.id, fields:{ done: cb.checked } }, { renderAll:false }));
+  // Con la lista bloqueada se puede marcar, pero no quitar el check
+  const lockDone = () => { cb.disabled = true; label.classList.add('fixed'); };
+  if(LOCKED && item.done) lockDone();
+  cb.addEventListener('change', () => {
+    if(LOCKED && !cb.checked){ cb.checked = true; return; }
+    commit({ type:'update', id:item.id, fields:{ done: cb.checked } }, { renderAll:false });
+    if(LOCKED && cb.checked) lockDone();
+  });
   const box = el('span', 'check'); box.setAttribute('aria-hidden', 'true'); box.appendChild(icon('i-check'));
   label.append(cb, box, el('span', 'item-name', item.name),
     el('span', 'item-price num' + (item.price == null ? ' none' : ''), item.price == null ? 'Sin precio' : fmt(item.price)));
@@ -919,7 +928,7 @@ function applyLock(){
   document.getElementById('lockIcon').setAttribute('href', LOCKED ? '#i-lock' : '#i-unlock');
   document.getElementById('lockTitle').textContent = LOCKED ? 'Editar lista: bloqueado' : 'Editar lista: activado';
   document.getElementById('lockSub').textContent = LOCKED
-    ? 'Solo puedes marcar lo comprado. Toca para editar.'
+    ? 'Puedes marcar lo comprado, pero no quitar el check. Toca para editar.'
     : 'Puedes agregar, cambiar y quitar ingredientes.';
 
   const add = document.querySelector('.add');
