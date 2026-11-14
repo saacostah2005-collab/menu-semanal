@@ -10,6 +10,9 @@
  *   • Hoja "Historial_Detalle": el detalle de ese guardado, un ingrediente por fila
  *       Fecha | Semana inicio | Semana fin | Ingrediente | Precio (S/) | Comprado
  *   Si alguna hoja no existe, se crea sola con sus encabezados.
+ *   • Bloqueo de la lista ("Editar lista" apagado): se guarda en el script y vale
+ *     para todos los dispositivos. Mientras está bloqueada, el script no acepta
+ *     cambios en la lista (ni agregar, ni quitar, ni marcar o desmarcar).
  *   La página historial.html lee estas dos hojas para mostrar lo gastado por semana.
  *
  * Cómo instalarlo (una sola vez):
@@ -30,7 +33,7 @@ const HOJA_DETALLE = 'Historial_Detalle';
 function doGet(e) {
   try {
     const accion = (e && e.parameter && e.parameter.action) || 'lista';
-    if (accion === 'lista') return respuesta({ ok: true, items: leerLista() });
+    if (accion === 'lista') return respuesta({ ok: true, items: leerLista(), locked: leerBloqueo() });
     if (accion === 'historial') return respuesta({ ok: true, registros: leerHistorial() });
     return respuesta({ ok: false, error: 'Acción desconocida: ' + accion });
   } catch (err) {
@@ -49,9 +52,17 @@ function doPost(e) {
       lock.waitLock(20000);
       try {
         let items = leerLista();
-        (data.ops || []).forEach(function (op) { items = aplicarOp(items, op); });
-        escribirLista(items);
-        return respuesta({ ok: true, items: items });
+        const antes = leerBloqueo();
+        let bloqueada = antes;
+        let cambio = false;
+        (data.ops || []).forEach(function (op) {
+          if (op && op.type === 'setLock') bloqueada = !!op.locked;
+          else if (!bloqueada) { items = aplicarOp(items, op); cambio = true; }
+          // con la lista bloqueada, los demás cambios se ignoran
+        });
+        if (cambio) escribirLista(items);
+        if (bloqueada !== antes) guardarBloqueo(bloqueada);
+        return respuesta({ ok: true, items: items, locked: bloqueada });
       } finally {
         lock.releaseLock();
       }
@@ -63,6 +74,18 @@ function doPost(e) {
   } catch (err) {
     return respuesta({ ok: false, error: String(err) });
   }
+}
+
+/* ---------- bloqueo compartido ---------- */
+
+const PROP_BLOQUEO = 'listaBloqueada';
+
+function leerBloqueo() {
+  return PropertiesService.getScriptProperties().getProperty(PROP_BLOQUEO) === '1';
+}
+
+function guardarBloqueo(bloqueada) {
+  PropertiesService.getScriptProperties().setProperty(PROP_BLOQUEO, bloqueada ? '1' : '0');
 }
 
 /* ---------- lista actual ---------- */

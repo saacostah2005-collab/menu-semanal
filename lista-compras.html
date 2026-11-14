@@ -550,14 +550,15 @@ let QUEUE = readJSON(QUEUE_KEY, []);   // operaciones pendientes de enviar
 let EDITING = null;                    // id del ingrediente en edición
 let PENDING_RENDER = false;
 let LAST_DELETED = null;
-/* Bloqueo de edición: se recuerda en cada celular */
+/* Bloqueo de edición: vive en el script de Google y vale para todos los
+   dispositivos. Aquí se guarda una copia para mostrarla al abrir. */
 const LOCK_KEY = 'menuSmartListaBloqueada';
-let LOCKED = false;
-try{ LOCKED = localStorage.getItem(LOCK_KEY) === '1'; }catch(e){}
+let LOCKED = !!readJSON(LOCK_KEY, false);
 
-const SYNC = { ready:false, busy:false, state:'connecting', last:null };
+// lockShared: false si el script de Google aún es la versión sin bloqueo compartido
+const SYNC = { ready:false, busy:false, state:'connecting', last:null, lockShared:null };
 
-function saveLocal(){ writeJSON(CACHE_KEY, ITEMS); writeJSON(QUEUE_KEY, QUEUE); }
+function saveLocal(){ writeJSON(CACHE_KEY, ITEMS); writeJSON(QUEUE_KEY, QUEUE); writeJSON(LOCK_KEY, LOCKED); }
 function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
 /* Pasa la lista de la versión anterior (guardada por semana en este
@@ -611,20 +612,39 @@ function cleanItems(list){
 
 /* Aplica un cambio aquí y lo manda a la hoja */
 function commit(op, opts){
-  ITEMS = applyOp(ITEMS, op);
+  if(op.type === 'setLock') LOCKED = !!op.locked;
+  else if(LOCKED) return;               // bloqueada: no se cambia nada
+  else ITEMS = applyOp(ITEMS, op);
   QUEUE.push(op);
   saveLocal();
-  if(opts && opts.renderAll === false) updateSummary(); else render();
+  if(op.type === 'setLock') applyLock();
+  else if(opts && opts.renderAll === false) updateSummary();
+  else render();
   flush();
 }
 
+/* Igual que el script: con la lista bloqueada se ignoran los cambios */
+function replay(items, locked){
+  QUEUE.forEach(op => {
+    if(op.type === 'setLock') locked = !!op.locked;
+    else if(!locked) items = applyOp(items, op);
+  });
+  return { items, locked };
+}
+
 /* Lo que vino de la hoja + lo que aún no se envió desde aquí */
-function applyServer(serverItems){
-  const next = QUEUE.reduce(applyOp, cleanItems(serverItems));
-  const changed = JSON.stringify(next) !== JSON.stringify(ITEMS);
-  ITEMS = next;
+function applyServer(serverItems, serverLocked){
+  const shared = typeof serverLocked === 'boolean';
+  const sharedChanged = shared !== SYNC.lockShared;
+  SYNC.lockShared = shared;
+  const next = replay(cleanItems(serverItems), shared ? serverLocked : LOCKED);
+  const changed = JSON.stringify(next.items) !== JSON.stringify(ITEMS);
+  const lockChanged = next.locked !== LOCKED;
+  ITEMS = next.items;
+  LOCKED = next.locked;
   saveLocal();
-  if(changed){
+  if(lockChanged || sharedChanged) applyLock();
+  else if(changed){
     if(EDITING) PENDING_RENDER = true;
     else render();
   }
@@ -645,7 +665,7 @@ async function flush(){
     const data = await res.json();
     if(!data || !data.ok || !Array.isArray(data.items)) throw new Error((data && data.error) || 'respuesta inesperada');
     QUEUE = QUEUE.slice(batch.length);
-    applyServer(data.items);
+    applyServer(data.items, data.locked);
     ok = true;
     setSync('ok');
   }catch(e){
@@ -671,7 +691,7 @@ async function pull(){
     try{ data = JSON.parse(text); }catch(e){ notReady = true; }
     if(!data || !data.ok || !Array.isArray(data.items)){ notReady = true; throw new Error('sin lista'); }
     SYNC.ready = true;
-    applyServer(data.items);
+    applyServer(data.items, data.locked);
     ok = true;
     setSync('ok');
   }catch(e){
@@ -785,15 +805,13 @@ function buildRow(item){
 
   const label = el('label');
   const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!item.done;
-  // Con la lista bloqueada se puede marcar, pero no quitar el check
-  const lockDone = () => { cb.disabled = true; label.classList.add('fixed'); };
-  if(LOCKED && item.done) lockDone();
-  // Segunda protección (Safari y otros): se ignora el toque sobre algo ya marcado
-  label.addEventListener('click', ev => { if(ev.target !== cb && LOCKED && cb.checked) ev.preventDefault(); });
+  // Con la lista bloqueada no se puede marcar ni desmarcar nada
+  if(LOCKED){ cb.disabled = true; label.classList.add('fixed'); }
+  // Segunda protección (Safari y otros): se ignora cualquier toque
+  label.addEventListener('click', ev => { if(LOCKED) ev.preventDefault(); });
   cb.addEventListener('change', () => {
-    if(LOCKED && !cb.checked){ cb.checked = true; return; }
+    if(LOCKED){ cb.checked = !!item.done; return; }
     commit({ type:'update', id:item.id, fields:{ done: cb.checked } }, { renderAll:false });
-    if(LOCKED && cb.checked) lockDone();
   });
   const box = el('span', 'check'); box.setAttribute('aria-hidden', 'true'); box.appendChild(icon('i-check'));
   label.append(cb, box, el('span', 'item-name', item.name),
@@ -929,9 +947,11 @@ function applyLock(){
   bar.setAttribute('aria-checked', String(!LOCKED));
   document.getElementById('lockIcon').setAttribute('href', LOCKED ? '#i-lock' : '#i-unlock');
   document.getElementById('lockTitle').textContent = LOCKED ? 'Editar lista: bloqueado' : 'Editar lista: activado';
+  const soloAqui = SYNC.lockShared === false;   // script de Google sin actualizar
   document.getElementById('lockSub').textContent = LOCKED
-    ? 'Puedes marcar lo comprado, pero no quitar el check. Toca para editar.'
-    : 'Puedes agregar, cambiar y quitar ingredientes.';
+    ? (soloAqui ? 'Bloqueada solo en este dispositivo: falta actualizar el script de Google.'
+                : 'Bloqueada en todos los dispositivos. Toca para editar.')
+    : 'Puedes agregar, marcar y quitar ingredientes.';
 
   const add = document.querySelector('.add');
   add.classList.toggle('locked', LOCKED);
@@ -945,9 +965,7 @@ function applyLock(){
   render();
 }
 document.getElementById('lockBar').addEventListener('click', function(){
-  LOCKED = !LOCKED;
-  try{ localStorage.setItem(LOCK_KEY, LOCKED ? '1' : '0'); }catch(e){}
-  applyLock();
+  commit({ type:'setLock', locked: !LOCKED });
 });
 
 /* ---------- tema ---------- */
