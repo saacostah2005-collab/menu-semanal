@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ingredientes de la semana — Menu Smart</title>
+<title>Lista de compras — Menu Smart</title>
 <meta name="description" content="Lista de ingredientes y compras de tu menú semanal en Menu Smart.">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#1F5C3F" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#12160F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121311" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Menu Smart">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Menu Smart">
 <meta property="og:locale" content="es_PE">
-<meta property="og:title" content="Ingredientes de la semana — Menu Smart">
+<meta property="og:title" content="Lista de compras — Menu Smart">
 <meta property="og:description" content="Todo lo que necesitas para tus comidas de la semana.">
 <meta property="og:url" content="https://saacostah2005-collab.github.io/menu-semanal/lista-compras.html">
 <meta property="og:image" content="https://saacostah2005-collab.github.io/menu-semanal/og-image.jpg">
@@ -35,163 +35,248 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,560;9..144,650&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #F5F6F0;
-    --paper: #FFFFFF;
-    --ink: #1B2A1F;
-    --ink-soft: #667065;
-    --line: #E3E7DA;
-    --brand: #1F5C3F;
-    --brand-deep: #143D29;
-    --brand-light: #4C8A67;
-    --brand-tint: #E5F0E7;
-    --shadow: 0 1px 2px rgba(20,30,20,0.04), 0 8px 20px rgba(20,30,20,0.06);
-    --radius: 16px;
+    --bg:#F6F4EE;
+    --surface:#FFFFFF;
+    --surface-2:#EFECE4;
+    --ink:#1D1B16;
+    --ink-2:#5E5A50;
+    --ink-3:#8C877B;
+    --line:#E5E1D7;
+    --line-strong:#D4CFC2;
+
+    --accent:#1F5C3F;
+    --accent-hover:#174A32;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E7EFE6;
+    --accent-line:#BFD5C4;
+    --danger:#B5523A;
+
+    --r-lg:18px;
+    --r:12px;
+    --shadow:0 1px 1px rgba(40,30,10,.03), 0 2px 6px rgba(40,30,10,.04), 0 12px 32px -12px rgba(40,30,10,.10);
+
+    --serif:'Newsreader', ui-serif, Georgia, 'Times New Roman', serif;
+    --sans:'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ease-out:cubic-bezier(.22,1,.36,1);
   }
   :root[data-theme="dark"]{
-    --bg: #12160F; --paper: #191F17; --ink: #EDEFE7; --ink-soft: #98A28E; --line: #2A3226;
-    --brand: #4C8A67; --brand-deep: #16241A; --brand-light: #6FAE86; --brand-tint: #1D2E22;
-    --shadow: 0 1px 2px rgba(0,0,0,0.25), 0 10px 24px rgba(0,0,0,0.35);
+    --bg:#121311;
+    --surface:#1A1B18;
+    --surface-2:#22231F;
+    --ink:#EEECE6;
+    --ink-2:#AAA699;
+    --ink-3:#7A776D;
+    --line:#2A2B26;
+    --line-strong:#383931;
+
+    --accent:#6DBB8F;
+    --accent-hover:#84CBA2;
+    --accent-ink:#0C1A12;
+    --accent-soft:#17241B;
+    --accent-line:#2B4535;
+    --danger:#E0846B;
+
+    --shadow:0 1px 1px rgba(0,0,0,.25), 0 12px 32px -12px rgba(0,0,0,.5);
   }
+
   *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  html{-webkit-text-size-adjust:100%; color-scheme:light;}
+  :root[data-theme="dark"]{color-scheme:dark;}
   body{
     margin:0; background:var(--bg); color:var(--ink);
-    font-family:'Work Sans', sans-serif;
+    font-family:var(--sans); font-size:16px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
     padding-top:env(safe-area-inset-top,0px);
     padding-bottom:env(safe-area-inset-bottom,0px);
   }
-  .wrap{max-width:720px; margin:0 auto; padding:0 18px;}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px;}
+  @media (min-width:768px){ .wrap{padding:0 36px;} }
+  button{font:inherit; color:inherit; touch-action:manipulation;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:8px;}
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
 
-  .topbar{padding:16px 0; border-bottom:1px solid var(--line);}
-  .topbar .wrap{display:flex; align-items:center; justify-content:space-between; gap:12px;}
-  .brand{display:flex; align-items:center; gap:10px;}
-  .brand-mark{width:32px; height:32px; border-radius:9px; background:var(--brand); display:flex; align-items:center; justify-content:center; flex:none;}
-  .brand-mark svg{width:17px; height:17px; stroke:#fff; fill:none;}
-  .brand-name{font-family:'Fraunces', serif; font-weight:650; font-size:16px;}
-  .back-link{
-    font-size:13px; font-weight:600; color:var(--brand); text-decoration:none;
-    display:flex; align-items:center; gap:5px;
+  /* ---------- Barra superior ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:10;
+    background:color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter:saturate(1.6) blur(14px);
+    -webkit-backdrop-filter:saturate(1.6) blur(14px);
+    border-bottom:1px solid transparent; transition:border-color .2s ease;
   }
-  .back-link svg{width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2;}
-  .theme-toggle{
-    display:flex; align-items:center; gap:7px;
-    background:var(--paper); border:1px solid var(--line); color:var(--ink);
-    font-size:12.5px; font-weight:500; padding:7px 12px; border-radius:999px; cursor:pointer;
-  }
-  .theme-toggle svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:1.8;}
+  .topbar.scrolled{border-bottom-color:var(--line);}
+  .topbar .wrap{height:64px; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit;}
+  .brand-mark{width:32px; height:32px; border-radius:9px; background:var(--accent); display:grid; place-items:center; flex:none;}
+  .brand-mark svg{width:17px; height:17px; stroke:var(--accent-ink); fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round;}
+  .brand-name{font-family:var(--serif); font-weight:500; font-size:21px; letter-spacing:-.01em;}
+  .top-actions{display:flex; align-items:center; gap:8px;}
 
-  .hero{
-    background:linear-gradient(135deg, var(--brand-tint), var(--bg));
-    padding:28px 0; border-bottom:1px solid var(--line);
-  }
-  .hero-inner{display:flex; align-items:center; gap:12px;}
-  .hero-icon{
-    width:46px; height:46px; border-radius:14px; background:var(--paper);
-    border:1px solid var(--line); display:flex; align-items:center; justify-content:center; flex:none;
-  }
-  .hero-icon svg{width:22px; height:22px; stroke:var(--brand); fill:none; stroke-width:1.8;}
-  .hero h1{font-family:'Fraunces', serif; font-weight:600; font-size:22px; margin:0 0 3px; color:var(--brand);}
-  .hero p{margin:0; font-size:13px; color:var(--ink-soft);}
-  .hero-range{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
-
-  .content{padding:22px 0 40px;}
-
-  .day-card{
-    background:var(--paper); border:1px solid var(--line); border-radius:14px;
-    box-shadow:var(--shadow); padding:16px; margin-bottom:12px;
-    display:flex; gap:14px; align-items:flex-start;
-  }
-  .day-badge{
-    width:52px; height:52px; border-radius:12px; background:var(--brand); color:#fff; flex:none;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-  }
-  .day-badge svg{width:16px; height:16px; stroke:#fff; fill:none; stroke-width:1.8;}
-  .day-badge span{font-size:10.5px; font-weight:700; letter-spacing:.03em;}
-  .day-info{min-width:0; flex:1;}
-  .day-title{font-family:'Fraunces', serif; font-weight:600; font-size:15.5px; margin:0 0 5px;}
-  .day-ingredients{font-size:13px; color:var(--ink-soft); line-height:1.45; margin:0;}
-  .day-empty{font-size:13px; color:var(--ink-soft); font-style:italic;}
-
-  .actions{
-    display:flex; gap:10px; flex-wrap:wrap; margin:20px 0 8px;
-  }
   .btn{
-    font-family:'Work Sans', sans-serif; font-weight:600; font-size:13.5px;
-    padding:11px 18px; border-radius:999px; cursor:pointer; border:1px solid var(--line);
-    background:var(--paper); color:var(--ink);
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    height:44px; padding:0 18px; border-radius:999px;
+    border:1px solid var(--line-strong); background:var(--surface); color:var(--ink);
+    font-size:14.5px; font-weight:500; cursor:pointer; white-space:nowrap; text-decoration:none;
+    transition:background-color .15s ease, border-color .15s ease, transform .12s var(--ease-out);
   }
-  .btn:hover{border-color:var(--brand-light);}
-  .btn.primary{background:var(--brand); color:#fff; border-color:var(--brand);}
-  .btn.primary:hover{background:var(--brand-deep); border-color:var(--brand-deep);}
-  .btn:disabled{opacity:.5; cursor:not-allowed;}
-  .action-status{font-size:12.5px; color:var(--ink-soft); min-height:16px; margin-bottom:16px;}
-  .action-status.ok{color:var(--brand);}
-  .action-status.err{color:#BD5A3F;}
+  .btn:active:not(:disabled){transform:scale(.97);}
+  .btn svg{width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+  .btn.ghost{border-color:transparent; background:transparent;}
+  .btn.icon{width:42px; height:42px; padding:0;}
+  .btn.sm{height:42px;}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  @media (hover:hover){
+    .btn:hover:not(:disabled){background:var(--surface-2);}
+    .btn.primary:hover:not(:disabled){background:var(--accent-hover); border-color:var(--accent-hover);}
+  }
 
-  .tip-banner{
-    background:var(--brand-tint); border:1px solid var(--line); border-radius:14px;
-    padding:16px; display:flex; align-items:center; gap:14px; margin-top:8px;
-  }
-  .tip-icon{
-    width:38px; height:38px; border-radius:10px; background:var(--paper); flex:none;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .tip-icon svg{width:19px; height:19px; stroke:var(--brand); fill:none; stroke-width:1.8;}
-  .tip-title{font-size:13.5px; font-weight:700; color:var(--brand); margin:0 0 2px;}
-  .tip-sub{font-size:12.5px; color:var(--ink-soft); margin:0;}
+  /* ---------- Encabezado ---------- */
+  .head{padding:36px 0 28px;}
+  @media (min-width:768px){ .head{padding:56px 0 36px;} }
+  .kicker{font-size:14px; font-weight:500; color:var(--ink-2); margin:0 0 14px;}
+  h1{font-family:var(--serif); font-weight:400; font-size:clamp(40px, 6.4vw, 68px); line-height:1.02; letter-spacing:-.025em; margin:0;}
+  h1 em{font-style:italic; color:var(--ink-2);}
+  .lead{margin:14px 0 0; font-size:16px; color:var(--ink-2);}
 
-  .state{text-align:center; padding:60px 20px; color:var(--ink-soft);}
-  .state h2{font-family:'Fraunces', serif; font-weight:560; color:var(--ink); font-size:19px; margin:0 0 8px;}
+  /* ---------- Contenido ---------- */
+  .layout{display:grid; gap:20px; align-items:start;}
+  @media (min-width:900px){ .layout{grid-template-columns:minmax(0,1fr) 320px; gap:32px;} }
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow);}
+
+  .list-head{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px 14px;}
+  .list-head h2{font-family:var(--serif); font-weight:400; font-size:24px; letter-spacing:-.015em; margin:0;}
+  .count{font-size:14px; color:var(--ink-2); font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .progress{height:4px; background:var(--surface-2); margin:0 20px 6px; border-radius:4px; overflow:hidden;}
+  .progress span{display:block; height:100%; width:0; background:var(--accent); border-radius:4px; transition:width .35s var(--ease-out);}
+
+  .items{list-style:none; margin:0; padding:6px; display:grid;}
+  @media (min-width:640px){ .items{grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:4px;} }
+  .item label{
+    display:flex; align-items:center; gap:12px; min-height:48px; padding:10px 14px; border-radius:var(--r);
+    cursor:pointer; user-select:none; -webkit-user-select:none;
+    transition:background-color .15s ease;
+  }
+  @media (hover:hover){ .item label:hover{background:var(--surface-2);} }
+  .item input{position:absolute; opacity:0; pointer-events:none;}
+  .check{
+    width:22px; height:22px; border-radius:7px; border:1.5px solid var(--line-strong); flex:none;
+    display:grid; place-items:center; background:var(--surface);
+    transition:background-color .15s ease, border-color .15s ease, transform .15s var(--ease-out);
+  }
+  .check svg{width:14px; height:14px; stroke:var(--accent-ink); fill:none; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; opacity:0; transform:scale(.6); transition:opacity .15s ease, transform .2s var(--ease-out);}
+  .item label:active .check{transform:scale(.9);}
+  .item input:checked + .check{background:var(--accent); border-color:var(--accent);}
+  .item input:checked + .check svg{opacity:1; transform:scale(1);}
+  .item input:focus-visible + .check{outline:2px solid var(--accent); outline-offset:2px;}
+  .item-name{font-size:15.5px; overflow-wrap:anywhere; transition:color .15s ease;}
+  .item input:checked ~ .item-name{color:var(--ink-3); text-decoration:line-through; text-decoration-color:var(--line-strong);}
+
+  .list-foot{display:flex; justify-content:flex-end; padding:4px 12px 12px;}
+  .list-foot .btn{height:40px; font-size:14px; color:var(--ink-2);}
+
+  /* Panel de acciones */
+  .side{padding:20px; display:grid; gap:10px;}
+  @media (min-width:900px){ .side-wrap{position:sticky; top:84px;} }
+  .side h2{font-size:15px; font-weight:600; margin:0 0 4px;}
+  .side p{margin:0 0 6px; font-size:14px; color:var(--ink-2);}
+  .side .btn{width:100%;}
+  .status{font-size:14px; color:var(--ink-2); min-height:21px; margin:2px 0 0;}
+  .status.ok{color:var(--accent);}
+  .status.err{color:var(--danger);}
+
+  /* Por día */
+  .by-day{margin-top:56px; padding-top:40px; border-top:1px solid var(--line);}
+  .by-day h2{font-family:var(--serif); font-weight:400; font-size:clamp(28px, 3.6vw, 36px); letter-spacing:-.02em; margin:0 0 6px;}
+  .by-day > p{margin:0 0 20px; color:var(--ink-2); font-size:15px;}
+  .days{display:grid; gap:12px;}
+  @media (min-width:640px){ .days{grid-template-columns:repeat(2, minmax(0,1fr));} }
+  @media (min-width:1000px){ .days{grid-template-columns:repeat(3, minmax(0,1fr));} }
+  .day{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:18px 20px 20px; min-width:0;}
+  .day-dow{font-size:13px; font-weight:500; color:var(--ink-3); margin:0 0 4px;}
+  .day-dish{font-family:var(--serif); font-size:21px; line-height:1.2; letter-spacing:-.01em; margin:0 0 14px; overflow-wrap:anywhere;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin:0; padding:0; list-style:none;}
+  .chips li{font-size:13px; padding:4px 10px; border-radius:999px; background:var(--surface-2); color:var(--ink-2);}
+  .day-empty{font-size:14px; color:var(--ink-3); margin:0;}
+
+  .state{text-align:center; padding:56px 24px; color:var(--ink-2); border:1px dashed var(--line-strong); border-radius:var(--r-lg); background:var(--surface);}
+  .state h2{font-family:var(--serif); font-weight:400; color:var(--ink); font-size:26px; margin:0 0 8px;}
+  .state p{margin:0 auto 20px; max-width:420px;}
+
+  .footer{margin-top:64px; padding:22px 0 44px; border-top:1px solid var(--line); font-size:13.5px; color:var(--ink-3);}
 </style>
 </head>
 <body>
 
-<header class="topbar">
+<header class="topbar" id="topbar">
   <div class="wrap">
-    <div class="brand">
-      <span class="brand-mark"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7a3 3 0 0 0 6 0V3"/><path d="M9 10v11"/><path d="M18 3c-1.5 1.5-2 3-2 6s.5 4.5 2 6"/><path d="M18 3v18"/></svg></span>
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3v7a3 3 0 0 0 6 0V3"/><path d="M9 10v11"/><path d="M18 3c-1.5 1.5-2 3-2 6s.5 4.5 2 6"/><path d="M18 3v18"/></svg></span>
       <span class="brand-name">Menu Smart</span>
+    </a>
+    <div class="top-actions">
+      <button class="btn icon" id="themeToggle" type="button">
+        <svg id="themeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+        <span class="sr-only" id="themeLabel">Modo oscuro</span>
+      </button>
+      <a class="btn sm" href="./">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        <span>Menú</span>
+      </a>
     </div>
-    <button class="theme-toggle" id="themeToggle" type="button">
-      <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
-      <span id="themeLabel">Modo oscuro</span>
-    </button>
   </div>
 </header>
 
-<section class="hero">
-  <div class="wrap hero-inner">
-    <span class="hero-icon"><svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></span>
-    <div>
-      <h1>Ingredientes de la semana</h1>
-      <p>Todo lo que necesitas para tus comidas</p>
-      <div class="hero-range" id="weekRangeLabel">&nbsp;</div>
+<main class="wrap">
+  <section class="head">
+    <p class="kicker" id="weekRangeLabel">&nbsp;</p>
+    <h1>Lista de compras</h1>
+    <p class="lead" id="lead">Cargando…</p>
+  </section>
+
+  <div id="content">
+    <div class="layout">
+      <section class="card" aria-labelledby="listTitle">
+        <div class="list-head">
+          <h2 id="listTitle">Ingredientes</h2>
+          <span class="count" id="count" aria-live="polite"></span>
+        </div>
+        <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+        <ul class="items" id="items"></ul>
+        <div class="list-foot"><button class="btn ghost" id="btnReset" type="button" hidden>Desmarcar todo</button></div>
+      </section>
+
+      <div class="side-wrap">
+        <aside class="card side" aria-label="Acciones">
+          <h2>Para ir al mercado</h2>
+          <p>Copia lo que te falta y pégalo en WhatsApp o en tus notas.</p>
+          <button class="btn primary" id="btnCopy" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
+            <span>Copiar lo que falta</span>
+          </button>
+          <button class="btn" id="btnSave" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+            <span>Guardar en historial</span>
+          </button>
+          <p class="status" id="actionStatus" role="status" aria-live="polite"></p>
+        </aside>
+      </div>
     </div>
-  </div>
-</section>
 
-<div class="wrap content">
-  <div id="daysContainer">
-    <div class="state"><h2>Cargando…</h2></div>
+    <section class="by-day" aria-labelledby="byDayTitle">
+      <h2 id="byDayTitle">Por día</h2>
+      <p>De dónde sale cada ingrediente.</p>
+      <div class="days" id="daysContainer"></div>
+    </section>
   </div>
 
-  <div class="actions">
-    <button class="btn primary" id="btnSave" type="button">Guardar en historial</button>
-    <button class="btn" id="btnCopy" type="button">Copiar lista completa</button>
-<a class="btn" href="https://saacostah2005-collab.github.io/menu-semanal/" style="text-decoration:none; display:inline-flex; align-items:center;">Volver al menú</a>
-  </div>
-  <div class="action-status" id="actionStatus"></div>
-
-  <div class="tip-banner">
-    <span class="tip-icon"><svg viewBox="0 0 24 24"><path d="M12 21c-4-3-8-6.5-8-11a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 4.5-4 8-8 11a1 1 0 0 1-2 0Z"/></svg></span>
-    <div>
-      <p class="tip-title">Consejo saludable</p>
-      <p class="tip-sub">Elige ingredientes frescos y de temporada para comidas más nutritivas y deliciosas.</p>
-    </div>
-  </div>
-</div>
+  <footer class="footer">Menu Smart · Planifica tus comidas, come mejor.</footer>
+</main>
 
 <script>
 /* ============================================================
@@ -229,8 +314,9 @@ const DISH_INGREDIENTS = [
 ];
 
 function normalize(s){
-  return (s || "").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  return (s || "").toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 }
+function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
 function splitRaw(text){
   if(!text) return [];
@@ -255,78 +341,118 @@ function expandDish(text){
         break;
       }
     }
-    if(matched){
-      if(matched.items.length){
-        matched.items.forEach(item => {
-          const key = normalize(item);
-          if(!seen.has(key)){ seen.add(key); result.push(item); }
-        });
-      } else {
-        const key = normPart;
-        if(!seen.has(key)){ seen.add(key); result.push(part); }
-      }
-    } else {
-      const key = normPart;
-      if(!seen.has(key)){ seen.add(key); result.push(part); }
-    }
+    const add = item => {
+      const key = normalize(item);
+      if(!seen.has(key)){ seen.add(key); result.push(item); }
+    };
+    if(matched && matched.items.length) matched.items.forEach(add);
+    else add(part);
   });
 
   return result;
 }
 
-const DAY_ABBR = {
-  "lunes":"LUN", "martes":"MAR", "miercoles":"MIÉ", "miércoles":"MIÉ",
-  "jueves":"JUE", "viernes":"VIE", "sabado":"SÁB", "sábado":"SÁB", "domingo":"DOM"
-};
+const DAY_NAMES = { lunes:"Lunes", martes:"Martes", miercoles:"Miércoles", jueves:"Jueves", viernes:"Viernes", sabado:"Sábado", domingo:"Domingo" };
+function displayDay(name){ return DAY_NAMES[normalize(name)] || name; }
 
-function buildDayCard(day){
-  const abbr = DAY_ABBR[normalize(day.nombreDia)] || day.nombreDia.slice(0,3).toUpperCase();
+function isFree(text){ return !text || normalize(text) === 'libre'; }
 
-  // Plato principal = Almuerzo; si está "Libre" o vacío, usa la Cena
-  let mainText = day.almuerzo;
-  if(!mainText || normalize(mainText) === 'libre'){
-    mainText = day.cena;
-  }
-  const dishTitle = (mainText && normalize(mainText) !== 'libre' && mainText.trim())
-    ? mainText.trim() : 'Sin plato definido';
-
-  // Ingredientes: se expande el plato principal + desayuno + media mañana + cena
-  const allIngredients = [];
+function dayIngredients(day){
+  const out = [];
   const seen = new Set();
   [day.almuerzo, day.cena, day.desayuno, day.media].forEach(text => {
-    if(!text || normalize(text) === 'libre') return;
+    if(isFree(text)) return;
     expandDish(text).forEach(item => {
       const key = normalize(item);
-      if(!seen.has(key)){ seen.add(key); allIngredients.push(item); }
+      if(!seen.has(key)){ seen.add(key); out.push(item); }
     });
   });
-
-  const card = document.createElement('div');
-  card.className = 'day-card';
-  card.innerHTML =
-    '<div class="day-badge"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>' + abbr + '</span></div>' +
-    '<div class="day-info">' +
-      '<p class="day-title">' + day.nombreDia + ' — ' + dishTitle + '</p>' +
-      (allIngredients.length
-        ? '<p class="day-ingredients">' + allIngredients.join(', ') + '</p>'
-        : '<p class="day-empty">No hay ingredientes detectados.</p>') +
-    '</div>';
-  return card;
+  return out;
 }
 
 function getAllIngredientsFlat(data){
   const seen = new Set();
   const out = [];
   data.days.forEach(day => {
-    [day.almuerzo, day.cena, day.desayuno, day.media].forEach(text => {
-      if(!text || normalize(text) === 'libre') return;
-      expandDish(text).forEach(item => {
-        const key = normalize(item);
-        if(!seen.has(key)){ seen.add(key); out.push(item); }
-      });
+    dayIngredients(day).forEach(item => {
+      const key = normalize(item);
+      if(!seen.has(key)){ seen.add(key); out.push(capitalize(item)); }
     });
   });
   return out.sort((a,b) => a.localeCompare(b, 'es'));
+}
+
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(text !== undefined) e.textContent = text;
+  return e;
+}
+
+function setStatus(text, state){
+  const s = document.getElementById('actionStatus');
+  s.textContent = text;
+  s.className = 'status' + (state ? ' ' + state : '');
+}
+
+/* ---------- tarjetas por día ---------- */
+function buildDayCard(day){
+  // Plato principal = Almuerzo; si está "Libre" o vacío, usa la Cena
+  const main = !isFree(day.almuerzo) ? day.almuerzo : (!isFree(day.cena) ? day.cena : '');
+  const items = dayIngredients(day);
+
+  const card = el('article', 'day');
+  card.appendChild(el('p', 'day-dow', displayDay(day.nombreDia)));
+  card.appendChild(el('h3', 'day-dish', main ? main.trim() : 'Día libre'));
+  if(items.length){
+    const ul = el('ul', 'chips');
+    items.forEach(i => ul.appendChild(el('li', '', capitalize(i))));
+    card.appendChild(ul);
+  } else {
+    card.appendChild(el('p', 'day-empty', 'Sin ingredientes para este día.'));
+  }
+  return card;
+}
+
+/* ---------- lista con casillas (se recuerda por semana) ---------- */
+let CHECKED = new Set();
+let STORE_KEY = '';
+
+function saveChecked(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(Array.from(CHECKED))); }catch(e){}
+}
+
+function updateProgress(total){
+  const done = CHECKED.size;
+  document.getElementById('count').textContent = done + ' de ' + total;
+  document.getElementById('progressBar').style.width = (total ? (done / total * 100) : 0) + '%';
+  document.getElementById('btnReset').hidden = done === 0;
+}
+
+function buildChecklist(list){
+  const ul = document.getElementById('items');
+  ul.innerHTML = '';
+  list.forEach((name, i) => {
+    const key = normalize(name);
+    const li = el('li', 'item');
+    const label = el('label');
+    const input = el('input');
+    input.type = 'checkbox';
+    input.id = 'it-' + i;
+    input.checked = CHECKED.has(key);
+    input.addEventListener('change', () => {
+      if(input.checked) CHECKED.add(key); else CHECKED.delete(key);
+      saveChecked();
+      updateProgress(list.length);
+    });
+    const box = el('span', 'check');
+    box.setAttribute('aria-hidden', 'true');
+    box.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    label.append(input, box, el('span', 'item-name', name));
+    li.appendChild(label);
+    ul.appendChild(li);
+  });
+  updateProgress(list.length);
 }
 
 function init(){
@@ -336,44 +462,60 @@ function init(){
     if(raw) data = JSON.parse(raw);
   }catch(e){}
 
-  const container = document.getElementById('daysContainer');
-
   if(!data || !data.days || !data.days.length){
-    container.innerHTML = '<div class="state"><h2>No hay datos del menú</h2><p>Vuelve a la página principal y presiona "Ahorra tiempo" de nuevo.</p></div>';
-    document.getElementById('btnSave').disabled = true;
-    document.getElementById('btnCopy').disabled = true;
+    document.getElementById('lead').textContent = 'Todavía no hay una semana seleccionada.';
+    document.getElementById('content').innerHTML =
+      '<div class="state"><h2>No hay datos del menú</h2><p>Abre tu menú y toca «Lista de compras» para traer los ingredientes de esa semana.</p><a class="btn primary" href="./">Ir al menú</a></div>';
     return;
   }
 
+  const list = getAllIngredientsFlat(data);
+  const activeDays = data.days.filter(d => dayIngredients(d).length).length;
+
   document.getElementById('weekRangeLabel').textContent = 'Semana del ' + data.weekLabel;
+  document.getElementById('lead').textContent =
+    list.length + ' ingredientes para ' + activeDays + (activeDays === 1 ? ' día' : ' días') + ' de comidas.';
+
+  STORE_KEY = 'menuSmartChecked:' + (data.monday || '');
+  try{ CHECKED = new Set(JSON.parse(localStorage.getItem(STORE_KEY) || '[]')); }catch(e){ CHECKED = new Set(); }
+  // quita marcas de ingredientes que ya no están en la lista
+  const valid = new Set(list.map(normalize));
+  CHECKED.forEach(k => { if(!valid.has(k)) CHECKED.delete(k); });
+
+  buildChecklist(list);
+
+  const container = document.getElementById('daysContainer');
   container.innerHTML = '';
   data.days.forEach(day => container.appendChild(buildDayCard(day)));
 
+  document.getElementById('btnReset').addEventListener('click', function(){
+    CHECKED.clear();
+    saveChecked();
+    buildChecklist(list);
+  });
+
   document.getElementById('btnCopy').addEventListener('click', function(){
-    const list = getAllIngredientsFlat(data);
-    const text = list.map(i => '- ' + i).join('\n');
-    const statusEl = document.getElementById('actionStatus');
+    const pending = list.filter(i => !CHECKED.has(normalize(i)));
+    const toCopy = pending.length ? pending : list;
+    const text = 'Lista de compras · ' + data.weekLabel + '\n' + toCopy.map(i => '- ' + i).join('\n');
     navigator.clipboard.writeText(text).then(function(){
-      statusEl.textContent = 'Lista copiada al portapapeles.';
-      statusEl.className = 'action-status ok';
+      setStatus(pending.length
+        ? 'Copiados ' + pending.length + ' ingredientes pendientes.'
+        : 'Ya marcaste todo; se copió la lista completa.', 'ok');
     }).catch(function(){
-      statusEl.textContent = 'No se pudo copiar automáticamente.';
-      statusEl.className = 'action-status err';
+      setStatus('No se pudo copiar automáticamente.', 'err');
     });
   });
 
   document.getElementById('btnSave').addEventListener('click', function(){
-    const statusEl = document.getElementById('actionStatus');
     const saveBtn = document.getElementById('btnSave');
     const url = data.historialScriptUrl;
 
     if(!url || url.indexOf('http') !== 0){
-      statusEl.textContent = 'Falta configurar el enlace de Google Apps Script.';
-      statusEl.className = 'action-status err';
+      setStatus('Falta configurar el enlace de Google Apps Script.', 'err');
       return;
     }
 
-    const list = getAllIngredientsFlat(data);
     const payload = {
       fechaGenerado: new Date().toISOString(),
       semanaInicio: data.monday,
@@ -382,8 +524,7 @@ function init(){
     };
 
     saveBtn.disabled = true;
-    statusEl.textContent = 'Guardando…';
-    statusEl.className = 'action-status';
+    setStatus('Guardando…');
 
     fetch(url, {
       method: 'POST',
@@ -393,26 +534,26 @@ function init(){
     .then(res => res.json())
     .then(resData => {
       if(resData && resData.ok){
-        statusEl.textContent = 'Guardado en tu Historial_Compras.';
-        statusEl.className = 'action-status ok';
+        setStatus('Guardado en tu hoja Historial_Compras.', 'ok');
       } else {
         throw new Error((resData && resData.error) || 'respuesta inesperada');
       }
     })
     .catch(err => {
-      statusEl.textContent = 'No se pudo guardar (' + err.message + ').';
-      statusEl.className = 'action-status err';
+      setStatus('No se pudo guardar (' + err.message + ').', 'err');
     })
     .finally(() => { saveBtn.disabled = false; });
   });
 }
 
-/* ---------- theme ---------- */
+/* ---------- tema ---------- */
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('themeLabel').textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
+  const label = theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+  document.getElementById('themeLabel').textContent = label;
+  document.getElementById('themeToggle').title = label;
   document.getElementById('themeIcon').innerHTML = theme === 'dark'
-    ? '<circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'
+    ? '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
     : '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>';
   try{ localStorage.setItem('menuSemanalTheme', theme); }catch(e){}
 }
@@ -426,6 +567,13 @@ document.getElementById('themeToggle').addEventListener('click', function(){
   const current = document.documentElement.getAttribute('data-theme');
   applyTheme(current === 'dark' ? 'light' : 'dark');
 });
+
+(function(){
+  const bar = document.getElementById('topbar');
+  const onScroll = () => bar.classList.toggle('scrolled', window.scrollY > 4);
+  window.addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+})();
 
 init();
 </script>
