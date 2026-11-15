@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entrar — WeekMenuIA</title>
+<meta name="description" content="Entra a WeekMenuIA: el menú semanal y la lista de compras de tu hogar.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#123D27">
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem('menuSemanalTheme');
+    if(!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  }catch(e){}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+  /* Misma paleta que el resto de páginas, tomada del banner */
+  :root{
+    --bg:#F3F6F0; --surface:#FFFFFF; --surface-2:#EEF3EA;
+    --ink:#17251C; --ink-2:#4F5E54; --ink-3:#85928A;
+    --line:#E0E8DA; --line-strong:#CCD8C5;
+    --brand:#1E5B3A; --brand-hover:#174A2F; --brand-soft:#E4F0E6; --brand-ink:#fff;
+    --leaf:#6AB04C; --leaf-soft:#EAF5E1;
+    --sun:#DB8E17; --sun-soft:#FDF0D9;
+    --danger:#D44E2C; --danger-soft:#FCE7E0;
+    --r-lg:20px; --r:14px;
+    --shadow:0 1px 2px rgba(18,61,39,.05), 0 10px 28px -10px rgba(18,61,39,.16);
+    --font:'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ease-out:cubic-bezier(.22,1,.36,1);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0C1711; --surface:#12211A; --surface-2:#182B21;
+    --ink:#E8F0E6; --ink-2:#A8B8AC; --ink-3:#718276;
+    --line:#1F3328; --line-strong:#2A4234;
+    --brand:#2E7A4F; --brand-hover:#38895B; --brand-soft:#163323;
+    --leaf:#8BCB5F; --leaf-soft:#1A2E1C;
+    --sun:#F0B54D; --sun-soft:#2E2513;
+    --danger:#EE7C5C; --danger-soft:#33201A;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 30px -12px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  html{-webkit-text-size-adjust:100%; color-scheme:light;}
+  :root[data-theme="dark"]{color-scheme:dark;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font); font-size:16px; line-height:1.5;
+    -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent;
+    padding-bottom:calc(32px + env(safe-area-inset-bottom,0px));
+  }
+  button, input{font:inherit; color:inherit;}
+  button{touch-action:manipulation;}
+  :focus-visible{outline:2.5px solid var(--leaf); outline-offset:2px; border-radius:10px;}
+  .ico{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+
+  /* ---------- Banner ---------- */
+  .hero{background:#123D27;}
+  .hero-img{display:block; width:100%; height:auto; aspect-ratio:1600/534; object-fit:cover;}
+  @media (min-width:900px){
+    .hero{padding:20px 0;}
+    .hero-img{width:min(calc(100% - 64px), 960px); margin:0 auto; border-radius:18px;}
+  }
+
+  /* ---------- Tarjeta central ---------- */
+  .main{max-width:460px; margin:0 auto; padding:24px 16px 0;}
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg);
+    box-shadow:var(--shadow); padding:24px 20px;
+  }
+  @media (min-width:480px){ .card{padding:28px 28px;} }
+  .card + .card{margin-top:16px;}
+  .head{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+  .head-ico{width:44px; height:44px; border-radius:14px; background:var(--brand-soft); color:var(--brand); display:grid; place-items:center; flex:none;}
+  :root[data-theme="dark"] .head-ico{color:var(--leaf);}
+  .head h1, .head h2{font-size:22px; font-weight:800; letter-spacing:-.02em; line-height:1.2; margin:0;}
+  .head p{margin:2px 0 0; font-size:14px; color:var(--ink-2);}
+
+  /* Pestañas Entrar / Crear cuenta */
+  .tabs{display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; background:var(--surface-2); border-radius:999px; margin-bottom:20px;}
+  .tab{height:40px; border:0; border-radius:999px; background:transparent; font-weight:700; font-size:14.5px; color:var(--ink-2); cursor:pointer; transition:background-color .15s ease, color .15s ease;}
+  .tab[aria-selected="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(18,61,39,.12);}
+
+  /* Formularios */
+  .field{display:block; margin-bottom:14px;}
+  .field span{display:block; font-size:13.5px; font-weight:700; margin-bottom:6px;}
+  .input{
+    width:100%; height:48px; padding:0 14px; border-radius:12px;
+    border:1px solid var(--line-strong); background:var(--surface);
+    font-size:16px; /* 16px: así el celular no hace zoom */
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .input:focus{outline:none; border-color:var(--leaf); box-shadow:0 0 0 3px var(--leaf-soft);}
+  .input.code{text-transform:uppercase; letter-spacing:.2em; font-weight:800; text-align:center; font-size:20px;}
+  .hint{font-size:13px; color:var(--ink-3); margin:-6px 0 14px;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    height:48px; padding:0 20px; border-radius:999px; width:100%;
+    border:1px solid var(--line-strong); background:var(--surface); color:var(--ink);
+    font-size:15px; font-weight:700; cursor:pointer; text-decoration:none; white-space:nowrap;
+    transition:background-color .15s ease, border-color .15s ease, transform .12s var(--ease-out), opacity .15s ease;
+  }
+  .btn:active:not(:disabled){transform:scale(.97);}
+  .btn:disabled{opacity:.55; cursor:progress;}
+  .btn.primary{background:var(--brand); border-color:var(--brand); color:var(--brand-ink);}
+  .btn .ico{width:18px; height:18px;}
+  .btn.small{height:40px; width:auto; padding:0 14px; font-size:14px;}
+  @media (hover:hover){
+    .btn:hover:not(:disabled){background:var(--surface-2);}
+    .btn.primary:hover:not(:disabled){background:var(--brand-hover); border-color:var(--brand-hover);}
+  }
+  .link{background:none; border:0; padding:0; color:var(--brand); font-weight:700; font-size:14px; cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+  :root[data-theme="dark"] .link{color:var(--leaf);}
+  .row-center{text-align:center; margin-top:16px;}
+
+  .or{display:flex; align-items:center; gap:12px; color:var(--ink-3); font-size:13px; margin:20px 0;}
+  .or::before, .or::after{content:""; flex:1; height:1px; background:var(--line);}
+
+  /* Mensajes */
+  .msg{border-radius:12px; padding:12px 14px; font-size:14px; margin-bottom:16px; display:flex; gap:10px; align-items:flex-start;}
+  .msg .ico{width:18px; height:18px; margin-top:1px;}
+  .msg.err{background:var(--danger-soft); color:var(--danger);}
+  .msg.ok{background:var(--leaf-soft); color:var(--brand);}
+  :root[data-theme="dark"] .msg.ok{color:var(--leaf);}
+
+  /* Estado del hogar */
+  .status{display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; font-size:14.5px; font-weight:600; margin-bottom:18px;}
+  .status.trial{background:var(--sun-soft); color:var(--sun);}
+  .status.active{background:var(--leaf-soft); color:var(--brand);}
+  :root[data-theme="dark"] .status.active{color:var(--leaf);}
+  .status.expired{background:var(--danger-soft); color:var(--danger);}
+  .codebox{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    border:1.5px dashed var(--line-strong); border-radius:14px; padding:12px 12px 12px 18px; margin:8px 0 12px;
+  }
+  .codebox strong{font-size:26px; letter-spacing:.22em; font-weight:800;}
+  .label{font-size:13.5px; font-weight:700; color:var(--ink-2); margin:0;}
+  .stack{display:grid; gap:10px;}
+  .meta{font-size:13.5px; color:var(--ink-3); margin:14px 0 0;}
+  .loading{text-align:center; color:var(--ink-3); padding:28px 0;}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3"/><path d="m16 7 3 3"/><path d="m19 4 2 2"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5Z"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></symbol>
+</svg>
+
+<header class="hero">
+  <img class="hero-img" src="banner.jpg" width="1600" height="534"
+       alt="WeekMenuIA — La forma inteligente de organizar tus comidas.">
+</header>
+
+<main class="main">
+
+  <div class="card loading" id="vCargando">Cargando…</div>
+
+  <!-- ===== 1. Entrar / Crear cuenta ===== -->
+  <section class="card" id="vLogin" hidden>
+    <div class="head">
+      <span class="head-ico"><svg class="ico"><use href="#i-user"/></svg></span>
+      <div><h1 id="loginTitle">Bienvenido</h1><p id="loginSub">Entra para ver el menú de tu hogar.</p></div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tabEntrar" aria-selected="true" type="button">Entrar</button>
+      <button class="tab" role="tab" id="tabCrear" aria-selected="false" type="button">Crear cuenta</button>
+    </div>
+
+    <div id="loginMsg" hidden></div>
+
+    <form id="fLogin" novalidate>
+      <label class="field"><span>Correo</span>
+        <input class="input" id="email" type="email" autocomplete="email" inputmode="email" required placeholder="tucorreo@gmail.com"></label>
+      <label class="field"><span>Contraseña</span>
+        <input class="input" id="pass" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo 6 caracteres"></label>
+      <button class="btn primary" id="btnLogin" type="submit">Entrar</button>
+    </form>
+    <div class="row-center" id="olvideWrap"><button class="link" id="btnOlvide" type="button">Olvidé mi contraseña</button></div>
+  </section>
+
+  <!-- ===== 1b. Nueva contraseña (al volver del correo de recuperación) ===== -->
+  <section class="card" id="vNuevaClave" hidden>
+    <div class="head">
+      <span class="head-ico"><svg class="ico"><use href="#i-key"/></svg></span>
+      <div><h1>Nueva contraseña</h1><p>Escribe la contraseña que usarás desde ahora.</p></div>
+    </div>
+    <div id="claveMsg" hidden></div>
+    <form id="fClave" novalidate>
+      <label class="field"><span>Nueva contraseña</span>
+        <input class="input" id="pass2" type="password" autocomplete="new-password" required minlength="6" placeholder="Mínimo 6 caracteres"></label>
+      <button class="btn primary" id="btnClave" type="submit">Guardar contraseña</button>
+    </form>
+  </section>
+
+  <!-- ===== 2. Crear o unirse a un hogar ===== -->
+  <section id="vHogar" hidden>
+    <div class="card">
+      <div class="head">
+        <span class="head-ico"><svg class="ico"><use href="#i-home"/></svg></span>
+        <div><h2>Crea tu hogar</h2><p>Tu familia compartirá el menú y la lista.</p></div>
+      </div>
+      <div id="crearMsg" hidden></div>
+      <form id="fCrear" novalidate>
+        <label class="field"><span>Nombre de tu hogar</span>
+          <input class="input" id="nombreHogar" maxlength="60" required placeholder="Ej.: Casa Pérez"></label>
+        <p class="hint">Empiezas con 14 días gratis.</p>
+        <button class="btn primary" id="btnCrear" type="submit">Crear mi hogar</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="head">
+        <span class="head-ico"><svg class="ico"><use href="#i-key"/></svg></span>
+        <div><h2>¿Te invitaron?</h2><p>Únete al hogar de tu familia con su código.</p></div>
+      </div>
+      <div id="unirMsg" hidden></div>
+      <form id="fUnir" novalidate>
+        <label class="field"><span>Código de invitación</span>
+          <input class="input code" id="codigo" maxlength="6" autocomplete="off" autocapitalize="characters" required placeholder="ABC123"></label>
+        <button class="btn" id="btnUnir" type="submit">Unirme al hogar</button>
+      </form>
+    </div>
+    <div class="row-center"><button class="link" data-salir type="button">Salir de la cuenta</button></div>
+  </section>
+
+  <!-- ===== 3. Mi hogar ===== -->
+  <section id="vListo" hidden>
+    <div class="card">
+      <div class="head">
+        <span class="head-ico"><svg class="ico"><use href="#i-home"/></svg></span>
+        <div><h2 id="hNombre">Mi hogar</h2><p id="hPersonas"></p></div>
+      </div>
+      <div class="status" id="hEstado"></div>
+
+      <p class="label">Invita a tu familia con este código</p>
+      <div class="codebox">
+        <strong id="hCodigo">——————</strong>
+        <button class="btn small" id="btnCopiar" type="button"><svg class="ico"><use href="#i-copy"/></svg><span>Copiar</span></button>
+      </div>
+      <div class="stack">
+        <a class="btn" id="btnWhats" target="_blank" rel="noopener"><svg class="ico"><use href="#i-share"/></svg>Enviar invitación por WhatsApp</a>
+        <a class="btn primary" href="index.html"><svg class="ico"><use href="#i-menu"/></svg>Ir a mi menú</a>
+      </div>
+      <p class="meta" id="hCuenta"></p>
+    </div>
+    <div class="row-center"><button class="link" data-salir type="button">Salir de la cuenta</button></div>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN — proyecto de Supabase (estos dos datos son públicos)
+   ============================================================ */
+const SUPABASE_URL = "https://qnskxjdxaczepupdrajz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_6k-RYwVTcTsRmT8v0eopHQ_2fMbOMQt";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = id => document.getElementById(id);
+const VISTAS = ['vCargando', 'vLogin', 'vNuevaClave', 'vHogar', 'vListo'];
+function mostrar(id){ VISTAS.forEach(v => { $(v).hidden = (v !== id); }); }
+
+const ESTA_PAGINA = location.origin + location.pathname;
+
+/* Código que llega en el link de invitación (entrar.html?codigo=ABC123).
+   Se guarda por si la persona primero tiene que crear su cuenta. */
+(function(){
+  const c = new URLSearchParams(location.search).get('codigo');
+  if(c){ try{ localStorage.setItem('wmInvitacion', c.toUpperCase().slice(0, 6)); }catch(e){} }
+})();
+function invitacionGuardada(){ try{ return localStorage.getItem('wmInvitacion') || ''; }catch(e){ return ''; } }
+function olvidarInvitacion(){ try{ localStorage.removeItem('wmInvitacion'); }catch(e){} }
+
+/* ---------- Mensajes ---------- */
+function aviso(id, tipo, texto){
+  const el = $(id);
+  if(!texto){ el.hidden = true; el.innerHTML = ''; return; }
+  el.className = 'msg ' + tipo;
+  el.innerHTML = '<svg class="ico"><use href="#' + (tipo === 'ok' ? 'i-check' : 'i-alert') + '"/></svg><span></span>';
+  el.querySelector('span').textContent = texto;
+  el.hidden = false;
+}
+
+/* Los errores de Supabase llegan en inglés: aquí se traducen */
+function traducir(err){
+  const m = String((err && err.message) || err || '');
+  const l = m.toLowerCase();
+  if(l.includes('invalid login credentials')) return 'Correo o contraseña incorrectos.';
+  if(l.includes('email not confirmed')) return 'Primero confirma tu correo: revisa tu bandeja (y la carpeta de spam).';
+  if(l.includes('user already registered')) return 'Ese correo ya tiene una cuenta. Usa la pestaña "Entrar".';
+  if(l.includes('password should be at least') || l.includes('password is too short')) return 'La contraseña debe tener al menos 6 caracteres.';
+  if(l.includes('weak password')) return 'Esa contraseña es muy fácil de adivinar. Prueba con otra.';
+  if(l.includes('rate limit') || l.includes('too many')) return 'Se hicieron muchos intentos seguidos. Espera unos minutos y vuelve a probar.';
+  if(l.includes('unable to validate email') || l.includes('invalid email') || l.includes('email address') && l.includes('invalid')) return 'Ese correo no parece válido.';
+  if(l.includes('failed to fetch') || l.includes('network')) return 'No hay conexión. Revisa tu internet e inténtalo otra vez.';
+  if(l.includes('same password') || l.includes('different from the old')) return 'La nueva contraseña debe ser distinta a la anterior.';
+  return m || 'Ocurrió un error. Inténtalo otra vez.';
+}
+
+function ocupado(btn, si, texto){
+  if(si){ btn.dataset.txt = btn.innerHTML; btn.disabled = true; btn.textContent = texto || 'Un momento…'; }
+  else { btn.disabled = false; if(btn.dataset.txt) btn.innerHTML = btn.dataset.txt; }
+}
+
+/* ============================================================
+   1. ENTRAR / CREAR CUENTA
+   ============================================================ */
+let modo = 'entrar';
+function ponerModo(m){
+  modo = m;
+  $('tabEntrar').setAttribute('aria-selected', m === 'entrar');
+  $('tabCrear').setAttribute('aria-selected', m === 'crear');
+  $('btnLogin').textContent = m === 'entrar' ? 'Entrar' : 'Crear mi cuenta';
+  $('pass').autocomplete = m === 'entrar' ? 'current-password' : 'new-password';
+  $('loginTitle').textContent = m === 'entrar' ? 'Bienvenido' : 'Crea tu cuenta';
+  $('loginSub').textContent = m === 'entrar' ? 'Entra para ver el menú de tu hogar.' : 'Gratis por 14 días. No necesitas tarjeta.';
+  $('olvideWrap').hidden = (m !== 'entrar');
+  aviso('loginMsg');
+}
+$('tabEntrar').onclick = () => ponerModo('entrar');
+$('tabCrear').onclick  = () => ponerModo('crear');
+
+$('fLogin').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('email').value.trim();
+  const password = $('pass').value;
+  if(!email || !email.includes('@')) return aviso('loginMsg', 'err', 'Escribe tu correo.');
+  if(password.length < 6) return aviso('loginMsg', 'err', 'La contraseña debe tener al menos 6 caracteres.');
+  aviso('loginMsg');
+  const btn = $('btnLogin');
+  ocupado(btn, true);
+  try{
+    if(modo === 'entrar'){
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) throw error;
+      // onAuthStateChange se encarga de seguir
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: ESTA_PAGINA } });
+      if(error) throw error;
+      // Supabase no avisa si el correo ya existía: en ese caso devuelve un usuario sin "identities"
+      if(data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0){
+        throw new Error('User already registered');
+      }
+      if(!data.session){
+        ponerModo('entrar');
+        aviso('loginMsg', 'ok', 'Te enviamos un correo a ' + email + '. Ábrelo y toca el enlace para confirmar tu cuenta. Revisa también la carpeta de spam.');
+      }
+    }
+  }catch(err){
+    aviso('loginMsg', 'err', traducir(err));
+  }finally{
+    ocupado(btn, false);
+  }
+});
+
+$('btnOlvide').addEventListener('click', async () => {
+  const email = $('email').value.trim();
+  if(!email || !email.includes('@')){
+    $('email').focus();
+    return aviso('loginMsg', 'err', 'Escribe tu correo arriba y vuelve a tocar "Olvidé mi contraseña".');
+  }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: ESTA_PAGINA });
+  if(error) return aviso('loginMsg', 'err', traducir(error));
+  aviso('loginMsg', 'ok', 'Si ese correo tiene cuenta, te llegará un enlace para crear una nueva contraseña.');
+});
+
+/* ---------- Nueva contraseña ---------- */
+$('fClave').addEventListener('submit', async e => {
+  e.preventDefault();
+  const password = $('pass2').value;
+  if(password.length < 6) return aviso('claveMsg', 'err', 'La contraseña debe tener al menos 6 caracteres.');
+  const btn = $('btnClave');
+  ocupado(btn, true);
+  const { error } = await sb.auth.updateUser({ password });
+  ocupado(btn, false);
+  if(error) return aviso('claveMsg', 'err', traducir(error));
+  recuperando = false;
+  cargarHogar();
+});
+
+/* ============================================================
+   2. CREAR O UNIRSE A UN HOGAR
+   ============================================================ */
+$('fCrear').addEventListener('submit', async e => {
+  e.preventDefault();
+  const nombre = $('nombreHogar').value.trim();
+  if(!nombre) return aviso('crearMsg', 'err', 'Escribe un nombre para tu hogar.');
+  const btn = $('btnCrear');
+  ocupado(btn, true);
+  const { error } = await sb.rpc('crear_hogar', { p_nombre: nombre });
+  ocupado(btn, false);
+  if(error) return aviso('crearMsg', 'err', traducir(error));
+  olvidarInvitacion();
+  cargarHogar();
+});
+
+$('fUnir').addEventListener('submit', async e => {
+  e.preventDefault();
+  const codigo = $('codigo').value.trim().toUpperCase();
+  if(codigo.length !== 6) return aviso('unirMsg', 'err', 'El código tiene 6 letras o números.');
+  const btn = $('btnUnir');
+  ocupado(btn, true);
+  const { error } = await sb.rpc('unirse_hogar', { p_codigo: codigo });
+  ocupado(btn, false);
+  if(error) return aviso('unirMsg', 'err', traducir(error));
+  olvidarInvitacion();
+  cargarHogar();
+});
+
+/* ============================================================
+   3. MI HOGAR
+   ============================================================ */
+function fechaLarga(iso){
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-PE', { day:'numeric', month:'long', year:'numeric' });
+}
+function diasHasta(iso){
+  const [y, m, d] = iso.split('-').map(Number);
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  return Math.round((new Date(y, m - 1, d) - hoy) / 86400000);
+}
+
+async function cargarHogar(){
+  mostrar('vCargando');
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session){ ponerModo(modo); mostrar('vLogin'); return; }
+
+    const { data: hogarId, error: e1 } = await sb.rpc('mi_hogar');
+    if(e1) throw e1;
+
+    if(!hogarId){
+      // Sin hogar todavía: si vino con un link de invitación, el código ya está escrito
+      const inv = invitacionGuardada();
+      if(inv) $('codigo').value = inv;
+      aviso('crearMsg'); aviso('unirMsg');
+      mostrar('vHogar');
+      return;
+    }
+
+    const [{ data: hogar, error: e2 }, { count }] = await Promise.all([
+      sb.from('hogares').select('*').eq('id', hogarId).single(),
+      sb.from('miembros').select('user_id', { count: 'exact', head: true }).eq('hogar_id', hogarId)
+    ]);
+    if(e2) throw e2;
+    pintarHogar(hogar, count || 1, session.user);
+    mostrar('vListo');
+  }catch(err){
+    $('vCargando').textContent = traducir(err);
+  }
+}
+
+function pintarHogar(h, personas, user){
+  $('hNombre').textContent = h.nombre;
+  $('hPersonas').textContent = personas === 1 ? 'Solo tú por ahora' : personas + ' personas en este hogar';
+
+  const dias = diasHasta(h.activo_hasta);
+  const creado = new Date(h.creado_en);
+  const enPrueba = (new Date(h.activo_hasta) - creado) <= 15 * 86400000;   // aún no hubo pagos
+  const est = $('hEstado');
+  if(dias < 0){
+    est.className = 'status expired';
+    est.innerHTML = '<svg class="ico"><use href="#i-alert"/></svg><span></span>';
+    est.querySelector('span').textContent = 'Tu suscripción venció el ' + fechaLarga(h.activo_hasta) + '. Puedes ver tus datos, pero no cambiarlos.';
+  } else if(enPrueba){
+    est.className = 'status trial';
+    est.innerHTML = '<svg class="ico"><use href="#i-gift"/></svg><span></span>';
+    est.querySelector('span').textContent = dias === 0 ? 'Prueba gratis: hoy es tu último día.'
+      : 'Prueba gratis: te quedan ' + dias + (dias === 1 ? ' día.' : ' días.');
+  } else {
+    est.className = 'status active';
+    est.innerHTML = '<svg class="ico"><use href="#i-check"/></svg><span></span>';
+    est.querySelector('span').textContent = 'Suscripción activa hasta el ' + fechaLarga(h.activo_hasta) + '.';
+  }
+
+  $('hCodigo').textContent = h.codigo_invitacion;
+  const link = ESTA_PAGINA + '?codigo=' + encodeURIComponent(h.codigo_invitacion);
+  const texto = 'Te invito a nuestro hogar "' + h.nombre + '" en WeekMenuIA para compartir el menú y la lista de compras. ' +
+                'Entra aquí: ' + link + ' (código: ' + h.codigo_invitacion + ')';
+  $('btnWhats').href = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  $('btnCopiar').onclick = async () => {
+    try{ await navigator.clipboard.writeText(h.codigo_invitacion); }catch(e){}
+    const s = $('btnCopiar').querySelector('span');
+    s.textContent = '¡Copiado!';
+    setTimeout(() => { s.textContent = 'Copiar'; }, 1600);
+  };
+  $('hCuenta').textContent = 'Entraste como ' + user.email;
+}
+
+/* ---------- Salir ---------- */
+document.querySelectorAll('[data-salir]').forEach(b => b.addEventListener('click', async () => {
+  await sb.auth.signOut();
+  $('pass').value = '';
+  ponerModo('entrar');
+  mostrar('vLogin');
+}));
+
+/* ============================================================
+   INICIO
+   ============================================================ */
+let recuperando = false;
+sb.auth.onAuthStateChange((evento) => {
+  if(evento === 'PASSWORD_RECOVERY'){ recuperando = true; aviso('claveMsg'); mostrar('vNuevaClave'); return; }
+  if(recuperando) return;
+  if(evento === 'SIGNED_IN' || evento === 'SIGNED_OUT'){
+    // setTimeout: Supabase recomienda no llamar a la base dentro de este aviso
+    setTimeout(cargarHogar, 0);
+  }
+});
+
+// Si viene de un link de invitación, abrir directamente en "Crear cuenta"
+if(invitacionGuardada()) ponerModo('crear');
+cargarHogar();
+</script>
+</body>
+</html>
