@@ -1090,8 +1090,16 @@ document.getElementById('edForm').addEventListener('submit', async ev => {
   document.getElementById('footHogar').textContent = CTX.hogar.nombre + ' · Mi cuenta';
   if(CTX.soloLectura){
     document.body.classList.add('readonly');
-    document.getElementById('noticeText').innerHTML = 'Tu suscripción venció. Puedes ver tu menú, pero no cambiarlo. <a href="../entrar.html">Ver mi cuenta</a>';
+    document.getElementById('noticeText').innerHTML = 'Tu suscripción venció. Puedes ver tu menú, pero no cambiarlo. <a href="../entrar.html#pagar">Renovar con Plin</a>';
     document.getElementById('notice').hidden = false;
+  } else {
+    // Faltan 3 días o menos: aviso para pagar a tiempo
+    const dias = Math.round((parseISO(CTX.hogar.activo_hasta) - todayDate()) / 864e5);
+    if(dias <= 3){
+      document.getElementById('noticeText').innerHTML = (dias === 0 ? 'Hoy es tu último día de suscripción. ' : 'Te quedan ' + dias + (dias === 1 ? ' día' : ' días') + ' de suscripción. ') +
+        '<a href="../entrar.html#pagar">Paga con Plin</a>';
+      document.getElementById('notice').hidden = false;
+    }
   }
   await loadMenu();
   // Si alguien de la familia cambia el menú, se actualiza solo

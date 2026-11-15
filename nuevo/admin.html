@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Administración — WeekMenuIA</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<meta name="theme-color" content="#123D27">
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem('menuSemanalTheme');
+    if(!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  }catch(e){}
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="wm.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F6F0; --surface:#FFFFFF; --surface-2:#EEF3EA;
+    --ink:#17251C; --ink-2:#4F5E54; --ink-3:#85928A;
+    --line:#E0E8DA; --line-strong:#CCD8C5;
+    --brand:#1E5B3A; --brand-hover:#174A2F; --brand-soft:#E4F0E6;
+    --leaf:#6AB04C; --leaf-soft:#EAF5E1;
+    --sun:#DB8E17; --sun-soft:#FDF0D9;
+    --danger:#D44E2C; --danger-soft:#FCE7E0;
+    --r-lg:20px; --r:14px;
+    --shadow:0 1px 2px rgba(18,61,39,.05), 0 10px 28px -10px rgba(18,61,39,.16);
+    --font:'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ease-out:cubic-bezier(.22,1,.36,1);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0C1711; --surface:#12211A; --surface-2:#182B21;
+    --ink:#E8F0E6; --ink-2:#A8B8AC; --ink-3:#718276;
+    --line:#1F3328; --line-strong:#2A4234;
+    --brand:#2E7A4F; --brand-hover:#38895B; --brand-soft:#163323;
+    --leaf:#8BCB5F; --leaf-soft:#1A2E1C;
+    --sun:#F0B54D; --sun-soft:#2E2513;
+    --danger:#EE7C5C; --danger-soft:#33201A;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 30px -12px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  html{-webkit-text-size-adjust:100%; color-scheme:light;}
+  :root[data-theme="dark"]{color-scheme:dark;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; padding-bottom:40px;}
+  button, select{font:inherit; color:inherit;}
+  .ico{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+  .num{font-variant-numeric:tabular-nums;}
+  .wrap{max-width:1000px; margin:0 auto; padding:0 16px;}
+  @media (min-width:768px){ .wrap{padding:0 28px;} }
+
+  .top{background:#123D27; color:#fff; padding:18px 0;}
+  .top .wrap{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .top h1{margin:0; font-size:20px; font-weight:800; letter-spacing:-.01em; display:flex; align-items:center; gap:10px;}
+  .top h1 .ico{color:#B9E58F; width:22px; height:22px;}
+  .top a{color:#fff; font-size:14px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px; background:rgba(255,255,255,.12);}
+
+  .stats{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin:22px 0 28px;}
+  @media (min-width:768px){ .stats{grid-template-columns:repeat(5, minmax(0,1fr));} }
+  .stat{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px;}
+  .stat p{margin:0;}
+  .stat .l{font-size:12.5px; font-weight:700; color:var(--ink-3);}
+  .stat .v{font-size:24px; font-weight:800; letter-spacing:-.02em; margin-top:2px;}
+  .stat.hot{background:var(--sun-soft); border-color:transparent;}
+  .stat.hot .v{color:var(--sun);}
+
+  h2{font-size:18px; font-weight:800; letter-spacing:-.01em; margin:0 0 12px; display:flex; align-items:center; gap:10px;}
+  h2 .count{font-size:13px; font-weight:800; background:var(--surface-2); color:var(--ink-2); padding:2px 10px; border-radius:999px;}
+  section{margin-bottom:32px;}
+
+  .pend{display:grid; gap:12px;}
+  @media (min-width:768px){ .pend{grid-template-columns:repeat(2, minmax(0,1fr));} }
+  .pcard{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow); padding:18px;}
+  .pcard-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .pcard h3{margin:0; font-size:16.5px; font-weight:800;}
+  .pcard .sub{font-size:13px; color:var(--ink-3); margin:2px 0 0;}
+  .amount{font-size:22px; font-weight:800; letter-spacing:-.02em; white-space:nowrap;}
+  .opbox{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:14px 0; padding:10px 12px 10px 14px; background:var(--surface-2); border-radius:12px;}
+  .opbox small{display:block; font-size:12px; font-weight:700; color:var(--ink-3);}
+  .opbox strong{font-size:18px; letter-spacing:.04em;}
+  .tag{display:inline-block; font-size:12px; font-weight:800; padding:3px 9px; border-radius:999px; background:var(--brand-soft); color:var(--brand);}
+  :root[data-theme="dark"] .tag{color:var(--leaf);}
+  .tag.plin{background:#E7E9FB; color:#4450B5;}
+  :root[data-theme="dark"] .tag.plin{background:#1E2340; color:#9AA4F0;}
+  .actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .actions label{font-size:13px; font-weight:700; color:var(--ink-2); display:flex; align-items:center; gap:6px;}
+  select{height:40px; border-radius:10px; border:1px solid var(--line-strong); background:var(--surface); padding:0 8px; font-size:15px;}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; height:40px; padding:0 16px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface); font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; transition:background-color .15s ease, transform .12s var(--ease-out);}
+  .btn:active:not(:disabled){transform:scale(.96);}
+  .btn:disabled{opacity:.55; cursor:progress;}
+  .btn.primary{background:var(--brand); border-color:var(--brand); color:#fff; margin-left:auto;}
+  .btn.danger{color:var(--danger);}
+  .btn.small{height:34px; padding:0 12px; font-size:13px;}
+  @media (hover:hover){ .btn:hover:not(:disabled){background:var(--surface-2);} .btn.primary:hover:not(:disabled){background:var(--brand-hover);} }
+  .result{font-size:13.5px; font-weight:700; margin:10px 0 0;}
+  .result.ok{color:var(--brand);} :root[data-theme="dark"] .result.ok{color:var(--leaf);}
+  .result.err{color:var(--danger);}
+
+  .table{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden;}
+  .row{display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; padding:12px 16px; border-top:1px solid var(--line);}
+  .row:first-child{border-top:0;}
+  .row .n{font-weight:700; min-width:0; overflow-wrap:anywhere;}
+  .row .d{font-size:13px; color:var(--ink-3);}
+  @media (min-width:700px){
+    .row{grid-template-columns:minmax(0,2fr) minmax(0,1.4fr) minmax(0,1fr) auto;}
+    .row .d.wide{display:block;}
+  }
+  .state{font-size:12px; font-weight:800; padding:3px 10px; border-radius:999px; white-space:nowrap; justify-self:end;}
+  .state.activo, .state.aprobado{background:var(--leaf-soft); color:var(--brand);}
+  :root[data-theme="dark"] .state.activo, :root[data-theme="dark"] .state.aprobado{color:var(--leaf);}
+  .state.prueba, .state.pendiente{background:var(--sun-soft); color:var(--sun);}
+  .state.vencido, .state.rechazado{background:var(--danger-soft); color:var(--danger);}
+  .empty{background:var(--surface); border:1px dashed var(--line-strong); border-radius:var(--r-lg); padding:24px; text-align:center; color:var(--ink-2);}
+  .msg{margin:40px auto; max-width:480px; text-align:center; color:var(--ink-2);}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <h1><svg class="ico"><use href="#i-shield"/></svg>Administración</h1>
+    <a href="../entrar.html"><svg class="ico"><use href="#i-left"/></svg>Mi cuenta</a>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <p class="msg" id="estado">Cargando…</p>
+
+  <div id="panel" hidden>
+    <div class="stats" id="stats"></div>
+
+    <section>
+      <h2>Pagos por revisar <span class="count" id="nPend">0</span></h2>
+      <p style="margin:-6px 0 14px; font-size:13.5px; color:var(--ink-2)">Busca el número de operación en tu Plin. Si el pago llegó, apruébalo y el hogar se activa al instante.</p>
+      <div class="pend" id="pend"></div>
+    </section>
+
+    <section>
+      <h2>Hogares <span class="count" id="nHog">0</span></h2>
+      <div class="table" id="hogares"></div>
+    </section>
+
+    <section>
+      <h2>Pagos revisados</h2>
+      <div class="table" id="revisados"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+/* Mismos planes que en entrar.html: con el monto se sugiere cuántos meses activar */
+const PLANES = [ { monto: 9.90, meses: 1 }, { monto: 99.00, meses: 12 } ];
+
+const $ = id => document.getElementById(id);
+const soles = n => 'S/ ' + Number(n || 0).toFixed(2);
+let CTX = null;
+
+function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text !== undefined) e.textContent = text; return e; }
+function icon(id){ const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'ico'); const u = document.createElementNS('http://www.w3.org/2000/svg', 'use'); u.setAttribute('href', '#' + id); s.appendChild(u); return s; }
+function fecha(iso){ const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('es-PE', { day:'numeric', month:'short', year:'numeric' }).replace('.', ''); }
+function fechaHora(ts){ return new Date(ts).toLocaleString('es-PE', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' }).replace('.', ''); }
+
+function estadoHogar(h, pagosAprobados){
+  if(h.activo_hasta < WM.hoyISO()) return { cls:'vencido', txt:'Vencido' };
+  return pagosAprobados.has(h.id) ? { cls:'activo', txt:'Pagando' } : { cls:'prueba', txt:'Prueba' };
+}
+
+async function cargar(){
+  const [pg, ho, mi] = await Promise.all([
+    CTX.sb.from('pagos').select('id, creado_en, metodo, monto, numero_operacion, estado, meses, revisado_en, hogar_id, hogares(nombre, activo_hasta)').order('creado_en', { ascending:false }),
+    CTX.sb.from('hogares').select('id, nombre, activo_hasta, creado_en').order('creado_en', { ascending:false }),
+    CTX.sb.from('miembros').select('hogar_id')
+  ]);
+  const err = pg.error || ho.error || mi.error;
+  if(err) throw err;
+  const pagos = pg.data, hogares = ho.data;
+  const personas = {};
+  mi.data.forEach(m => { personas[m.hogar_id] = (personas[m.hogar_id] || 0) + 1; });
+  const aprobados = new Set(pagos.filter(p => p.estado === 'aprobado').map(p => p.hogar_id));
+  const pendientes = pagos.filter(p => p.estado === 'pendiente');
+
+  // Resumen
+  const est = hogares.map(h => estadoHogar(h, aprobados).cls);
+  const mes = WM.hoyISO().slice(0, 7);
+  const ingresoMes = pagos.filter(p => p.estado === 'aprobado' && (p.revisado_en || '').slice(0, 7) === mes).reduce((a, p) => a + Number(p.monto), 0);
+  const stats = $('stats');
+  stats.innerHTML = '';
+  [
+    ['Por revisar', String(pendientes.length), pendientes.length ? 'hot' : ''],
+    ['Hogares pagando', String(est.filter(x => x === 'activo').length)],
+    ['En prueba', String(est.filter(x => x === 'prueba').length)],
+    ['Vencidos', String(est.filter(x => x === 'vencido').length)],
+    ['Cobrado este mes', soles(ingresoMes)]
+  ].forEach(([l, v, cls]) => { const s = el('div', 'stat' + (cls ? ' ' + cls : '')); s.append(el('p', 'l', l), el('p', 'v num', v)); stats.appendChild(s); });
+
+  // Pagos por revisar
+  $('nPend').textContent = pendientes.length;
+  const pend = $('pend');
+  pend.innerHTML = '';
+  if(!pendientes.length) pend.appendChild(el('div', 'empty', 'No hay pagos por revisar. 🎉'));
+  pendientes.forEach(p => pend.appendChild(tarjetaPago(p)));
+
+  // Hogares
+  $('nHog').textContent = hogares.length;
+  const th = $('hogares');
+  th.innerHTML = '';
+  if(!hogares.length) th.appendChild(el('div', 'empty', 'Aún no hay hogares.'));
+  hogares.forEach(h => {
+    const e = estadoHogar(h, aprobados);
+    const r = el('div', 'row');
+    const n = el('div'); n.append(el('div', 'n', h.nombre), el('div', 'd', (personas[h.id] || 0) + ((personas[h.id] || 0) === 1 ? ' persona' : ' personas')));
+    r.append(n, el('div', 'd wide', 'Desde ' + fecha(h.creado_en)), el('div', 'd', (e.cls === 'vencido' ? 'Venció ' : 'Hasta ') + fecha(h.activo_hasta)), el('span', 'state ' + e.cls, e.txt));
+    th.appendChild(r);
+  });
+
+  // Revisados
+  const tr = $('revisados');
+  tr.innerHTML = '';
+  const rev = pagos.filter(p => p.estado !== 'pendiente').slice(0, 30);
+  if(!rev.length) tr.appendChild(el('div', 'empty', 'Todavía no revisaste pagos.'));
+  rev.forEach(p => {
+    const r = el('div', 'row');
+    const n = el('div'); n.append(el('div', 'n', (p.hogares && p.hogares.nombre) || 'Hogar'), el('div', 'd', soles(p.monto) + ' · ' + (p.metodo === 'yape' ? 'Yape' : 'Plin') + ' · Op. ' + p.numero_operacion));
+    r.append(n, el('div', 'd wide', p.revisado_en ? 'Revisado ' + fechaHora(p.revisado_en) : ''),
+             el('div', 'd', p.estado === 'aprobado' && p.meses ? '+' + p.meses + (p.meses === 1 ? ' mes' : ' meses') : ''),
+             el('span', 'state ' + p.estado, p.estado === 'aprobado' ? 'Aprobado' : 'Rechazado'));
+    tr.appendChild(r);
+  });
+}
+
+function tarjetaPago(p){
+  const c = el('article', 'pcard');
+  const top = el('div', 'pcard-top');
+  const left = el('div');
+  left.append(el('h3', '', (p.hogares && p.hogares.nombre) || 'Hogar'),
+              el('p', 'sub', 'Enviado ' + fechaHora(p.creado_en) + (p.hogares ? ' · activo hasta ' + fecha(p.hogares.activo_hasta) : '')));
+  const right = el('div');
+  right.style.textAlign = 'right';
+  right.append(el('div', 'amount num', soles(p.monto)), el('span', 'tag ' + p.metodo, p.metodo === 'yape' ? 'Yape' : 'Plin'));
+  top.append(left, right);
+  c.appendChild(top);
+
+  const ob = el('div', 'opbox');
+  const t = el('div'); t.append(el('small', '', 'N.° de operación'), el('strong', 'num', p.numero_operacion));
+  const cp = el('button', 'btn small'); cp.type = 'button'; cp.append(icon('i-copy'), 'Copiar');
+  cp.addEventListener('click', async () => { try{ await navigator.clipboard.writeText(p.numero_operacion); cp.lastChild.textContent = '¡Copiado!'; }catch(e){} });
+  ob.append(t, cp);
+  c.appendChild(ob);
+
+  const act = el('div', 'actions');
+  const lab = el('label', '', 'Activar');
+  const sel = el('select');
+  const sugerido = (PLANES.find(x => Math.abs(x.monto - Number(p.monto)) < 0.01) || { meses: 1 }).meses;
+  [1, 2, 3, 6, 12].forEach(m => { const o = el('option', '', m + (m === 1 ? ' mes' : ' meses')); o.value = m; if(m === sugerido) o.selected = true; sel.appendChild(o); });
+  lab.appendChild(sel);
+  const no = el('button', 'btn danger'); no.type = 'button'; no.append(icon('i-x'), 'Rechazar');
+  const si = el('button', 'btn primary'); si.type = 'button'; si.append(icon('i-check'), 'Aprobar');
+  act.append(lab, no, si);
+  c.appendChild(act);
+  const res = el('p', 'result'); res.hidden = true;
+  c.appendChild(res);
+
+  const fin = (ok, texto) => { res.hidden = false; res.className = 'result ' + (ok ? 'ok' : 'err'); res.textContent = texto; };
+  si.addEventListener('click', async () => {
+    si.disabled = no.disabled = true;
+    const { data, error } = await CTX.sb.rpc('aprobar_pago', { p_pago: p.id, p_meses: Number(sel.value) });
+    if(error){ si.disabled = no.disabled = false; return fin(false, 'No se pudo aprobar: ' + WM.traducir(error)); }
+    fin(true, 'Aprobado. ' + ((p.hogares && p.hogares.nombre) || 'El hogar') + ' queda activo hasta el ' + fecha(data) + '.');
+    setTimeout(cargarSeguro, 1800);
+  });
+  no.addEventListener('click', async () => {
+    if(!confirm('¿Rechazar este pago? Úsalo solo si el número de operación no aparece en tu Plin.')) return;
+    si.disabled = no.disabled = true;
+    const { error } = await CTX.sb.rpc('rechazar_pago', { p_pago: p.id });
+    if(error){ si.disabled = no.disabled = false; return fin(false, 'No se pudo rechazar: ' + WM.traducir(error)); }
+    fin(false, 'Pago rechazado.');
+    setTimeout(cargarSeguro, 1800);
+  });
+  return c;
+}
+
+async function cargarSeguro(){
+  try{ await cargar(); }
+  catch(err){ $('estado').hidden = false; $('estado').textContent = 'No se pudo cargar: ' + WM.traducir(err); }
+}
+
+(async function start(){
+  try{
+    CTX = await WM.iniciar();
+    const { data: admin } = await CTX.sb.rpc('es_admin');
+    if(!admin){ $('estado').textContent = 'Esta página es solo para el administrador.'; return; }
+    await cargar();
+    $('estado').hidden = true;
+    $('panel').hidden = false;
+    // Al volver a esta pestaña se ven los pagos nuevos
+    document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') cargarSeguro(); });
+  }catch(err){
+    $('estado').textContent = 'No se pudo conectar: ' + WM.traducir(err);
+  }
+})();
+</script>
+</body>
+</html>

@@ -148,6 +148,39 @@
   .stack{display:grid; gap:10px;}
   .meta{font-size:13.5px; color:var(--ink-3); margin:14px 0 0;}
   .loading{text-align:center; color:var(--ink-3); padding:28px 0;}
+
+  /* ---------- Suscripción y pagos ---------- */
+  .plans{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;}
+  .plan{
+    position:relative; text-align:left; border:1.5px solid var(--line-strong); border-radius:16px; background:var(--surface);
+    padding:14px 14px 12px; cursor:pointer; transition:border-color .15s ease, background-color .15s ease, transform .12s var(--ease-out);
+  }
+  .plan:active{transform:scale(.97);}
+  .plan[aria-checked="true"]{border-color:var(--brand); background:var(--brand-soft); box-shadow:0 0 0 1px var(--brand);}
+  :root[data-theme="dark"] .plan[aria-checked="true"]{border-color:var(--leaf); box-shadow:0 0 0 1px var(--leaf);}
+  .plan-name{display:block; font-size:13.5px; font-weight:700; color:var(--ink-2);}
+  .plan-price{display:block; font-size:22px; font-weight:800; letter-spacing:-.02em; margin-top:2px;}
+  .plan-price small{display:block; font-size:13px; font-weight:600; color:var(--ink-3); letter-spacing:0;}
+  .plan-tag{position:absolute; top:-10px; right:10px; background:var(--sun); color:#fff; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:999px;}
+  .step{display:flex; gap:12px; margin-bottom:14px;}
+  .step-n{width:26px; height:26px; border-radius:50%; background:var(--brand); color:#fff; font-size:13px; font-weight:800; display:grid; place-items:center; flex:none; margin-top:1px;}
+  .step-body{flex:1; min-width:0; font-size:14.5px;}
+  .paybox{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px; padding:10px 10px 10px 14px; border-radius:14px; background:var(--surface-2);}
+  .paybox > div{min-width:0;}
+  .paybox strong{display:block; font-size:20px; font-weight:800; letter-spacing:.03em; white-space:nowrap;}
+  .paybox span{display:block; font-size:13px; color:var(--ink-2);}
+  .seg{display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; background:var(--surface-2); border-radius:999px; margin:8px 0 10px;}
+  .seg button{height:38px; border:0; border-radius:999px; background:transparent; font-weight:700; font-size:14px; color:var(--ink-2); cursor:pointer;}
+  .seg button[aria-checked="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(18,61,39,.12);}
+  .pays{list-style:none; margin:18px 0 0; padding:14px 0 0; border-top:1px solid var(--line); display:grid; gap:10px;}
+  .pays-title{font-size:13.5px; font-weight:700; color:var(--ink-2); margin:0;}
+  .pay{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:14px;}
+  .pay small{display:block; color:var(--ink-3); font-size:12.5px;}
+  .pill{font-size:12px; font-weight:800; padding:4px 10px; border-radius:999px; white-space:nowrap;}
+  .pill.pendiente{background:var(--sun-soft); color:var(--sun);}
+  .pill.aprobado{background:var(--leaf-soft); color:var(--brand);}
+  :root[data-theme="dark"] .pill.aprobado{color:var(--leaf);}
+  .pill.rechazado{background:var(--danger-soft); color:var(--danger);}
 </style>
 </head>
 <body>
@@ -163,6 +196,8 @@
   <symbol id="i-share" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5Z"/></symbol>
   <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
   <symbol id="i-menu" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
 </svg>
 
 <header class="hero">
@@ -263,6 +298,45 @@
       </div>
       <p class="meta" id="hCuenta"></p>
     </div>
+
+    <!-- Suscripción: pago por Plin -->
+    <div class="card" id="pagar">
+      <div class="head">
+        <span class="head-ico"><svg class="ico"><use href="#i-wallet"/></svg></span>
+        <div><h2>Tu suscripción</h2><p>Paga con Plin, sin tarjeta.</p></div>
+      </div>
+
+      <div class="plans" role="radiogroup" aria-label="Elige tu plan" id="plans"></div>
+
+      <div class="step">
+        <span class="step-n">1</span>
+        <div class="step-body">Plinea <strong id="pMonto">S/ 9.90</strong> a este número:
+          <div class="paybox">
+            <div><strong id="pNumero"></strong><span id="pTitular"></span></div>
+            <button class="btn small" id="btnCopiarNum" type="button"><svg class="ico"><use href="#i-copy"/></svg><span>Copiar</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-n">2</span>
+        <div class="step-body">Escribe el <strong>número de operación</strong> que te muestra Plin al pagar.
+          <form id="fPago" novalidate>
+            <input class="input" id="pOperacion" style="margin-top:8px" inputmode="numeric" autocomplete="off" maxlength="30" placeholder="N.° de operación, ej.: 12345678">
+            <div id="pagoMsg" hidden style="margin:12px 0 0"></div>
+            <button class="btn primary" id="btnPagar" type="submit" style="margin-top:12px">Enviar mi pago</button>
+          </form>
+        </div>
+      </div>
+      <p class="hint" style="margin:4px 0 0">Revisamos tu pago y activamos tu suscripción, normalmente el mismo día.</p>
+
+      <ul class="pays" id="misPagos" hidden></ul>
+    </div>
+
+    <a class="card" id="cardAdmin" href="nuevo/admin.html" hidden style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; padding:16px 20px">
+      <span class="head-ico"><svg class="ico"><use href="#i-shield"/></svg></span>
+      <span><strong style="display:block">Administrar pagos</strong><span style="font-size:14px; color:var(--ink-2)">Solo tú ves esto (administrador)</span></span>
+    </a>
+
     <div class="row-center"><button class="link" data-salir type="button">Salir de la cuenta</button></div>
   </section>
 
@@ -274,6 +348,17 @@
    ============================================================ */
 const SUPABASE_URL = "https://qnskxjdxaczepupdrajz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_6k-RYwVTcTsRmT8v0eopHQ_2fMbOMQt";
+
+/* ============================================================
+   CONFIGURACIÓN — precios y a dónde pagan los clientes
+   (para cambiar el precio, cambia "monto"; "meses" es lo que se activa)
+   ============================================================ */
+const PAGO_NUMERO  = "907 410 584";
+const PAGO_TITULAR = "Sergio Acosta";
+const PLANES = [
+  { id: 'mensual', nombre: 'Mensual', monto: 9.90, meses: 1,  detalle: 'al mes' },
+  { id: 'anual',   nombre: 'Anual',   monto: 99.00, meses: 12, detalle: 'por 12 meses', etiqueta: '2 meses gratis' }
+];
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
@@ -465,6 +550,9 @@ async function cargarHogar(){
     if(e2) throw e2;
     pintarHogar(hogar, count || 1, session.user);
     mostrar('vListo');
+    cargarPagos();
+    sb.rpc('es_admin').then(({ data }) => { $('cardAdmin').hidden = !data; });
+    if(location.hash === '#pagar') $('pagar').scrollIntoView();
   }catch(err){
     $('vCargando').textContent = traducir(err);
   }
@@ -505,6 +593,85 @@ function pintarHogar(h, personas, user){
     setTimeout(() => { s.textContent = 'Copiar'; }, 1600);
   };
   $('hCuenta').textContent = 'Entraste como ' + user.email;
+}
+
+/* ============================================================
+   4. PAGAR LA SUSCRIPCIÓN (Plin)
+   ============================================================ */
+const soles = n => 'S/ ' + Number(n).toFixed(2);
+let PLAN = PLANES[0];
+const METODO = 'plin';   // por ahora solo se cobra por Plin
+
+(function pintarPlanes(){
+  const box = $('plans');
+  PLANES.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'plan';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(i === 0));
+    b.innerHTML = (p.etiqueta ? '<span class="plan-tag"></span>' : '') +
+      '<span class="plan-name"></span><span class="plan-price"><span class="v"></span> <small></small></span>';
+    if(p.etiqueta) b.querySelector('.plan-tag').textContent = p.etiqueta;
+    b.querySelector('.plan-name').textContent = p.nombre;
+    b.querySelector('.v').textContent = soles(p.monto);
+    b.querySelector('small').textContent = p.detalle;
+    b.addEventListener('click', () => {
+      PLAN = p;
+      box.querySelectorAll('.plan').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+      $('pMonto').textContent = soles(p.monto);
+    });
+    box.appendChild(b);
+  });
+  $('pMonto').textContent = soles(PLAN.monto);
+  $('pNumero').textContent = PAGO_NUMERO;
+  $('pTitular').textContent = 'a nombre de ' + PAGO_TITULAR;
+})();
+
+$('btnCopiarNum').addEventListener('click', async () => {
+  try{ await navigator.clipboard.writeText(PAGO_NUMERO.replace(/\s/g, '')); }catch(e){}
+  const s = $('btnCopiarNum').querySelector('span');
+  s.textContent = '¡Copiado!';
+  setTimeout(() => { s.textContent = 'Copiar'; }, 1600);
+});
+
+$('fPago').addEventListener('submit', async e => {
+  e.preventDefault();
+  const op = $('pOperacion').value.replace(/\s/g, '');
+  if(op.length < 4) return aviso('pagoMsg', 'err', 'Escribe el número de operación que aparece en tu Plin.');
+  const btn = $('btnPagar');
+  ocupado(btn, true, 'Enviando…');
+  const { error } = await sb.from('pagos').insert({ metodo: METODO, monto: PLAN.monto, numero_operacion: op });
+  ocupado(btn, false);
+  if(error){
+    if(error.code === '23505') return aviso('pagoMsg', 'err', 'Ese número de operación ya fue registrado. Si crees que es un error, escríbenos.');
+    return aviso('pagoMsg', 'err', traducir(error));
+  }
+  $('pOperacion').value = '';
+  aviso('pagoMsg', 'ok', '¡Gracias! Recibimos tu pago. Te avisaremos aquí cuando esté activado.');
+  cargarPagos();
+});
+
+async function cargarPagos(){
+  const { data, error } = await sb.from('pagos')
+    .select('creado_en, metodo, monto, numero_operacion, estado, meses')
+    .order('creado_en', { ascending: false }).limit(10);
+  const ul = $('misPagos');
+  if(error || !data || !data.length){ ul.hidden = true; return; }
+  ul.innerHTML = '<li><p class="pays-title">Tus pagos</p></li>';
+  const ESTADO = { pendiente: 'En revisión', aprobado: 'Activado', rechazado: 'Rechazado' };
+  data.forEach(p => {
+    const li = document.createElement('li');
+    li.className = 'pay';
+    li.innerHTML = '<span><span class="t"></span><small></small></span><span class="pill"></span>';
+    li.querySelector('.t').textContent = soles(p.monto) + ' por ' + (p.metodo === 'yape' ? 'Yape' : 'Plin');
+    li.querySelector('small').textContent = new Date(p.creado_en).toLocaleDateString('es-PE', { day:'numeric', month:'short', year:'numeric' }) + ' · Op. ' + p.numero_operacion;
+    const pill = li.querySelector('.pill');
+    pill.classList.add(p.estado);
+    pill.textContent = ESTADO[p.estado] || p.estado;
+    ul.appendChild(li);
+  });
+  ul.hidden = false;
 }
 
 /* ---------- Salir ---------- */
