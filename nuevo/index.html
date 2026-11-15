@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Menú de la semana — WeekMenuIA</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="Tu menú semanal inteligente: desayuno, media mañana, almuerzo y cena de cada día, con lista de compras de la semana.">
+
+<!-- Ícono de pestaña y app -->
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="theme-color" content="#123D27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WeekMenuIA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+
+<!-- Aplica el tema guardado antes de pintar (evita el parpadeo claro/oscuro) -->
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem('menuSemanalTheme');
+    if(!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  }catch(e){}
+})();
+</script>
+
+<link rel="preload" as="image" href="../banner.jpg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="wm.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Paleta tomada del banner: verde bosque, verde hoja, tomate y pimiento */
+  :root{
+    --bg:#F3F6F0;
+    --surface:#FFFFFF;
+    --surface-2:#EEF3EA;
+    --ink:#17251C;
+    --ink-2:#4F5E54;
+    --ink-3:#85928A;
+    --line:#E0E8DA;
+    --line-strong:#CCD8C5;
+
+    --brand:#1E5B3A;
+    --brand-hover:#174A2F;
+    --brand-deep:#123D27;
+    --brand-ink:#FFFFFF;
+    --brand-soft:#E4F0E6;
+    --leaf:#6AB04C;
+    --leaf-soft:#EAF5E1;
+
+    --c-desayuno:#DB8E17;  --t-desayuno:#FDF0D9;
+    --c-media:#5E9F43;     --t-media:#E8F4DF;
+    --c-almuerzo:#D44E2C;  --t-almuerzo:#FCE7E0;
+    --c-cena:#46699B;      --t-cena:#E4EBF5;
+
+    --r-lg:20px;
+    --r:14px;
+    --r-sm:10px;
+    --shadow-sm:0 1px 2px rgba(18,61,39,.05);
+    --shadow:0 1px 2px rgba(18,61,39,.05), 0 10px 28px -10px rgba(18,61,39,.16);
+
+    --font:'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ease-out:cubic-bezier(.22,1,.36,1);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0C1711;
+    --surface:#12211A;
+    --surface-2:#182B21;
+    --ink:#E8F0E6;
+    --ink-2:#A8B8AC;
+    --ink-3:#718276;
+    --line:#1F3328;
+    --line-strong:#2A4234;
+
+    --brand:#2E7A4F;
+    --brand-hover:#38895B;
+    --brand-deep:#0F2E1E;
+    --brand-ink:#FFFFFF;
+    --brand-soft:#163323;
+    --leaf:#8BCB5F;
+    --leaf-soft:#1A2E1C;
+
+    --c-desayuno:#F0B54D;  --t-desayuno:#2E2513;
+    --c-media:#8BCB5F;     --t-media:#1B2C17;
+    --c-almuerzo:#EE7C5C;  --t-almuerzo:#33201A;
+    --c-cena:#86A7D6;      --t-cena:#1A2433;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 30px -12px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  html{-webkit-text-size-adjust:100%; color-scheme:light;}
+  :root[data-theme="dark"]{color-scheme:dark;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font);
+    font-size:16px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:0 18px;}
+  @media (min-width:768px){ .wrap{padding:0 32px;} }
+  button{font:inherit; color:inherit; touch-action:manipulation;}
+  :focus-visible{outline:2.5px solid var(--leaf); outline-offset:2px; border-radius:10px;}
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+
+  .ico{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+
+  /* ---------- Banner ---------- */
+  .hero{
+    position:relative; overflow:hidden;
+    height:clamp(230px, 27vw, 440px);
+    background:#123D27;
+    color:#fff;
+  }
+  .hero-img{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; object-position:left top; display:block;
+  }
+  .hero::after{
+    content:""; position:absolute; inset:auto 0 0 0; height:45%;
+    background:linear-gradient(to top, rgba(10,36,22,.45), rgba(10,36,22,0));
+    pointer-events:none;
+  }
+  .hero-bar{
+    position:absolute; left:0; right:0; bottom:0; z-index:1;
+    padding-bottom:18px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:10px;
+  }
+  @media (min-width:768px){ .hero-bar{padding-bottom:26px;} }
+  .hero-chip{
+    display:inline-flex; align-items:center; gap:10px; min-width:0;
+    background:rgba(8,30,18,.42); border:1px solid rgba(255,255,255,.18);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    padding:8px 14px 8px 10px; border-radius:14px;
+  }
+  .hero-chip .chip-ico{width:32px; height:32px; border-radius:10px; background:rgba(255,255,255,.14); display:grid; place-items:center; flex:none;}
+  .hero-chip .ico{width:18px; height:18px; color:#B9E58F;}
+  .hero-chip .chip-text{display:flex; flex-direction:column; min-width:0; line-height:1.25;}
+  .hero-chip strong{font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .hero-chip span{font-size:12.5px; color:rgba(255,255,255,.8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .hero-actions{display:flex; gap:8px; flex:none;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    height:44px; padding:0 18px; border-radius:999px;
+    border:1px solid var(--line-strong); background:var(--surface); color:var(--ink);
+    font-size:14.5px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none;
+    transition:background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s var(--ease-out);
+  }
+  .btn:active:not(:disabled){transform:scale(.96);}
+  .btn .ico{width:18px; height:18px;}
+  .btn.primary{background:var(--brand); border-color:var(--brand); color:var(--brand-ink);}
+  .btn.light{background:rgba(255,255,255,.95); border-color:transparent; color:#17251C; box-shadow:0 4px 14px rgba(0,0,0,.18);}
+  .btn.light .ico{color:#1E5B3A;}
+  .btn.glass{background:rgba(8,30,18,.42); border-color:rgba(255,255,255,.22); color:#fff; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+  .btn.icon{width:44px; padding:0;}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  @media (hover:hover){
+    .btn:hover:not(:disabled){background:var(--surface-2);}
+    .btn.primary:hover:not(:disabled){background:var(--brand-hover); border-color:var(--brand-hover);}
+    .btn.light:hover:not(:disabled){background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.22);}
+    .btn.glass:hover:not(:disabled){background:rgba(8,30,18,.6);}
+  }
+  @media (max-width:479px){ .btn .label-long{display:none;} }
+
+  /* ---------- Títulos de sección ---------- */
+  .sec-head{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:18px;}
+  .sec-title{display:flex; align-items:center; gap:12px; min-width:0;}
+  .sec-ico{width:44px; height:44px; border-radius:14px; background:var(--brand-soft); color:var(--brand); display:grid; place-items:center; flex:none;}
+  :root[data-theme="dark"] .sec-ico{color:var(--leaf);}
+  .sec-ico .ico{width:22px; height:22px;}
+  .sec-title h2{font-size:clamp(21px, 2.6vw, 26px); font-weight:800; letter-spacing:-.02em; line-height:1.15; margin:0;}
+  .sec-title p{margin:2px 0 0; font-size:14px; color:var(--ink-2);}
+
+  /* ---------- Hoy ---------- */
+  .today{padding-top:28px;}
+  @media (min-width:768px){ .today{padding-top:40px;} }
+
+  .next{
+    position:relative; overflow:hidden;
+    background:linear-gradient(120deg, #123D27 0%, #1E5B3A 55%, #2D7448 100%);
+    color:#fff; border-radius:var(--r-lg); padding:22px 22px 24px;
+    display:flex; align-items:center; gap:18px; box-shadow:var(--shadow);
+    margin-bottom:14px;
+  }
+  .next::after{
+    content:""; position:absolute; right:-60px; top:-60px; width:220px; height:220px; border-radius:50%;
+    background:radial-gradient(circle, rgba(139,203,95,.28), rgba(139,203,95,0) 70%);
+    pointer-events:none;
+  }
+  @media (min-width:768px){ .next{padding:28px 30px; gap:22px;} }
+  .next-ico{width:58px; height:58px; border-radius:18px; background:rgba(255,255,255,.14); display:grid; place-items:center; flex:none;}
+  .next-ico .ico{width:28px; height:28px; color:#B9E58F; stroke-width:1.9;}
+  @media (min-width:768px){ .next-ico{width:68px; height:68px;} .next-ico .ico{width:32px; height:32px;} }
+  .next-body{min-width:0; position:relative; z-index:1;}
+  .next-label{font-size:13.5px; font-weight:700; color:#B9E58F; margin:0 0 4px;}
+  .next h1{font-size:clamp(24px, 4.2vw, 38px); font-weight:800; line-height:1.12; letter-spacing:-.025em; margin:0; overflow-wrap:anywhere;}
+  .next-sub{font-size:14.5px; color:rgba(255,255,255,.8); margin:6px 0 0;}
+
+  .meal-grid{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px;}
+  @media (min-width:900px){ .meal-grid{grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px;} }
+  .tile{
+    position:relative; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg);
+    padding:16px; min-width:0; box-shadow:var(--shadow-sm);
+    display:flex; flex-direction:column; gap:12px;
+  }
+  @media (min-width:768px){ .tile{padding:18px 18px 20px;} }
+  .tile.is-next{border-color:var(--leaf); box-shadow:0 0 0 1px var(--leaf), var(--shadow);}
+  .tile.is-past .tile-dish{color:var(--ink-2); font-weight:500;}
+  .tile-top{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .tile-label{font-size:13px; font-weight:600; color:var(--ink-2); margin:0 0 2px;}
+  .tile-dish{font-size:16px; font-weight:700; line-height:1.35; margin:0; overflow-wrap:anywhere;}
+  .tile-dish.empty{color:var(--ink-3); font-weight:500;}
+
+  .mi{width:40px; height:40px; border-radius:12px; display:grid; place-items:center; flex:none; background:var(--t); color:var(--c);}
+  .mi .ico{width:20px; height:20px;}
+  .mi.sm{width:30px; height:30px; border-radius:9px;}
+  .mi.sm .ico{width:16px; height:16px;}
+  .m-desayuno{--c:var(--c-desayuno); --t:var(--t-desayuno);}
+  .m-media{--c:var(--c-media); --t:var(--t-media);}
+  .m-almuerzo{--c:var(--c-almuerzo); --t:var(--t-almuerzo);}
+  .m-cena{--c:var(--c-cena); --t:var(--t-cena);}
+
+  .badge{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:12px; font-weight:700; line-height:1; padding:6px 10px; border-radius:999px;
+    background:var(--leaf-soft); color:var(--brand); white-space:nowrap;
+  }
+  .badge .ico{width:13px; height:13px; stroke-width:2.4;}
+  :root[data-theme="dark"] .badge{color:var(--leaf);}
+  .badge.solid{background:var(--brand); color:#fff;}
+
+  .empty-today{
+    background:var(--surface); border:1px dashed var(--line-strong); border-radius:var(--r-lg);
+    padding:22px; display:flex; align-items:center; gap:16px;
+  }
+  .empty-today h1{font-size:20px; font-weight:800; margin:0 0 2px; letter-spacing:-.01em;}
+  .empty-today p{margin:0; color:var(--ink-2); font-size:14.5px;}
+
+  /* ---------- Semana ---------- */
+  .week{margin-top:48px;}
+  @media (min-width:768px){ .week{margin-top:64px;} }
+
+  .segmented{display:inline-flex; align-items:center; gap:2px; padding:3px; border:1px solid var(--line); border-radius:999px; background:var(--surface); box-shadow:var(--shadow-sm);}
+  .segmented button{
+    height:40px; min-width:40px; padding:0 16px; border:0; border-radius:999px; background:transparent; cursor:pointer;
+    font-size:14px; font-weight:700; display:grid; place-items:center;
+    transition:background-color .15s ease, transform .12s var(--ease-out);
+  }
+  .segmented button.nav{padding:0;}
+  .segmented button:active:not(:disabled){transform:scale(.94);}
+  .segmented button:disabled{color:var(--ink-3); opacity:.55; cursor:not-allowed;}
+  @media (hover:hover){ .segmented button:hover:not(:disabled){background:var(--surface-2);} }
+  .segmented .ico{width:18px; height:18px;}
+  #thisWeek.active{background:var(--brand); color:#fff;}
+
+  .swap{animation:swap .28s var(--ease-out);}
+  @keyframes swap{from{opacity:0; transform:translateY(6px);}}
+  @media (prefers-reduced-motion:reduce){ .swap{animation:none;} }
+
+  /* Tira de días (móvil y tablet) */
+  .daystrip{display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px; margin-bottom:14px;}
+  .daystrip button{
+    height:64px; border:1px solid var(--line); border-radius:var(--r); background:var(--surface); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0;
+    transition:background-color .15s ease, transform .12s var(--ease-out);
+  }
+  .daystrip button:active{transform:scale(.94);}
+  .daystrip .ds-dow{font-size:12px; font-weight:600; color:var(--ink-3);}
+  .daystrip .ds-num{font-size:19px; font-weight:800; letter-spacing:-.02em; line-height:1.1;}
+  .daystrip button.is-today{background:var(--brand); border-color:var(--brand); color:#fff;}
+  .daystrip button.is-today .ds-dow{color:#B9E58F;}
+
+  /* Tarjetas por día (móvil y tablet) */
+  .days{display:grid; gap:12px;}
+  @media (min-width:640px){ .days{grid-template-columns:repeat(2, minmax(0,1fr));} }
+  @media (min-width:900px){ .days{grid-template-columns:repeat(3, minmax(0,1fr));} }
+  .day{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg);
+    padding:16px 18px 18px; scroll-margin-top:16px; min-width:0; box-shadow:var(--shadow-sm);
+  }
+  .day.is-today{border-color:var(--leaf); box-shadow:0 0 0 1px var(--leaf), var(--shadow);}
+  .day-head{display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid var(--line);}
+  .day-title{font-size:17px; font-weight:800; letter-spacing:-.01em; margin:0; line-height:1.2;}
+  .day-date{font-size:13px; font-weight:500; color:var(--ink-3); margin-left:6px;}
+  .day-meals{display:grid; gap:10px; margin:0;}
+  .day-meal{display:grid; grid-template-columns:30px 1fr; gap:12px; align-items:center;}
+  .day-meal dt{margin:0;}
+  .day-meal dd{margin:0; min-width:0;}
+  .dm-label{display:block; font-size:12px; font-weight:600; color:var(--ink-3); line-height:1.3;}
+  .dm-dish{display:block; font-size:15px; font-weight:600; line-height:1.35; overflow-wrap:anywhere;}
+  .dm-dish.empty{color:var(--ink-3); font-weight:500;}
+
+  /* Tabla de la semana (escritorio) */
+  .planner{
+    display:none;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg);
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .planner-grid{display:grid;}
+  .p-cell{padding:14px 14px; border-top:1px solid var(--line); min-width:0; font-size:14.5px; font-weight:600; line-height:1.4; overflow-wrap:break-word;}
+  .p-cell + .p-cell{border-left:1px solid var(--line);}
+  .p-cell.first{border-left:0;}
+  .p-head{border-top:0; padding:16px 14px 14px; background:var(--surface-2);}
+  .p-dow{font-size:13px; font-weight:600; color:var(--ink-2);}
+  .p-num{font-size:24px; font-weight:800; line-height:1.1; letter-spacing:-.02em; margin-top:2px;}
+  .p-label{display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:700; color:var(--ink-2);}
+  .p-cell.is-today{background:var(--leaf-soft);}
+  .p-head.is-today{background:var(--brand); color:#fff;}
+  .p-head.is-today .p-dow{color:#B9E58F;}
+  .p-cell .empty{color:var(--ink-3); font-weight:500;}
+
+  @media (min-width:1180px){
+    .planner{display:block;}
+    .daystrip, .days{display:none;}
+  }
+
+  /* ---------- Estados ---------- */
+  .state{
+    background:var(--surface); border:1px dashed var(--line-strong); border-radius:var(--r-lg);
+    padding:44px 24px; text-align:center; color:var(--ink-2);
+  }
+  .state .sec-ico{margin:0 auto 14px;}
+  .state h3{color:var(--ink); font-size:19px; font-weight:800; margin:0 0 6px;}
+  .state p{margin:0 auto; max-width:460px; font-size:14.5px;}
+  .state code{font-size:13px; background:var(--surface-2); padding:1px 6px; border-radius:5px;}
+  .skeleton{display:grid; gap:10px;}
+  .skeleton div{height:56px; border-radius:var(--r); background:linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2)); background-size:200% 100%; animation:shimmer 1.4s infinite linear;}
+  .skeleton.sk-today div:first-child{height:104px; border-radius:var(--r-lg);}
+  @keyframes shimmer{to{background-position:-200% 0;}}
+  @media (prefers-reduced-motion:reduce){ .skeleton div{animation:none;} }
+
+  /* ---------- Pie ---------- */
+  .footer{
+    margin-top:56px; padding:22px 0 40px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+    font-size:13.5px; color:var(--ink-3);
+  }
+  .sync{display:inline-flex; align-items:center; gap:8px;}
+  .sync .ico{width:16px; height:16px;}
+  .sync.ok{color:var(--brand);}
+  :root[data-theme="dark"] .sync.ok{color:var(--leaf);}
+  .sync.err{color:var(--c-almuerzo);}
+  .foot-brand{display:inline-flex; align-items:center; gap:6px;}
+  .foot-brand .ico{width:16px; height:16px; color:var(--leaf);}
+
+  /* Banner WeekMenuIA: la imagen se ve completa y los controles van en una franja debajo */
+  .hero{height:auto; overflow:visible;}
+  .hero-img{position:static; width:100%; height:auto; aspect-ratio:1600/534; object-fit:cover;}
+  .hero::after{display:none;}
+  .hero-bar{position:static; padding-top:12px; padding-bottom:12px; align-items:center;}
+  @media (min-width:768px){ .hero-bar{padding-top:14px; padding-bottom:14px;} }
+  /* En laptop/PC el banner no ocupa todo el ancho: queda centrado y con esquinas redondeadas */
+  @media (min-width:900px){
+    .hero{padding-top:20px;}
+    .hero-img{width:min(calc(100% - 64px), 960px); margin:0 auto; border-radius:18px;}
+  }
+
+  /* ---------- Editar el menú (versión WeekMenuIA) ---------- */
+  .notice{display:flex; gap:10px; align-items:flex-start; margin-top:20px; padding:12px 16px; border-radius:var(--r); font-size:14px; font-weight:600; background:var(--t-almuerzo); color:var(--c-almuerzo);}
+  .notice .ico{width:18px; height:18px; margin-top:1px;}
+  .notice a{color:inherit;}
+  .day-actions{display:flex; align-items:center; gap:8px; flex:none;}
+  .edit-btn{
+    display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 12px; border-radius:999px;
+    border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-2);
+    font-size:13px; font-weight:700; cursor:pointer; transition:background-color .15s ease, transform .12s var(--ease-out);
+  }
+  .edit-btn .ico{width:15px; height:15px;}
+  .edit-btn:active{transform:scale(.95);}
+  @media (hover:hover){ .edit-btn:hover{background:var(--surface-2); color:var(--ink);} }
+  .today-edit{display:flex; justify-content:flex-end; margin-top:12px;}
+  .empty-today .btn{margin-left:auto;}
+  @media (max-width:559px){ .empty-today{flex-wrap:wrap;} .empty-today .btn{margin-left:0; width:100%;} }
+  .week-hint{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink-3); margin:-6px 0 16px;}
+  .week-hint .ico{width:15px; height:15px;}
+  .p-cell.editable{cursor:pointer; transition:background-color .15s ease;}
+  @media (hover:hover){
+    .p-cell.editable:hover{background:var(--surface-2);}
+    .p-head.is-today.editable:hover{background:var(--brand-hover);}
+  }
+  .readonly .edit-btn, .readonly .today-edit, .readonly .week-hint, .readonly .empty-today .btn{display:none;}
+  .readonly .p-cell.editable{cursor:default;}
+
+  .editor{
+    border:0; padding:0; border-radius:22px; width:min(520px, calc(100% - 24px)); max-height:calc(100dvh - 24px);
+    background:var(--surface); color:var(--ink); box-shadow:0 24px 60px -12px rgba(0,0,0,.35);
+  }
+  .editor::backdrop{background:rgba(10,30,18,.5);}
+  .editor[open]{animation:edIn .22s var(--ease-out);}
+  @keyframes edIn{from{opacity:0; transform:translateY(12px);}}
+  @media (prefers-reduced-motion:reduce){ .editor[open]{animation:none;} }
+  @media (max-width:599px){
+    .editor{margin:auto 0 0; width:100%; max-width:100%; border-radius:22px 22px 0 0; padding-bottom:env(safe-area-inset-bottom,0px);}
+  }
+  .ed-form{padding:20px 20px 22px;}
+  @media (min-width:600px){ .ed-form{padding:24px 26px 26px;} }
+  .ed-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:18px;}
+  .ed-kicker{font-size:13px; font-weight:700; color:var(--leaf); margin:0 0 2px;}
+  .ed-head h2{margin:0; font-size:22px; font-weight:800; letter-spacing:-.02em; line-height:1.2;}
+  .ed-field{display:grid; grid-template-columns:30px 1fr; gap:12px; align-items:end; margin-bottom:12px;}
+  .ed-field .mi{margin-bottom:8px;}
+  .ed-lbl{display:block; font-size:12.5px; font-weight:700; color:var(--ink-2); margin-bottom:5px;}
+  .ed-field input{
+    width:100%; height:46px; border-radius:12px; border:1px solid var(--line-strong);
+    background:var(--surface); color:var(--ink); padding:0 12px; font:inherit; font-size:16px;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .ed-field input:focus{outline:none; border-color:var(--leaf); box-shadow:0 0 0 3px var(--leaf-soft);}
+  .ed-msg{font-size:13.5px; font-weight:600; color:var(--c-almuerzo); margin:6px 0 0;}
+  .ed-actions{display:flex; gap:10px; margin-top:18px;}
+  .ed-actions .btn{flex:1; height:48px;}
+  .foot-acc{display:inline-flex; align-items:center; gap:6px; color:inherit; font-weight:600;}
+  .foot-acc .ico{width:16px; height:16px;}
+</style>
+</head>
+<body>
+
+<!-- Iconos (estilo Lucide, licencia ISC) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M6 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/></symbol>
+  <symbol id="i-apple" viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/></symbol>
+  <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
+  <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5Z"/><path d="m15 5 4 4"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+</svg>
+
+<header class="hero">
+  <img class="hero-img" src="../banner.jpg" width="1600" height="534" fetchpriority="high"
+       alt="WeekMenuIA — La forma inteligente de organizar tus comidas. Planifica tu semana, come más saludable, ahorra tiempo, disfruta cada comida.">
+  <div class="hero-bar wrap">
+    <div class="hero-chip">
+      <span class="chip-ico"><svg class="ico" aria-hidden="true"><use href="#i-calendar"/></svg></span>
+      <span class="chip-text"><strong id="heroDate">Hoy</strong><span id="heroSub">Cargando tu menú…</span></span>
+    </div>
+    <div class="hero-actions">
+      <button class="btn glass icon" id="themeToggle" type="button">
+        <svg class="ico" aria-hidden="true"><use id="themeIcon" href="#i-moon"/></svg>
+        <span class="sr-only" id="themeLabel">Modo oscuro</span>
+      </button>
+      <button class="btn light" id="btnAhorraTiempo" type="button">
+        <svg class="ico" aria-hidden="true"><use href="#i-cart"/></svg>
+        <span>Lista<span class="label-long"> de compras</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="notice" id="notice" hidden><svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg><span id="noticeText"></span></div>
+
+  <section class="today" aria-label="Hoy">
+    <div id="todayBox">
+      <div class="skeleton sk-today" aria-hidden="true"><div></div><div></div></div>
+    </div>
+  </section>
+
+  <section class="week" aria-labelledby="weekTitle">
+    <div class="sec-head">
+      <div class="sec-title">
+        <span class="sec-ico"><svg class="ico" aria-hidden="true"><use href="#i-calendar"/></svg></span>
+        <div>
+          <h2 id="weekTitle">Semana</h2>
+          <p id="weekRange">&nbsp;</p>
+        </div>
+      </div>
+      <div class="segmented" role="group" aria-label="Cambiar de semana">
+        <button class="nav" id="prevWeek" type="button" aria-label="Semana anterior"><svg class="ico" aria-hidden="true"><use href="#i-left"/></svg></button>
+        <button id="thisWeek" type="button">Hoy</button>
+        <button class="nav" id="nextWeek" type="button" aria-label="Semana siguiente"><svg class="ico" aria-hidden="true"><use href="#i-right"/></svg></button>
+      </div>
+    </div>
+    <p class="week-hint"><svg class="ico" aria-hidden="true"><use href="#i-pencil"/></svg>Toca un día (o su botón «Editar») para escribir o cambiar su menú.</p>
+    <div id="app">
+      <div class="skeleton" aria-hidden="true"><div></div><div></div><div></div><div></div></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span class="sync" id="sync"><svg class="ico" aria-hidden="true"><use id="syncIcon" href="#i-refresh"/></svg><span id="syncText">Cargando tu menú…</span></span>
+    <a class="foot-acc" href="../entrar.html"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg><span id="footHogar">Mi cuenta</span></a>
+    <span class="foot-brand"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>WeekMenuIA · Planifica tus comidas, come mejor.</span>
+  </footer>
+
+</main>
+
+<dialog class="editor" id="editor" aria-labelledby="edTitle">
+  <form class="ed-form" id="edForm" autocomplete="off">
+    <div class="ed-head">
+      <div><p class="ed-kicker">Menú del día</p><h2 id="edTitle">&nbsp;</h2></div>
+      <button class="btn icon" type="button" id="edClose" aria-label="Cerrar"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <div id="edFields"></div>
+    <p class="ed-msg" id="edMsg" role="status" hidden></p>
+    <div class="ed-actions">
+      <button class="btn" type="button" id="edCancel">Cancelar</button>
+      <button class="btn primary" type="submit" id="edSave">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* "hasta" = minuto del día hasta el que esa comida se considera la que toca */
+const MEAL_COLUMNS = [
+  { key: "Desayuno", db: "desayuno",     label: "Desayuno",     cls: "m-desayuno", icon: "i-coffee",   hasta: 10*60,      ej: "Avena con plátano" },
+  { key: "Med/Mañ",  db: "media_manana", label: "Media mañana", cls: "m-media",    icon: "i-apple",    hasta: 12*60 + 30, ej: "Fruta / yogur" },
+  { key: "Almuerzo", db: "almuerzo",     label: "Almuerzo",     cls: "m-almuerzo", icon: "i-utensils", hasta: 16*60,      ej: "Pollo al horno + ensalada" },
+  { key: "Cena",     db: "cena",         label: "Cena",         cls: "m-cena",     icon: "i-moon",     hasta: 24*60,      ej: "Sopa de verduras" }
+];
+
+/* Nombres con tilde para mostrar, aunque la hoja los tenga sin tilde */
+const DAY_NAMES = { lunes:"Lunes", martes:"Martes", miercoles:"Miércoles", jueves:"Jueves", viernes:"Viernes", sabado:"Sábado", domingo:"Domingo" };
+const DAY_ABBR  = { lunes:"Lun", martes:"Mar", miercoles:"Mié", jueves:"Jue", viernes:"Vie", sabado:"Sáb", domingo:"Dom" };
+
+let WEEKS = [];       // array de { monday: Date, days: [rowObj, ...] } ordenado por fecha
+let CURRENT_INDEX = 0;
+let TODAY_WEEK_INDEX = null;
+
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+/* ---------- utilidades ---------- */
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(inQuotes){
+      if(c === '"'){
+        if(text[i+1] === '"'){ field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if(c === '"') inQuotes = true;
+      else if(c === ','){ row.push(field); field = ""; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; }
+      else if(c === '\r'){ /* skip */ }
+      else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(f => f.trim() !== ""));
+}
+
+function normalize(s){
+  return (s || "").toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+function parseFecha(str){
+  const m = str.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+}
+
+function isSameDay(a, b){
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate();
+}
+
+function getMonday(d){
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  date.setDate(date.getDate() + diff);
+  date.setHours(0,0,0,0);
+  return date;
+}
+
+function fmtRange(monday){
+  const sunday = new Date(monday);
+  sunday.setDate(sunday.getDate() + 6);
+  const opts = { day:'numeric', month:'long' };
+  return monday.toLocaleDateString('es-PE', opts) + ' – ' + sunday.toLocaleDateString('es-PE', opts) + ', ' + sunday.getFullYear();
+}
+
+function fmtShort(d){
+  return d ? d.toLocaleDateString('es-PE', { day:'numeric', month:'short' }).replace('.', '') : '';
+}
+
+function displayDay(name){ return DAY_NAMES[normalize(name)] || name; }
+function abbrDay(name){ return DAY_ABBR[normalize(name)] || name.slice(0,3); }
+
+/* Un valor vacío o "Libre" se muestra atenuado */
+function isEmptyValue(v){ return !v || normalize(v) === 'libre' || normalize(v) === 'sin definir'; }
+function mealText(v){ return v ? v.replace(/\s*\+\s*/g, ' + ').replace(/\s*\/\s*/g, ' / ') : 'Sin definir'; }
+
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(text !== undefined) e.textContent = text;
+  return e;
+}
+
+function icon(id){
+  const svg = document.createElementNS(SVGNS, 'svg');
+  svg.setAttribute('class', 'ico');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS(SVGNS, 'use');
+  use.setAttribute('href', '#' + id);
+  svg.appendChild(use);
+  return svg;
+}
+
+/* Cuadrito de color con el icono de la comida */
+function mealIcon(col, small){
+  const s = el('span', 'mi ' + col.cls + (small ? ' sm' : ''));
+  s.appendChild(icon(col.icon));
+  return s;
+}
+
+function todayDate(){ const t = new Date(); t.setHours(0,0,0,0); return t; }
+function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+function replay(node){
+  node.classList.remove('swap');
+  void node.offsetWidth;
+  node.classList.add('swap');
+}
+
+/* ---------- tema ---------- */
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const label = theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+  document.getElementById('themeLabel').textContent = label;
+  document.getElementById('themeToggle').title = label;
+  document.getElementById('themeIcon').setAttribute('href', theme === 'dark' ? '#i-sun' : '#i-moon');
+  try{ localStorage.setItem('menuSemanalTheme', theme); }catch(e){}
+}
+(function initTheme(){
+  let saved = null;
+  try{ saved = localStorage.getItem('menuSemanalTheme'); }catch(e){}
+  const preferDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (preferDark ? 'dark' : 'light'));
+})();
+document.getElementById('themeToggle').addEventListener('click', function(){
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+/* ---------- sección "Hoy" ---------- */
+function renderToday(){
+  const today = todayDate();
+  let row = null;
+  WEEKS.forEach(w => w.days.forEach(d => { if(d.fecha && isSameDay(d.fecha, today)) row = d; }));
+
+  const box = document.getElementById('todayBox');
+  box.innerHTML = '';
+  // Fecha corta para que entre en el banner del celular ("Miércoles 18 nov")
+  document.getElementById('heroDate').textContent =
+    capitalize(today.toLocaleDateString('es-PE', { weekday:'long' })) + ' ' + fmtShort(today);
+
+  if(!row || MEAL_COLUMNS.every(c => !row.values[c.key])){
+    document.getElementById('heroSub').textContent = 'Sin menú para hoy';
+    const empty = el('div', 'empty-today');
+    const ic = el('span', 'sec-ico'); ic.appendChild(icon('i-calendar'));
+    const txt = el('div');
+    txt.appendChild(el('h1', '', 'Aún no hay menú para hoy'));
+    txt.appendChild(el('p', '', 'Escribe qué van a comer hoy y aparecerá aquí.'));
+    empty.append(ic, txt);
+    if(row){
+      const b = el('button', 'btn primary');
+      b.type = 'button';
+      b.append(icon('i-pencil'), 'Escribir el menú de hoy');
+      b.addEventListener('click', () => openEditor(row));
+      empty.appendChild(b);
+    }
+    box.appendChild(empty);
+    return;
+  }
+
+  // La comida que toca según la hora; si está libre, la próxima que tenga plato
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  let slot = MEAL_COLUMNS.findIndex(c => minutes < c.hasta);
+  if(slot < 0) slot = MEAL_COLUMNS.length - 1;
+  let nextIdx = -1;
+  for(let i = slot; i < MEAL_COLUMNS.length; i++){
+    if(!isEmptyValue(row.values[MEAL_COLUMNS[i].key])){ nextIdx = i; break; }
+  }
+
+  const planned = MEAL_COLUMNS.filter(c => !isEmptyValue(row.values[c.key])).length;
+  document.getElementById('heroSub').textContent = planned + (planned === 1 ? ' comida hoy' : ' comidas hoy');
+
+  // Tarjeta verde: lo que toca ahora
+  const next = el('div', 'next');
+  const nIco = el('span', 'next-ico');
+  const body = el('div', 'next-body');
+  if(nextIdx >= 0){
+    const col = MEAL_COLUMNS[nextIdx];
+    nIco.appendChild(icon(col.icon));
+    body.appendChild(el('p', 'next-label', (nextIdx === slot ? 'Ahora toca' : 'Lo siguiente') + ' · ' + col.label));
+    body.appendChild(el('h1', '', mealText(row.values[col.key])));
+  } else {
+    nIco.appendChild(icon('i-smile'));
+    body.appendChild(el('p', 'next-label', 'Hoy'));
+    body.appendChild(el('h1', '', 'El resto del día está libre'));
+    body.appendChild(el('p', 'next-sub', 'No hay más comidas planificadas.'));
+  }
+  next.append(nIco, body);
+  box.appendChild(next);
+
+  // Las cuatro comidas del día
+  const grid = el('div', 'meal-grid');
+  grid.setAttribute('role', 'list');
+  grid.setAttribute('aria-label', 'Comidas de hoy');
+  MEAL_COLUMNS.forEach((col, i) => {
+    const v = row.values[col.key];
+    const tile = el('div', 'tile' + (i === nextIdx ? ' is-next' : '') + (i < slot ? ' is-past' : ''));
+    tile.setAttribute('role', 'listitem');
+    const top = el('div', 'tile-top');
+    top.appendChild(mealIcon(col));
+    if(i === nextIdx){
+      const b = el('span', 'badge');
+      b.append(icon('i-clock'), nextIdx === slot ? 'Ahora' : 'Sigue');
+      top.appendChild(b);
+    }
+    tile.appendChild(top);
+    const txt = el('div');
+    txt.appendChild(el('p', 'tile-label', col.label));
+    txt.appendChild(el('p', 'tile-dish' + (isEmptyValue(v) ? ' empty' : ''), mealText(v)));
+    tile.appendChild(txt);
+    grid.appendChild(tile);
+  });
+  box.appendChild(grid);
+  const ed = el('div', 'today-edit');
+  ed.appendChild(editBtn(row, 'Editar el menú de hoy'));
+  box.appendChild(ed);
+}
+
+/* ---------- tabla de la semana (escritorio) ---------- */
+function buildPlanner(week, today){
+  const planner = el('div', 'planner');
+  const grid = el('div', 'planner-grid');
+  grid.style.gridTemplateColumns = '170px repeat(' + week.days.length + ', minmax(0, 1fr))';
+
+  grid.appendChild(el('div', 'p-cell p-head first'));
+  week.days.forEach(d => {
+    const isToday = !!(d.fecha && isSameDay(d.fecha, today));
+    const h = el('div', 'p-cell p-head' + (isToday ? ' is-today' : ''));
+    h.appendChild(el('div', 'p-dow', isToday ? 'Hoy · ' + abbrDay(d.nombreDia) : displayDay(d.nombreDia)));
+    h.appendChild(el('div', 'p-num', d.fecha ? String(d.fecha.getDate()) : '–'));
+    makeEditable(h, d);
+    grid.appendChild(h);
+  });
+
+  MEAL_COLUMNS.forEach(col => {
+    const label = el('div', 'p-cell p-label first');
+    label.append(mealIcon(col, true), col.label);
+    grid.appendChild(label);
+    week.days.forEach(d => {
+      const isToday = !!(d.fecha && isSameDay(d.fecha, today));
+      const v = d.values[col.key];
+      const c = el('div', 'p-cell' + (isToday ? ' is-today' : ''));
+      c.appendChild(el('span', isEmptyValue(v) ? 'empty' : '', mealText(v)));
+      makeEditable(c, d);
+      grid.appendChild(c);
+    });
+  });
+
+  planner.appendChild(grid);
+  return planner;
+}
+
+/* ---------- tira de días + tarjetas (móvil / tablet) ---------- */
+function buildDayStrip(week, today){
+  const strip = el('nav', 'daystrip');
+  strip.setAttribute('aria-label', 'Ir a un día');
+  week.days.forEach((d, i) => {
+    const isToday = !!(d.fecha && isSameDay(d.fecha, today));
+    const b = el('button', isToday ? 'is-today' : '');
+    b.type = 'button';
+    b.setAttribute('aria-label', displayDay(d.nombreDia) + (d.fecha ? ' ' + fmtShort(d.fecha) : ''));
+    b.appendChild(el('span', 'ds-dow', isToday ? 'Hoy' : abbrDay(d.nombreDia)));
+    b.appendChild(el('span', 'ds-num', d.fecha ? String(d.fecha.getDate()) : '–'));
+    b.addEventListener('click', () => {
+      const target = document.getElementById('day-' + i);
+      if(target) target.scrollIntoView({ behavior: REDUCED_MOTION ? 'auto' : 'smooth', block:'start' });
+    });
+    strip.appendChild(b);
+  });
+  return strip;
+}
+
+function buildDayList(week, today){
+  const list = el('div', 'days');
+  week.days.forEach((d, i) => {
+    const isToday = !!(d.fecha && isSameDay(d.fecha, today));
+    const art = el('article', 'day' + (isToday ? ' is-today' : ''));
+    art.id = 'day-' + i;
+
+    const head = el('div', 'day-head');
+    const h3 = el('h3', 'day-title', displayDay(d.nombreDia));
+    if(d.fecha) h3.appendChild(el('span', 'day-date', fmtShort(d.fecha)));
+    head.appendChild(h3);
+    const actions = el('div', 'day-actions');
+    if(isToday) actions.appendChild(el('span', 'badge solid', 'Hoy'));
+    actions.appendChild(editBtn(d));
+    head.appendChild(actions);
+    art.appendChild(head);
+
+    const dl = el('dl', 'day-meals');
+    MEAL_COLUMNS.forEach(col => {
+      if(d.values[col.key] === undefined) return;
+      const v = d.values[col.key];
+      const row = el('div', 'day-meal');
+      const dt = el('dt');
+      dt.appendChild(mealIcon(col, true));
+      const dd = el('dd');
+      dd.appendChild(el('span', 'dm-label', col.label));
+      dd.appendChild(el('span', 'dm-dish' + (isEmptyValue(v) ? ' empty' : ''), mealText(v)));
+      row.append(dt, dd);
+      dl.appendChild(row);
+    });
+    art.appendChild(dl);
+    list.appendChild(art);
+  });
+  return list;
+}
+
+/* ---------- título relativo de la semana ---------- */
+function weekTitle(monday){
+  const diff = Math.round((monday - getMonday(todayDate())) / (7 * 864e5));
+  if(diff === 0) return 'Esta semana';
+  if(diff === -1) return 'Semana pasada';
+  if(diff === 1) return 'Próxima semana';
+  return 'Semana del ' + monday.toLocaleDateString('es-PE', { day:'numeric', month:'long' });
+}
+
+/* ---------- render de la semana activa ---------- */
+function renderWeek(animate){
+  const app = document.getElementById('app');
+  const week = WEEKS[CURRENT_INDEX];
+  const today = todayDate();
+
+  app.innerHTML = "";
+  app.appendChild(buildPlanner(week, today));
+  app.appendChild(buildDayStrip(week, today));
+  app.appendChild(buildDayList(week, today));
+  if(animate) replay(app);
+
+  document.getElementById('weekTitle').textContent = weekTitle(week.monday);
+  document.getElementById('weekRange').textContent = fmtRange(week.monday);
+
+  document.getElementById('prevWeek').disabled = (CURRENT_INDEX === 0);
+  document.getElementById('nextWeek').disabled = (CURRENT_INDEX === WEEKS.length - 1);
+
+  const thisWeekBtn = document.getElementById('thisWeek');
+  thisWeekBtn.disabled = (TODAY_WEEK_INDEX === null);
+  thisWeekBtn.title = (TODAY_WEEK_INDEX === null) ? 'No hay menú para esta semana' : 'Ir a esta semana';
+  thisWeekBtn.classList.toggle('active', CURRENT_INDEX === TODAY_WEEK_INDEX);
+}
+
+document.getElementById('prevWeek').addEventListener('click', function(){
+  if(CURRENT_INDEX > 0){ CURRENT_INDEX--; renderWeek(true); }
+});
+document.getElementById('nextWeek').addEventListener('click', function(){
+  if(CURRENT_INDEX < WEEKS.length - 1){ CURRENT_INDEX++; renderWeek(true); }
+});
+document.getElementById('thisWeek').addEventListener('click', function(){
+  if(TODAY_WEEK_INDEX !== null && CURRENT_INDEX !== TODAY_WEEK_INDEX){ CURRENT_INDEX = TODAY_WEEK_INDEX; renderWeek(true); }
+});
+
+/* ---------- estados ---------- */
+function setSync(text, state){
+  document.getElementById('syncText').textContent = text;
+  document.getElementById('sync').className = 'sync' + (state ? ' ' + state : '');
+  document.getElementById('syncIcon').setAttribute('href', state === 'err' ? '#i-alert' : '#i-refresh');
+}
+
+function showError(message){
+  setSync('No se pudo cargar el menú', 'err');
+  document.getElementById('heroSub').textContent = 'No se pudo cargar el menú';
+  document.getElementById('todayBox').innerHTML = '';
+  document.getElementById('app').innerHTML =
+    '<div class="state"><span class="sec-ico"><svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg></span>' +
+    '<h3>No se pudo cargar el menú</h3><p>' + message + '</p></div>';
+}
+
+/* ============================================================
+   DATOS — el menú del hogar vive en Supabase (tabla menu_dias)
+   ============================================================ */
+let CTX = null;                 // { sb, user, hogar, soloLectura }
+let MENU = new Map();           // 'AAAA-MM-DD' -> fila de menu_dias
+const DOW_KEYS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function parseISO(s){ const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function cacheKey(){ return 'wmMenu:' + CTX.hogar.id; }
+
+/* Semanas completas (lunes a domingo): desde la primera con menú (o esta)
+   hasta la última con menú (o la próxima), para poder escribir por adelantado */
+function buildWeeks(){
+  const thisMon = getMonday(todayDate());
+  let first = thisMon, last = addDays(thisMon, 7);
+  MENU.forEach((_, iso) => {
+    const m = getMonday(parseISO(iso));
+    if(m < first) first = m;
+    if(m > last) last = m;
+  });
+  WEEKS = [];
+  for(let m = new Date(first); m <= last; m = addDays(m, 7)){
+    const days = [];
+    for(let i = 0; i < 7; i++){
+      const f = addDays(m, i);
+      const iso = isoDate(f);
+      const row = MENU.get(iso) || {};
+      const values = {};
+      MEAL_COLUMNS.forEach(c => { values[c.key] = row[c.db] || ''; });
+      days.push({ fecha: f, iso, fechaStr: f.toLocaleDateString('es-PE'), nombreDia: DOW_KEYS[f.getDay()], values });
+    }
+    WEEKS.push({ monday: new Date(m), days });
+  }
+  TODAY_WEEK_INDEX = WEEKS.findIndex(w => isSameDay(w.monday, thisMon));
+  if(TODAY_WEEK_INDEX < 0) TODAY_WEEK_INDEX = null;
+}
+
+/* Vuelve a pintar; se queda en la semana que estabas viendo */
+function paint(){
+  const viendo = WEEKS[CURRENT_INDEX] ? WEEKS[CURRENT_INDEX].monday.getTime() : null;
+  buildWeeks();
+  const idx = viendo ? WEEKS.findIndex(w => w.monday.getTime() === viendo) : -1;
+  CURRENT_INDEX = idx >= 0 ? idx : (TODAY_WEEK_INDEX !== null ? TODAY_WEEK_INDEX : 0);
+  renderToday();
+  renderWeek(false);
+}
+
+function horaCorta(){ return new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' }); }
+
+async function loadMenu(){
+  try{
+    const { data, error } = await CTX.sb.from('menu_dias').select('*').order('fecha');
+    if(error) throw error;
+    MENU = new Map(data.map(r => [r.fecha, r]));
+    try{ localStorage.setItem(cacheKey(), JSON.stringify(data)); }catch(e){}
+    paint();
+    setSync('Actualizado · ' + horaCorta(), 'ok');
+  }catch(err){
+    let cache = null;
+    try{ cache = JSON.parse(localStorage.getItem(cacheKey())); }catch(e){}
+    if(Array.isArray(cache)){
+      MENU = new Map(cache.map(r => [r.fecha, r]));
+      paint();
+      setSync('Sin conexión · mostrando lo guardado en este celular', 'err');
+    } else {
+      showError('Revisa tu conexión a internet y vuelve a abrir la página. (' + WM.traducir(err) + ')');
+    }
+  }
+}
+
+/* ============================================================
+   EDITOR — escribir el menú de un día
+   ============================================================ */
+let ED_DAY = null;
+
+function editBtn(day, text){
+  const b = el('button', 'edit-btn');
+  b.type = 'button';
+  b.append(icon('i-pencil'), text || 'Editar');
+  b.setAttribute('aria-label', (text || 'Editar') + ' · ' + displayDay(day.nombreDia) + ' ' + fmtShort(day.fecha));
+  b.addEventListener('click', () => openEditor(day));
+  return b;
+}
+function makeEditable(node, day){
+  node.classList.add('editable');
+  node.title = 'Toca para editar el menú del ' + displayDay(day.nombreDia).toLowerCase();
+  node.addEventListener('click', () => openEditor(day));
+}
+
+function edMsg(text){
+  const m = document.getElementById('edMsg');
+  m.textContent = text || '';
+  m.hidden = !text;
+}
+
+function openEditor(day){
+  if(!CTX || CTX.soloLectura) return;
+  ED_DAY = day;
+  document.getElementById('edTitle').textContent = displayDay(day.nombreDia) + ' ' + fmtShort(day.fecha);
+  const box = document.getElementById('edFields');
+  box.innerHTML = '';
+  MEAL_COLUMNS.forEach(col => {
+    const f = el('label', 'ed-field');
+    const wrap = el('span');
+    wrap.appendChild(el('span', 'ed-lbl', col.label));
+    const inp = el('input');
+    inp.type = 'text';
+    inp.maxLength = 120;
+    inp.name = col.db;
+    inp.placeholder = 'Ej.: ' + col.ej;
+    inp.value = day.values[col.key] || '';
+    inp.enterKeyHint = 'next';
+    wrap.appendChild(inp);
+    f.append(mealIcon(col, true), wrap);
+    box.appendChild(f);
+  });
+  edMsg('');
+  const save = document.getElementById('edSave');
+  save.disabled = false;
+  save.textContent = 'Guardar';
+  const dlg = document.getElementById('editor');
+  dlg.showModal();
+  // En el celular no se abre el teclado de golpe: así se ve el día completo
+  if(window.matchMedia('(min-width:600px)').matches) box.querySelector('input').focus();
+}
+
+function closeEditor(){ document.getElementById('editor').close(); ED_DAY = null; }
+document.getElementById('edClose').addEventListener('click', closeEditor);
+document.getElementById('edCancel').addEventListener('click', closeEditor);
+document.getElementById('editor').addEventListener('click', ev => { if(ev.target.id === 'editor') closeEditor(); });
+
+/* Enter pasa a la siguiente comida; en la última, guarda */
+document.getElementById('edFields').addEventListener('keydown', ev => {
+  if(ev.key !== 'Enter' || ev.target.tagName !== 'INPUT') return;
+  const inputs = Array.from(document.querySelectorAll('#edFields input'));
+  const i = inputs.indexOf(ev.target);
+  if(i < inputs.length - 1){ ev.preventDefault(); inputs[i + 1].focus(); }
+});
+
+document.getElementById('edForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  if(!ED_DAY) return;
+  const day = ED_DAY;
+  const fila = { hogar_id: CTX.hogar.id, fecha: day.iso };
+  document.querySelectorAll('#edFields input').forEach(inp => { fila[inp.name] = inp.value.trim(); });
+  const vacio = MEAL_COLUMNS.every(c => !fila[c.db]);
+  const save = document.getElementById('edSave');
+  save.disabled = true;
+  save.textContent = 'Guardando…';
+  edMsg('');
+  try{
+    if(vacio){
+      const { error } = await CTX.sb.from('menu_dias').delete().eq('hogar_id', CTX.hogar.id).eq('fecha', day.iso);
+      if(error) throw error;
+      MENU.delete(day.iso);
+    } else {
+      const { data, error } = await CTX.sb.from('menu_dias').upsert(fila, { onConflict: 'hogar_id,fecha' }).select().single();
+      if(error) throw error;
+      MENU.set(day.iso, data);
+    }
+    try{ localStorage.setItem(cacheKey(), JSON.stringify(Array.from(MENU.values()))); }catch(e){}
+    closeEditor();
+    paint();
+    setSync('Guardado · ' + horaCorta(), 'ok');
+  }catch(err){
+    save.disabled = false;
+    save.textContent = 'Guardar';
+    edMsg(WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo guardar: ' + WM.traducir(err));
+  }
+});
+
+/* ============================================================
+   INICIO
+   ============================================================ */
+(async function start(){
+  try{
+    CTX = await WM.iniciar();
+  }catch(err){
+    showError('No se pudo conectar. Revisa tu internet y vuelve a abrir la página.');
+    return;
+  }
+  document.getElementById('footHogar').textContent = CTX.hogar.nombre + ' · Mi cuenta';
+  if(CTX.soloLectura){
+    document.body.classList.add('readonly');
+    document.getElementById('noticeText').innerHTML = 'Tu suscripción venció. Puedes ver tu menú, pero no cambiarlo. <a href="../entrar.html">Ver mi cuenta</a>';
+    document.getElementById('notice').hidden = false;
+  }
+  await loadMenu();
+  // Si alguien de la familia cambia el menú, se actualiza solo
+  WM.escuchar('menu_dias', 'hogar_id=eq.' + CTX.hogar.id, loadMenu);
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') loadMenu(); });
+})();
+
+/* ============================================================
+   LISTA DE COMPRAS — botón "Lista de compras"
+   ============================================================ */
+document.getElementById('btnAhorraTiempo').addEventListener('click', function(){
+  const week = WEEKS[CURRENT_INDEX];
+  if(week){
+    try{
+      localStorage.setItem('wmShoppingWeek', JSON.stringify({
+        weekLabel: fmtRange(week.monday),
+        monday: isoDate(week.monday),
+        sunday: isoDate(addDays(week.monday, 6))
+      }));
+    }catch(e){}
+  }
+  window.location.href = 'lista-compras.html';
+});
+</script>
+</body>
+</html>
