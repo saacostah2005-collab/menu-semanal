@@ -340,6 +340,13 @@
 
   .footer{margin-top:56px; padding:22px 0 40px; border-top:1px solid var(--line); font-size:13.5px; color:var(--ink-3); display:flex; align-items:center; gap:6px;}
   .footer .ico{width:16px; height:16px; color:var(--leaf);}
+
+  /* Banner WeekMenuIA: la imagen se ve completa y los controles van en una franja debajo */
+  .hero{height:auto; overflow:visible;}
+  .hero-img{position:static; width:100%; height:auto; aspect-ratio:1600/534; object-fit:cover;}
+  .hero::after{display:none;}
+  .hero-bar{position:static; padding-top:12px; padding-bottom:12px; align-items:center;}
+  @media (min-width:768px){ .hero-bar{padding-top:14px; padding-bottom:14px;} }
 </style>
 </head>
 <body>
@@ -372,8 +379,8 @@
 </svg>
 
 <header class="hero">
-  <img class="hero-img" src="banner.jpg" width="1432" height="459" fetchpriority="high"
-       alt="Menu Smart — Tu menú inteligente. Planifica tus comidas. Come mejor. Vive saludable.">
+  <img class="hero-img" src="banner.jpg" width="1600" height="534" fetchpriority="high"
+       alt="WeekMenuIA — La forma inteligente de organizar tus comidas. Planifica tu semana, come más saludable, ahorra tiempo, disfruta cada comida.">
   <div class="hero-bar wrap">
     <button class="btn glass icon" id="themeToggle" type="button">
       <svg class="ico" aria-hidden="true"><use id="themeIcon" href="#i-moon"/></svg>
