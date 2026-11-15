@@ -43,6 +43,7 @@
 <link rel="preload" as="image" href="banner.jpg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="wm.js"></script>
+<script src="recetario.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -437,6 +438,44 @@
   .ed-actions .btn{flex:1; height:48px;}
   .foot-acc{display:inline-flex; align-items:center; gap:6px; color:inherit; font-weight:600;}
   .foot-acc .ico{width:16px; height:16px;}
+
+  /* ---------- Arma mi semana ---------- */
+  .arm-cta{
+    display:flex; align-items:center; gap:14px; margin:0 0 16px; padding:14px 16px;
+    border-radius:var(--r-lg); background:var(--leaf-soft); border:1px solid var(--line);
+  }
+  .arm-cta .sec-ico{background:var(--surface);}
+  .arm-cta-text{flex:1; min-width:0;}
+  .arm-cta-text strong{display:block; font-size:15.5px; font-weight:800;}
+  .arm-cta-text span{display:block; font-size:13.5px; color:var(--ink-2);}
+  @media (max-width:559px){ .arm-cta{flex-wrap:wrap;} .arm-cta .btn{width:100%;} }
+  .readonly .arm-cta{display:none;}
+  .editor{overflow:auto; overscroll-behavior:contain;}
+  .arm-group{margin-bottom:16px;}
+  .arm-label{display:block; font-size:13px; font-weight:700; color:var(--ink-2); margin:0 0 8px;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:0 14px; border-radius:999px;
+    border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-2);
+    font-size:14px; font-weight:700; cursor:pointer; transition:background-color .15s ease, border-color .15s ease, transform .12s var(--ease-out);
+  }
+  .chip:active{transform:scale(.96);}
+  .chip[aria-pressed="true"], .chip[aria-checked="true"]{background:var(--brand); border-color:var(--brand); color:#fff;}
+  .chip .ico{width:15px; height:15px;}
+  .arm-days{display:grid; gap:10px; margin:0 0 4px;}
+  .arm-day{border:1px solid var(--line); border-radius:var(--r); padding:12px 12px 10px 14px;}
+  .arm-day-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;}
+  .arm-day-head strong{font-size:15px; font-weight:800;}
+  .arm-day-head small{font-size:12.5px; font-weight:500; color:var(--ink-3); margin-left:6px;}
+  .arm-reroll{display:inline-flex; align-items:center; gap:5px; height:32px; padding:0 10px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-2); font-size:12.5px; font-weight:700; cursor:pointer;}
+  .arm-reroll .ico{width:14px; height:14px;}
+  .arm-meal{display:grid; grid-template-columns:28px 1fr; gap:10px; align-items:center; padding:3px 0;}
+  .arm-meal .mi.sm{width:26px; height:26px; border-radius:8px;}
+  .arm-meal .mi.sm .ico{width:14px; height:14px;}
+  .arm-meal span{font-size:14.5px; font-weight:600; line-height:1.35;}
+  .arm-meal span.kept{color:var(--ink-3); font-weight:500;}
+  .arm-meal span.kept::after{content:" · ya estaba"; font-size:12px;}
+  .arm-note{font-size:13px; color:var(--ink-3); margin:10px 0 0;}
 </style>
 </head>
 <body>
@@ -460,6 +499,8 @@
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5Z"/><path d="m15 5 4 4"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.94 14.06 8.5 19.5l-1.44-5.44L1.5 12.5l5.56-1.56L8.5 5.5l1.44 5.44 5.56 1.56Z"/><path d="M19 3v4"/><path d="M21 5h-4"/><path d="M18 15v3"/><path d="M19.5 16.5h-3"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.97a4 4 0 0 0 3.3-1.7l5.46-8.6A4 4 0 0 1 16.03 6H22"/><path d="M2 6h1.97a4 4 0 0 1 3.3 1.7l5.46 8.6A4 4 0 0 0 16.03 18H22"/></symbol>
 </svg>
 
 <header class="hero">
@@ -508,6 +549,11 @@
         <button class="nav" id="nextWeek" type="button" aria-label="Semana siguiente"><svg class="ico" aria-hidden="true"><use href="#i-right"/></svg></button>
       </div>
     </div>
+    <div class="arm-cta">
+      <span class="sec-ico"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg></span>
+      <div class="arm-cta-text"><strong>¿Sin ideas para la semana?</strong><span>Elige tus preferencias y te proponemos los 7 días.</span></div>
+      <button class="btn primary" id="btnArmar" type="button"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>Arma mi semana</button>
+    </div>
     <p class="week-hint"><svg class="ico" aria-hidden="true"><use href="#i-pencil"/></svg>Toca un día (o su botón «Editar») para escribir o cambiar su menú.</p>
     <div id="app">
       <div class="skeleton" aria-hidden="true"><div></div><div></div><div></div><div></div></div>
@@ -535,6 +581,64 @@
       <button class="btn primary" type="submit" id="edSave">Guardar</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="editor" id="armador" aria-labelledby="armTitle">
+  <div class="ed-form">
+    <div class="ed-head">
+      <div><p class="ed-kicker" id="armKicker">Arma mi semana</p><h2 id="armTitle">&nbsp;</h2></div>
+      <button class="btn icon" type="button" id="armClose" aria-label="Cerrar"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+
+    <!-- Paso 1: preferencias -->
+    <div id="armPaso1">
+      <div class="arm-group">
+        <span class="arm-label">Presupuesto</span>
+        <div class="chips" role="radiogroup" aria-label="Presupuesto">
+          <button class="chip" type="button" role="radio" data-presupuesto="economico">Económico</button>
+          <button class="chip" type="button" role="radio" data-presupuesto="normal">Normal</button>
+        </div>
+      </div>
+      <div class="arm-group">
+        <span class="arm-label">Preferencias</span>
+        <div class="chips">
+          <button class="chip" type="button" aria-pressed="false" data-pref="sinCerdo">Sin cerdo</button>
+          <button class="chip" type="button" aria-pressed="false" data-pref="sinPescado">Sin pescado ni mariscos</button>
+          <button class="chip" type="button" aria-pressed="false" data-pref="vegetariano">Sin carnes</button>
+          <button class="chip" type="button" aria-pressed="false" data-pref="ninos">Para niños</button>
+          <button class="chip" type="button" aria-pressed="false" data-pref="peruana">Solo comida peruana</button>
+          <button class="chip" type="button" aria-pressed="false" data-pref="propios">Incluir nuestros platos de antes</button>
+        </div>
+      </div>
+      <div class="arm-group">
+        <span class="arm-label">¿Qué comidas armamos?</span>
+        <div class="chips" id="armComidas"></div>
+      </div>
+      <div class="arm-group" id="armModoWrap">
+        <span class="arm-label">Esta semana ya tiene platos escritos</span>
+        <div class="chips" role="radiogroup" aria-label="Qué hacer con lo ya escrito">
+          <button class="chip" type="button" role="radio" data-modo="vacios">Solo llenar lo que falta</button>
+          <button class="chip" type="button" role="radio" data-modo="todo">Reemplazar todo</button>
+        </div>
+      </div>
+      <p class="ed-msg" id="armMsg1" hidden></p>
+      <div class="ed-actions">
+        <button class="btn primary" type="button" id="armGenerar"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>Ver propuesta</button>
+      </div>
+    </div>
+
+    <!-- Paso 2: propuesta -->
+    <div id="armPaso2" hidden>
+      <div class="arm-days" id="armDias"></div>
+      <p class="arm-note">Toca «Otro» para cambiar un día. Después de guardar puedes editar cualquier plato.</p>
+      <p class="ed-msg" id="armMsg2" hidden></p>
+      <div class="ed-actions">
+        <button class="btn" type="button" id="armOtra"><svg class="ico" aria-hidden="true"><use href="#i-shuffle"/></svg>Otra propuesta</button>
+        <button class="btn primary" type="button" id="armGuardar">Guardar semana</button>
+      </div>
+      <div style="text-align:center; margin-top:12px"><button class="arm-reroll" type="button" id="armVolver" style="border:0">← Cambiar preferencias</button></div>
+    </div>
+  </div>
 </dialog>
 
 <script>
@@ -1085,6 +1189,284 @@ document.getElementById('edForm').addEventListener('submit', async ev => {
     save.disabled = false;
     save.textContent = 'Guardar';
     edMsg(WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo guardar: ' + WM.traducir(err));
+  }
+});
+
+/* ============================================================
+   ARMA MI SEMANA — propone los 7 días con el recetario (recetario.js)
+   No usa IA de pago: elige platos al azar siguiendo reglas
+   (preferencias, no repetir, alternar proteínas, fines de semana).
+   ============================================================ */
+const ARM_DEFAULT = {
+  presupuesto: 'normal', sinCerdo: false, sinPescado: false, vegetariano: false,
+  ninos: false, peruana: false, propios: true,
+  comidas: { desayuno: true, media_manana: true, almuerzo: true, cena: true },
+  modo: 'vacios'
+};
+const CARNES = new Set(['pollo', 'carne', 'cerdo', 'pescado']);
+/* Máximo de veces por semana que se repite cada proteína en el almuerzo */
+const TOPE_PROT = { pollo: 3, carne: 2, cerdo: 1, pescado: 2, menestra: 2, huevo: 1 };
+let ARM = null;   // { prefs, week, prop: [ { día, values } ] }
+
+function armPrefsKey(){ return 'wmArmador:' + CTX.hogar.id; }
+function armLeerPrefs(){
+  try{
+    const p = JSON.parse(localStorage.getItem(armPrefsKey()));
+    if(p) return Object.assign({}, ARM_DEFAULT, p, { comidas: Object.assign({}, ARM_DEFAULT.comidas, p.comidas) });
+  }catch(e){}
+  return JSON.parse(JSON.stringify(ARM_DEFAULT));
+}
+function armGuardarPrefs(){ try{ localStorage.setItem(armPrefsKey(), JSON.stringify(ARM.prefs)); }catch(e){} }
+
+/* Adivina la proteína y si lleva cerdo de un plato escrito por la familia */
+function adivinar(nombre){
+  const t = normalize(nombre);
+  const has = re => re.test(t);
+  if(has(/chancho|cerdo|chicharron(?! de pollo| de pescado)|lechon|jamon|chorizo|salchicha|tocino|adobo|butifarra/)) return { prot: 'cerdo', cerdo: true };
+  if(has(/pescado|atun|bonito|jurel|caballa|ceviche|mariscos|camaron|jalea|sudado|trucha|tilapia|pota|calamar/)) return { prot: 'pescado' };
+  if(has(/pollo|gallina|pavita|pavo|alitas|ala /)) return { prot: 'pollo' };
+  if(has(/carne|\bres\b|bistec|bisteck|lomo|asado|\bseco\b|guiso|molida|albondiga|higado|mondongo|cau cau|anticucho|hamburguesa|chuleta/)) return { prot: 'carne' };
+  if(has(/lenteja|frejol|frijol|garbanzo|pallar|arveja|alverja|menestra|tacu/)) return { prot: 'menestra' };
+  if(has(/huevo|tortilla/)) return { prot: 'huevo' };
+  return { prot: 'veg' };
+}
+
+/* Platos posibles para una comida según las preferencias */
+function armPool(db, prefs){
+  const ok = r => !(prefs.sinCerdo && r.cerdo)
+    && !(prefs.sinPescado && r.prot === 'pescado')
+    && !(prefs.vegetariano && CARNES.has(r.prot))
+    && !(prefs.ninos && r.ninos === false)
+    && !(prefs.peruana && r.peru === false)
+    && !(prefs.presupuesto === 'economico' && r.costo > 1);
+  const pool = RECETARIO.filter(r => r.comidas.includes(db) && ok(r));
+  if(prefs.propios){
+    // Platos que esta familia ya escribió para esa comida
+    const vistos = new Set(pool.map(r => normalize(r.n)));
+    MENU.forEach(fila => {
+      const n = (fila[db] || '').trim();
+      const k = normalize(n);
+      if(!n || k === 'libre' || k === 'sin definir' || vistos.has(k)) return;
+      vistos.add(k);
+      const g = adivinar(n);
+      const r = { n, comidas: [db], prot: g.prot, cerdo: !!g.cerdo, propio: true, costo: 1 };
+      if(ok(r)) pool.push(r);
+    });
+  }
+  return pool;
+}
+
+/* Elige un plato: al azar, pero con reglas que suman o restan puntos */
+function armElegir(pool, db, dia, usados, ctx){
+  const hoy = ctx.delDia || new Set();   // lo que ya tiene ese día (no repetir en otra comida)
+  let cand = pool.filter(r => !usados.has(normalize(r.n)) && !hoy.has(normalize(r.n)) && (!r.finde || dia >= 5));
+  if(!cand.length) cand = pool.filter(r => !hoy.has(normalize(r.n)) && (!r.finde || dia >= 5));   // si no alcanzan, se permite repetir
+  if(!cand.length) return null;
+  const puntaje = r => {
+    let p = Math.random();
+    if(r.finde && dia >= 5) p += 0.8;                     // platos de domingo, el fin de semana
+    if(db === 'almuerzo'){
+      if(r.prot === ctx.protAyer) p -= 5;                 // no la misma proteína dos días seguidos
+      if((ctx.cuenta[r.prot] || 0) >= (TOPE_PROT[r.prot] || 2)) p -= 5;
+      if((r.prot === 'pescado' || r.prot === 'menestra') && !ctx.cuenta[r.prot] && dia >= 2) p += 1.2;
+    }
+    if(db === 'cena'){
+      if(r.prot === ctx.protAlmuerzo && CARNES.has(r.prot)) p -= 3;   // cena distinta al almuerzo
+      if(r.prot === ctx.protCenaAyer) p -= 1;
+    }
+    return p;
+  };
+  const mejorDe = lista => {
+    let mejor = null, mejorP = -Infinity;
+    lista.forEach(r => { const p = puntaje(r); if(p > mejorP){ mejorP = p; mejor = r; } });
+    return { mejor, mejorP };
+  };
+  // Más o menos 4 de cada 10 platos salen de los que la familia ya preparó
+  const propios = cand.filter(r => r.propio), receta = cand.filter(r => !r.propio);
+  if(propios.length && receta.length){
+    const elegido = mejorDe(Math.random() < 0.4 ? propios : receta);
+    if(elegido.mejorP >= 0) return elegido.mejor;        // si rompe una regla, se busca en todos
+  }
+  const { mejor } = mejorDe(cand);
+  return mejor;
+}
+
+/* Arma la propuesta completa (o solo un día si se pasa "soloDia") */
+function armProponer(soloDia){
+  const prefs = ARM.prefs;
+  const comidas = MEAL_COLUMNS.filter(c => prefs.comidas[c.db]);
+  const pools = {};
+  comidas.forEach(c => { pools[c.db] = armPool(c.db, prefs); });
+  if(soloDia === undefined){
+    ARM.prop = ARM.week.days.map(d => ({ day: d, values: {}, kept: {} }));
+  }
+  const usados = {};
+  comidas.forEach(c => { usados[c.db] = new Set(); });
+  const cuenta = {};
+  // Lo que se mantiene (días ya escritos o los otros días al cambiar uno) cuenta para no repetir
+  ARM.prop.forEach((p, i) => {
+    MEAL_COLUMNS.forEach(c => {
+      const ya = p.day.values[c.key];
+      const mantener = ARM.prefs.modo === 'vacios' && ya;
+      p.kept[c.db] = !!mantener || !prefs.comidas[c.db];
+      if(p.kept[c.db]) p.values[c.db] = ya || '';
+    });
+  });
+  ARM.prop.forEach((p, i) => {
+    if(soloDia !== undefined && i !== soloDia){
+      comidas.forEach(c => { if(p.values[c.db]) usados[c.db].add(normalize(p.values[c.db])); });
+      if(p.values.almuerzo){ const pr = armProtDe(p.values.almuerzo); cuenta[pr] = (cuenta[pr] || 0) + 1; }
+    } else if(soloDia === i){
+      // al pedir "Otro" para un día, no se vuelve a proponer lo mismo
+      comidas.forEach(c => { if(p.values[c.db]) usados[c.db].add(normalize(p.values[c.db])); });
+    } else {
+      comidas.forEach(c => { if(p.kept[c.db] && p.values[c.db]) usados[c.db].add(normalize(p.values[c.db])); });
+    }
+  });
+  ARM.prop.forEach((p, i) => {
+    if(soloDia !== undefined && i !== soloDia) return;
+    const ayer = ARM.prop[i - 1];
+    const ctx = {
+      cuenta,
+      protAyer: ayer && ayer.values.almuerzo ? armProtDe(ayer.values.almuerzo) : null,
+      protCenaAyer: ayer && ayer.values.cena ? armProtDe(ayer.values.cena) : null
+    };
+    ctx.delDia = new Set();
+    MEAL_COLUMNS.forEach(c => { if(p.kept[c.db] && p.values[c.db]) ctx.delDia.add(normalize(p.values[c.db])); });
+    comidas.forEach(c => {
+      if(p.kept[c.db]) return;
+      if(c.db === 'cena') ctx.protAlmuerzo = p.values.almuerzo ? (armProtDe(p.values.almuerzo)) : null;
+      const r = armElegir(pools[c.db], c.db, i, usados[c.db], ctx);
+      p.values[c.db] = r ? r.n : '';
+      if(r){
+        usados[c.db].add(normalize(r.n));
+        ctx.delDia.add(normalize(r.n));
+        if(c.db === 'almuerzo') cuenta[r.prot] = (cuenta[r.prot] || 0) + 1;
+      }
+    });
+  });
+}
+function armProtDe(nombre){
+  const r = RECETARIO.find(x => x.n === nombre);
+  return r ? r.prot : adivinar(nombre).prot;
+}
+
+/* ---------- Pantalla ---------- */
+function armMsg(id, texto){ const m = document.getElementById(id); m.textContent = texto || ''; m.hidden = !texto; }
+
+function armPintarPrefs(){
+  const p = ARM.prefs;
+  document.querySelectorAll('#armador [data-presupuesto]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.presupuesto === p.presupuesto)));
+  document.querySelectorAll('#armador [data-pref]').forEach(b => b.setAttribute('aria-pressed', String(!!p[b.dataset.pref])));
+  document.querySelectorAll('#armador [data-modo]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.modo === p.modo)));
+  const box = document.getElementById('armComidas');
+  box.innerHTML = '';
+  MEAL_COLUMNS.forEach(c => {
+    const b = el('button', 'chip', c.label);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(!!p.comidas[c.db]));
+    b.addEventListener('click', () => { p.comidas[c.db] = !p.comidas[c.db]; armPintarPrefs(); });
+    box.appendChild(b);
+  });
+  const hayEscrito = ARM.week.days.some(d => MEAL_COLUMNS.some(c => d.values[c.key]));
+  document.getElementById('armModoWrap').hidden = !hayEscrito;
+}
+
+function armPintarPropuesta(){
+  const box = document.getElementById('armDias');
+  box.innerHTML = '';
+  ARM.prop.forEach((p, i) => {
+    const card = el('div', 'arm-day');
+    const head = el('div', 'arm-day-head');
+    const t = el('strong', '', displayDay(p.day.nombreDia));
+    t.appendChild(el('small', '', fmtShort(p.day.fecha)));
+    head.appendChild(t);
+    const todoFijo = MEAL_COLUMNS.every(c => p.kept[c.db]);
+    if(!todoFijo){
+      const b = el('button', 'arm-reroll');
+      b.type = 'button';
+      b.append(icon('i-shuffle'), 'Otro');
+      b.setAttribute('aria-label', 'Proponer otro menú para el ' + displayDay(p.day.nombreDia).toLowerCase());
+      b.addEventListener('click', () => { armProponer(i); armPintarPropuesta(); });
+      head.appendChild(b);
+    }
+    card.appendChild(head);
+    MEAL_COLUMNS.forEach(c => {
+      const v = p.values[c.db];
+      if(!v) return;
+      const row = el('div', 'arm-meal');
+      row.append(mealIcon(c, true), el('span', p.kept[c.db] && ARM.prefs.comidas[c.db] ? 'kept' : '', v));
+      card.appendChild(row);
+    });
+    box.appendChild(card);
+  });
+}
+
+function armPaso(n){
+  document.getElementById('armPaso1').hidden = n !== 1;
+  document.getElementById('armPaso2').hidden = n !== 2;
+  document.getElementById('armador').scrollTop = 0;
+}
+
+function abrirArmador(){
+  if(!CTX || CTX.soloLectura) return;
+  const week = WEEKS[CURRENT_INDEX];
+  if(!week) return;
+  ARM = { prefs: armLeerPrefs(), week, prop: [] };
+  document.getElementById('armTitle').textContent = weekTitle(week.monday);
+  document.getElementById('armKicker').textContent = 'Arma mi semana · ' + fmtShort(week.monday) + ' al ' + fmtShort(addDays(week.monday, 6));
+  armMsg('armMsg1'); armMsg('armMsg2');
+  armPintarPrefs();
+  armPaso(1);
+  document.getElementById('armador').showModal();
+}
+function cerrarArmador(){ document.getElementById('armador').close(); ARM = null; }
+
+document.getElementById('btnArmar').addEventListener('click', abrirArmador);
+document.getElementById('armClose').addEventListener('click', cerrarArmador);
+document.getElementById('armador').addEventListener('click', ev => { if(ev.target.id === 'armador') cerrarArmador(); });
+document.querySelectorAll('#armador [data-presupuesto]').forEach(b => b.addEventListener('click', () => { ARM.prefs.presupuesto = b.dataset.presupuesto; armPintarPrefs(); }));
+document.querySelectorAll('#armador [data-modo]').forEach(b => b.addEventListener('click', () => { ARM.prefs.modo = b.dataset.modo; armPintarPrefs(); }));
+document.querySelectorAll('#armador [data-pref]').forEach(b => b.addEventListener('click', () => { ARM.prefs[b.dataset.pref] = !ARM.prefs[b.dataset.pref]; armPintarPrefs(); }));
+
+document.getElementById('armGenerar').addEventListener('click', () => {
+  if(!MEAL_COLUMNS.some(c => ARM.prefs.comidas[c.db])) return armMsg('armMsg1', 'Elige al menos una comida.');
+  armGuardarPrefs();
+  armProponer();
+  const vacios = ARM.prop.every(p => MEAL_COLUMNS.every(c => p.kept[c.db] || !p.values[c.db]));
+  if(vacios) return armMsg('armMsg1', ARM.prefs.modo === 'vacios'
+    ? 'Esta semana ya está completa. Elige «Reemplazar todo» si quieres una propuesta nueva.'
+    : 'No encontramos platos con esas preferencias. Prueba quitando alguna.');
+  armMsg('armMsg1');
+  armPintarPropuesta();
+  armPaso(2);
+});
+document.getElementById('armOtra').addEventListener('click', () => { armProponer(); armPintarPropuesta(); });
+document.getElementById('armVolver').addEventListener('click', () => armPaso(1));
+
+document.getElementById('armGuardar').addEventListener('click', async () => {
+  const btn = document.getElementById('armGuardar');
+  const filas = ARM.prop.map(p => {
+    const fila = { hogar_id: CTX.hogar.id, fecha: p.day.iso };
+    MEAL_COLUMNS.forEach(c => { fila[c.db] = p.values[c.db] || p.day.values[c.key] || ''; });
+    return fila;
+  }).filter(f => MEAL_COLUMNS.some(c => f[c.db]));
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+  armMsg('armMsg2');
+  try{
+    const { data, error } = await CTX.sb.from('menu_dias').upsert(filas, { onConflict: 'hogar_id,fecha' }).select();
+    if(error) throw error;
+    data.forEach(r => MENU.set(r.fecha, r));
+    try{ localStorage.setItem(cacheKey(), JSON.stringify(Array.from(MENU.values()))); }catch(e){}
+    cerrarArmador();
+    paint();
+    setSync('Semana guardada · ' + horaCorta(), 'ok');
+  }catch(err){
+    armMsg('armMsg2', WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo guardar: ' + WM.traducir(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Guardar semana';
   }
 });
 
