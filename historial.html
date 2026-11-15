@@ -292,6 +292,11 @@
   .hero::after{display:none;}
   .hero-bar{position:static; padding-top:12px; padding-bottom:12px; align-items:center;}
   @media (min-width:768px){ .hero-bar{padding-top:14px; padding-bottom:14px;} }
+  /* En laptop/PC el banner no ocupa todo el ancho: queda centrado y con esquinas redondeadas */
+  @media (min-width:900px){
+    .hero{padding-top:20px;}
+    .hero-img{width:min(calc(100% - 64px), 960px); margin:0 auto; border-radius:18px;}
+  }
 </style>
 </head>
 <body>
