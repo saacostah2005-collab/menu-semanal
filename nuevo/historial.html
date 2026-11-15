@@ -735,7 +735,7 @@ async function load(){
   }
   try{
     const { data, error } = await CTX.sb.from('compras')
-      .select('fecha, semana_inicio, total, compra_items(nombre, precio, comprado, categoria)')
+      .select('fecha, semana_inicio, total, ingredientes_texto, compra_items(nombre, precio, comprado, categoria)')
       .order('fecha');
     if(error) throw error;
     // Mismo formato que usaba el historial de Google Sheets
@@ -743,7 +743,7 @@ async function load(){
       fecha: c.fecha,
       semanaInicio: c.semana_inicio,
       total: c.total == null ? null : Number(c.total),
-      ingredientes: '',
+      ingredientes: c.ingredientes_texto || '',
       items: (c.compra_items || []).map(i => ({ nombre: i.nombre, precio: i.precio == null ? null : Number(i.precio), comprado: i.comprado, categoria: i.categoria }))
     }));
     WEEKS = buildWeeks(registros);
