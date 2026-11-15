@@ -476,6 +476,44 @@
   .arm-meal span.kept{color:var(--ink-3); font-weight:500;}
   .arm-meal span.kept::after{content:" · ya estaba"; font-size:12px;}
   .arm-note{font-size:13px; color:var(--ink-3); margin:10px 0 0;}
+
+  /* ---------- Favoritos y copiar día (editor) ---------- */
+  .ed-field{align-items:start;}
+  .ed-field .mi{margin:24px 0 0;}
+  .ed-field label{display:block; min-width:0;}
+  .fav-chips{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin-top:6px; padding-bottom:2px; align-items:center;}
+  .fav-chips::-webkit-scrollbar{display:none;}
+  .fav-lbl{font-size:13px; color:var(--sun); flex:none;}
+  .fav{flex:none; height:30px; padding:0 10px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface-2); color:var(--ink-2); font-size:12.5px; font-weight:700; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .fav:active{transform:scale(.96);}
+  .ed-copy{margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);}
+  .ed-copy:empty{display:none;}
+  .copy-days{display:flex; flex-wrap:wrap; gap:6px;}
+  .day-chip{height:36px; padding:0 12px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-2); font-size:13px; font-weight:700; cursor:pointer;}
+  .day-chip[aria-pressed="true"]{background:var(--brand); border-color:var(--brand); color:#fff;}
+  .copy-note{font-size:12.5px; color:var(--ink-3); margin:8px 0 0;}
+
+  /* ---------- Repetir una semana ---------- */
+  .arm-cta-btns{display:flex; gap:8px; flex-wrap:wrap;}
+  @media (max-width:559px){ .arm-cta-btns{width:100%;} .arm-cta-btns .btn{flex:1;} }
+  .rep-list{display:grid; gap:8px;}
+  .rep-item{display:block; width:100%; text-align:left; border:1px solid var(--line-strong); border-radius:var(--r); background:var(--surface); padding:12px 14px; cursor:pointer; transition:border-color .15s ease, background-color .15s ease;}
+  .rep-item[aria-pressed="true"]{border-color:var(--brand); background:var(--brand-soft); box-shadow:0 0 0 1px var(--brand);}
+  .rep-item strong{display:block; font-size:15px; font-weight:800;}
+  .rep-item span{display:block; font-size:13px; color:var(--ink-2); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  /* ---------- Mañana (recordatorio) ---------- */
+  .manana{margin-top:14px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:16px 18px; box-shadow:var(--shadow-sm);}
+  .manana-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;}
+  .manana-head strong{font-size:16px; font-weight:800;}
+  .manana-head span{font-size:13px; color:var(--ink-3);}
+  .manana-meals{font-size:14.5px; color:var(--ink-2); margin:0 0 10px; line-height:1.5;}
+  .manana-meals b{color:var(--ink); font-weight:700;}
+  .tips{list-style:none; margin:0 0 12px; padding:0; display:grid; gap:6px;}
+  .tips li{display:flex; gap:8px; align-items:flex-start; font-size:14px; font-weight:600; padding:8px 10px; border-radius:10px; background:var(--t-desayuno); color:var(--ink);}
+  .btn.wa{background:#1f8f4e; border-color:#1f8f4e; color:#fff;}
+  @media (hover:hover){ .btn.wa:hover{background:#18763f !important;} }
+  .readonly .manana .btn{display:none;}
 </style>
 </head>
 <body>
@@ -500,6 +538,8 @@
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
   <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.94 14.06 8.5 19.5l-1.44-5.44L1.5 12.5l5.56-1.56L8.5 5.5l1.44 5.44 5.56 1.56Z"/><path d="M19 3v4"/><path d="M21 5h-4"/><path d="M18 15v3"/><path d="M19.5 16.5h-3"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+  <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5Z"/></symbol>
   <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.97a4 4 0 0 0 3.3-1.7l5.46-8.6A4 4 0 0 1 16.03 6H22"/><path d="M2 6h1.97a4 4 0 0 1 3.3 1.7l5.46 8.6A4 4 0 0 0 16.03 18H22"/></symbol>
 </svg>
 
@@ -552,7 +592,10 @@
     <div class="arm-cta">
       <span class="sec-ico"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg></span>
       <div class="arm-cta-text"><strong>¿Sin ideas para la semana?</strong><span>Elige tus preferencias y te proponemos los 7 días.</span></div>
-      <button class="btn primary" id="btnArmar" type="button"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>Arma mi semana</button>
+      <div class="arm-cta-btns">
+        <button class="btn" id="btnRepetir" type="button"><svg class="ico" aria-hidden="true"><use href="#i-repeat"/></svg>Repetir una semana</button>
+        <button class="btn primary" id="btnArmar" type="button"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>Arma mi semana</button>
+      </div>
     </div>
     <p class="week-hint"><svg class="ico" aria-hidden="true"><use href="#i-pencil"/></svg>Toca un día (o su botón «Editar») para escribir o cambiar su menú.</p>
     <div id="app">
@@ -575,12 +618,35 @@
       <button class="btn icon" type="button" id="edClose" aria-label="Cerrar"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
     </div>
     <div id="edFields"></div>
+    <div class="ed-copy" id="edCopy"></div>
     <p class="ed-msg" id="edMsg" role="status" hidden></p>
     <div class="ed-actions">
       <button class="btn" type="button" id="edCancel">Cancelar</button>
       <button class="btn primary" type="submit" id="edSave">Guardar</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="editor" id="repetir" aria-labelledby="repTitle">
+  <div class="ed-form">
+    <div class="ed-head">
+      <div><p class="ed-kicker" id="repKicker">Repetir una semana</p><h2 id="repTitle">¿Qué semana repetimos?</h2></div>
+      <button class="btn icon" type="button" id="repClose" aria-label="Cerrar"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="rep-list" id="repList" role="radiogroup" aria-label="Semanas anteriores"></div>
+    <div class="arm-group" id="repModoWrap" style="margin-top:16px">
+      <span class="arm-label">Esta semana ya tiene platos escritos</span>
+      <div class="chips" role="radiogroup" aria-label="Qué hacer con lo ya escrito">
+        <button class="chip" type="button" role="radio" data-rmodo="vacios" aria-checked="true">Solo llenar lo que falta</button>
+        <button class="chip" type="button" role="radio" data-rmodo="todo" aria-checked="false">Reemplazar todo</button>
+      </div>
+    </div>
+    <p class="ed-msg" id="repMsg" hidden></p>
+    <div class="ed-actions">
+      <button class="btn" type="button" id="repCancel">Cancelar</button>
+      <button class="btn primary" type="button" id="repOk">Repetir</button>
+    </div>
+  </div>
 </dialog>
 
 <dialog class="editor" id="armador" aria-labelledby="armTitle">
@@ -808,6 +874,7 @@ function renderToday(){
       empty.appendChild(b);
     }
     box.appendChild(empty);
+    box.appendChild(tarjetaManana());
     return;
   }
 
@@ -868,6 +935,7 @@ function renderToday(){
   const ed = el('div', 'today-edit');
   ed.appendChild(editBtn(row, 'Editar el menú de hoy'));
   box.appendChild(ed);
+  box.appendChild(tarjetaManana());
 }
 
 /* ---------- tabla de la semana (escritorio) ---------- */
@@ -1116,6 +1184,20 @@ function edMsg(text){
   m.hidden = !text;
 }
 
+/* Platos que la familia más repite en cada comida (sus "favoritos") */
+function favoritos(db, n){
+  const cuenta = new Map();
+  MENU.forEach(fila => {
+    const v = (fila[db] || '').trim();
+    const k = normalize(v);
+    if(!v || k === 'libre' || k === 'sin definir') return;
+    const e = cuenta.get(k) || { v, n: 0 };
+    e.n++; e.v = v;
+    cuenta.set(k, e);
+  });
+  return Array.from(cuenta.values()).sort((a, b) => b.n - a.n || a.v.localeCompare(b.v)).slice(0, n).map(e => e.v);
+}
+
 function openEditor(day){
   if(!CTX || CTX.soloLectura) return;
   ED_DAY = day;
@@ -1123,8 +1205,8 @@ function openEditor(day){
   const box = document.getElementById('edFields');
   box.innerHTML = '';
   MEAL_COLUMNS.forEach(col => {
-    const f = el('label', 'ed-field');
-    const wrap = el('span');
+    const f = el('div', 'ed-field');
+    const wrap = el('label');
     wrap.appendChild(el('span', 'ed-lbl', col.label));
     const inp = el('input');
     inp.type = 'text';
@@ -1133,16 +1215,68 @@ function openEditor(day){
     inp.placeholder = 'Ej.: ' + col.ej;
     inp.value = day.values[col.key] || '';
     inp.enterKeyHint = 'next';
-    wrap.appendChild(inp);
+    // Sugerencias al escribir: sus platos de siempre + el recetario
+    const dl = el('datalist');
+    dl.id = 'dl-' + col.db;
+    const vistos = new Set();
+    favoritos(col.db, 60).concat((window.RECETARIO || []).filter(r => r.comidas.includes(col.db)).map(r => r.n)).forEach(v => {
+      const k = normalize(v);
+      if(vistos.has(k)) return;
+      vistos.add(k);
+      const o = el('option'); o.value = v; dl.appendChild(o);
+    });
+    inp.setAttribute('list', dl.id);
+    wrap.append(inp, dl);
+    // Favoritos: los 4 que más repiten, para elegir con un toque
+    const favs = favoritos(col.db, 4);
+    if(favs.length){
+      const chips = el('div', 'fav-chips');
+      chips.appendChild(el('span', 'fav-lbl', '★'));
+      favs.forEach(v => {
+        const b = el('button', 'fav', v);
+        b.type = 'button';
+        b.addEventListener('click', () => { inp.value = v; inp.focus(); });
+        chips.appendChild(b);
+      });
+      wrap.appendChild(chips);
+    }
     f.append(mealIcon(col, true), wrap);
     box.appendChild(f);
   });
+  // Copiar este menú a otros días de la misma semana
+  const week = WEEKS.find(w => w.days.some(d => d.iso === day.iso));
+  const copy = document.getElementById('edCopy');
+  copy.innerHTML = '';
+  if(week){
+    copy.appendChild(el('span', 'ed-lbl', 'Copiar también a otros días'));
+    const row = el('div', 'copy-days');
+    week.days.forEach(d => {
+      if(d.iso === day.iso) return;
+      const b = el('button', 'day-chip', abbrDay(d.nombreDia) + ' ' + d.fecha.getDate());
+      b.type = 'button';
+      b.dataset.iso = d.iso;
+      b.setAttribute('aria-pressed', 'false');
+      b.setAttribute('aria-label', 'Copiar también al ' + displayDay(d.nombreDia).toLowerCase() + ' ' + fmtShort(d.fecha));
+      b.addEventListener('click', () => {
+        b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+        const n = copy.querySelectorAll('.day-chip[aria-pressed="true"]').length;
+        document.getElementById('edCopyNote').hidden = !n;
+      });
+      row.appendChild(b);
+    });
+    copy.appendChild(row);
+    const note = el('p', 'copy-note', 'Se reemplazará el menú de los días marcados.');
+    note.id = 'edCopyNote';
+    note.hidden = true;
+    copy.appendChild(note);
+  }
   edMsg('');
   const save = document.getElementById('edSave');
   save.disabled = false;
   save.textContent = 'Guardar';
   const dlg = document.getElementById('editor');
   dlg.showModal();
+  dlg.scrollTop = 0;
   // En el celular no se abre el teclado de golpe: así se ve el día completo
   if(window.matchMedia('(min-width:600px)').matches) box.querySelector('input').focus();
 }
@@ -1164,27 +1298,30 @@ document.getElementById('edForm').addEventListener('submit', async ev => {
   ev.preventDefault();
   if(!ED_DAY) return;
   const day = ED_DAY;
-  const fila = { hogar_id: CTX.hogar.id, fecha: day.iso };
-  document.querySelectorAll('#edFields input').forEach(inp => { fila[inp.name] = inp.value.trim(); });
-  const vacio = MEAL_COLUMNS.every(c => !fila[c.db]);
+  const valores = {};
+  document.querySelectorAll('#edFields input').forEach(inp => { valores[inp.name] = inp.value.trim(); });
+  const vacio = MEAL_COLUMNS.every(c => !valores[c.db]);
+  const copias = Array.from(document.querySelectorAll('#edCopy .day-chip[aria-pressed="true"]')).map(b => b.dataset.iso);
   const save = document.getElementById('edSave');
   save.disabled = true;
   save.textContent = 'Guardando…';
   edMsg('');
   try{
     if(vacio){
-      const { error } = await CTX.sb.from('menu_dias').delete().eq('hogar_id', CTX.hogar.id).eq('fecha', day.iso);
+      const fechas = [day.iso].concat(copias);
+      const { error } = await CTX.sb.from('menu_dias').delete().eq('hogar_id', CTX.hogar.id).in('fecha', fechas);
       if(error) throw error;
-      MENU.delete(day.iso);
+      fechas.forEach(f => MENU.delete(f));
     } else {
-      const { data, error } = await CTX.sb.from('menu_dias').upsert(fila, { onConflict: 'hogar_id,fecha' }).select().single();
+      const filas = [day.iso].concat(copias).map(iso => Object.assign({ hogar_id: CTX.hogar.id, fecha: iso }, valores));
+      const { data, error } = await CTX.sb.from('menu_dias').upsert(filas, { onConflict: 'hogar_id,fecha' }).select();
       if(error) throw error;
-      MENU.set(day.iso, data);
+      data.forEach(r => MENU.set(r.fecha, r));
     }
     try{ localStorage.setItem(cacheKey(), JSON.stringify(Array.from(MENU.values()))); }catch(e){}
     closeEditor();
     paint();
-    setSync('Guardado · ' + horaCorta(), 'ok');
+    setSync((copias.length ? 'Guardado en ' + (copias.length + 1) + ' días · ' : 'Guardado · ') + horaCorta(), 'ok');
   }catch(err){
     save.disabled = false;
     save.textContent = 'Guardar';
@@ -1469,6 +1606,152 @@ document.getElementById('armGuardar').addEventListener('click', async () => {
     btn.textContent = 'Guardar semana';
   }
 });
+
+/* ============================================================
+   REPETIR UNA SEMANA — copia una semana anterior a la que estás viendo
+   ============================================================ */
+let REP = null;   // { destino, origen, modo }
+
+function semanasAnteriores(destino){
+  // Semanas con algo escrito, antes de la que se está viendo (la más reciente primero)
+  const lunes = new Map();
+  MENU.forEach((fila, iso) => {
+    const m = getMonday(parseISO(iso));
+    if(m >= destino.monday) return;
+    if(!MEAL_COLUMNS.some(c => (fila[c.db] || '').trim())) return;
+    lunes.set(isoDate(m), m);
+  });
+  return Array.from(lunes.values()).sort((a, b) => b - a).slice(0, 10);
+}
+function abrirRepetir(){
+  if(!CTX || CTX.soloLectura) return;
+  const destino = WEEKS[CURRENT_INDEX];
+  if(!destino) return;
+  REP = { destino, origen: null, modo: 'vacios' };
+  document.getElementById('repKicker').textContent = 'Repetir en ' + weekTitle(destino.monday).toLowerCase() + ' · ' + fmtShort(destino.monday) + ' al ' + fmtShort(addDays(destino.monday, 6));
+  const list = document.getElementById('repList');
+  list.innerHTML = '';
+  const semanas = semanasAnteriores(destino);
+  if(!semanas.length) list.appendChild(el('p', 'arm-note', 'Todavía no hay semanas anteriores con menú.'));
+  semanas.forEach(m => {
+    const b = el('button', 'rep-item');
+    b.type = 'button';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-pressed', 'false');
+    const almuerzos = [0, 1, 2, 3, 4, 5, 6].map(i => (MENU.get(isoDate(addDays(m, i))) || {}).almuerzo).filter(Boolean);
+    b.append(el('strong', '', weekTitle(m) + ' · ' + fmtShort(m) + ' al ' + fmtShort(addDays(m, 6))),
+             el('span', '', almuerzos.length ? almuerzos.slice(0, 4).join(' · ') : 'Sin almuerzos escritos'));
+    b.addEventListener('click', () => {
+      REP.origen = m;
+      list.querySelectorAll('.rep-item').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+    list.appendChild(b);
+  });
+  const hayEscrito = destino.days.some(d => MEAL_COLUMNS.some(c => d.values[c.key]));
+  document.getElementById('repModoWrap').hidden = !hayEscrito;
+  document.querySelectorAll('#repetir [data-rmodo]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.rmodo === 'vacios')));
+  document.getElementById('repOk').disabled = !semanas.length;
+  document.getElementById('repMsg').hidden = true;
+  document.getElementById('repetir').showModal();
+}
+function cerrarRepetir(){ document.getElementById('repetir').close(); REP = null; }
+document.getElementById('btnRepetir').addEventListener('click', abrirRepetir);
+document.getElementById('repClose').addEventListener('click', cerrarRepetir);
+document.getElementById('repCancel').addEventListener('click', cerrarRepetir);
+document.getElementById('repetir').addEventListener('click', ev => { if(ev.target.id === 'repetir') cerrarRepetir(); });
+document.querySelectorAll('#repetir [data-rmodo]').forEach(b => b.addEventListener('click', () => {
+  REP.modo = b.dataset.rmodo;
+  document.querySelectorAll('#repetir [data-rmodo]').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+}));
+document.getElementById('repOk').addEventListener('click', async () => {
+  const msg = document.getElementById('repMsg');
+  if(!REP.origen){ msg.textContent = 'Elige qué semana quieres repetir.'; msg.hidden = false; return; }
+  const filas = [];
+  REP.destino.days.forEach((d, i) => {
+    const src = MENU.get(isoDate(addDays(REP.origen, i))) || {};
+    const fila = { hogar_id: CTX.hogar.id, fecha: d.iso };
+    MEAL_COLUMNS.forEach(c => {
+      const ya = d.values[c.key];
+      fila[c.db] = (REP.modo === 'vacios' && ya) ? ya : ((src[c.db] || '').trim() || ya || '');
+    });
+    if(MEAL_COLUMNS.some(c => fila[c.db])) filas.push(fila);
+  });
+  const btn = document.getElementById('repOk');
+  btn.disabled = true; btn.textContent = 'Copiando…';
+  try{
+    const { data, error } = await CTX.sb.from('menu_dias').upsert(filas, { onConflict: 'hogar_id,fecha' }).select();
+    if(error) throw error;
+    data.forEach(r => MENU.set(r.fecha, r));
+    try{ localStorage.setItem(cacheKey(), JSON.stringify(Array.from(MENU.values()))); }catch(e){}
+    cerrarRepetir();
+    paint();
+    setSync('Semana repetida · ' + horaCorta(), 'ok');
+  }catch(err){
+    msg.textContent = WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo copiar: ' + WM.traducir(err);
+    msg.hidden = false;
+  }finally{
+    btn.disabled = false; btn.textContent = 'Repetir';
+  }
+});
+
+/* ============================================================
+   MAÑANA — recordatorio para enviar por WhatsApp
+   ============================================================ */
+function consejosPara(row){
+  const congelar = { pollo: 'el pollo', carne: 'la carne', cerdo: 'el cerdo', pescado: 'el pescado' };
+  const sacar = new Map(), remojar = [];
+  [['almuerzo', 'el almuerzo'], ['cena', 'la cena']].forEach(([db, cual]) => {
+    const v = row.values[MEAL_COLUMNS.find(c => c.db === db).key];
+    if(!v || isEmptyValue(v)) return;
+    const prot = armProtDe(v);
+    if(congelar[prot]) sacar.set(prot, (sacar.get(prot) || []).concat(cual));
+    if(/frejol|frijol|garbanzo|pallar|haba/.test(normalize(v))) remojar.push(cual);
+  });
+  const tips = [];
+  sacar.forEach((cuales, prot) => tips.push('🧊 Saca ' + congelar[prot] + ' del congelador esta noche (para ' + cuales.join(' y ') + ').'));
+  if(remojar.length) tips.push('🫘 Deja remojando las menestras esta noche (para ' + remojar.join(' y ') + ').');
+  return tips;
+}
+function tarjetaManana(){
+  const t = addDays(todayDate(), 1);
+  let row = null;
+  WEEKS.forEach(w => w.days.forEach(d => { if(isSameDay(d.fecha, t)) row = d; }));
+  const card = el('div', 'manana');
+  const head = el('div', 'manana-head');
+  head.append(el('strong', '', 'Mañana · ' + capitalize(t.toLocaleDateString('es-PE', { weekday:'long' })) + ' ' + fmtShort(t)));
+  card.appendChild(head);
+  const tiene = row && MEAL_COLUMNS.some(c => row.values[c.key]);
+  if(!tiene){
+    card.appendChild(el('p', 'manana-meals', 'Mañana todavía no tiene menú.'));
+    if(row) card.appendChild(editBtn(row, 'Escribir el menú de mañana'));
+    return card;
+  }
+  const p = el('p', 'manana-meals');
+  MEAL_COLUMNS.forEach((c, i) => {
+    const v = row.values[c.key];
+    if(!v) return;
+    if(p.childNodes.length) p.append(' · ');
+    p.append(c.label + ': ');
+    p.appendChild(el('b', '', mealText(v)));
+  });
+  card.appendChild(p);
+  const tips = consejosPara(row);
+  if(tips.length){
+    const ul = el('ul', 'tips');
+    tips.forEach(tx => ul.appendChild(el('li', '', tx)));
+    card.appendChild(ul);
+  }
+  const texto = '🍽️ Menú de mañana (' + capitalize(t.toLocaleDateString('es-PE', { weekday:'long', day:'numeric', month:'long' })) + ')\n' +
+    MEAL_COLUMNS.filter(c => row.values[c.key]).map(c => '• ' + c.label + ': ' + mealText(row.values[c.key])).join('\n') +
+    (tips.length ? '\n\n' + tips.join('\n') : '') + '\n\n— WeekMenuIA';
+  const a = el('a', 'btn wa');
+  a.href = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.append(icon('i-whatsapp'), 'Enviar recordatorio por WhatsApp');
+  card.appendChild(a);
+  return card;
+}
 
 /* ============================================================
    INICIO
