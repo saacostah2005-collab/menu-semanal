@@ -294,7 +294,7 @@
       </div>
       <div class="stack">
         <a class="btn" id="btnWhats" target="_blank" rel="noopener"><svg class="ico"><use href="#i-share"/></svg>Enviar invitación por WhatsApp</a>
-        <a class="btn primary" href="nuevo/"><svg class="ico"><use href="#i-menu"/></svg>Ir a mi menú</a>
+        <a class="btn primary" href="./"><svg class="ico"><use href="#i-menu"/></svg>Ir a mi menú</a>
       </div>
       <p class="meta" id="hCuenta"></p>
     </div>
@@ -332,7 +332,7 @@
       <ul class="pays" id="misPagos" hidden></ul>
     </div>
 
-    <a class="card" id="cardAdmin" href="nuevo/admin.html" hidden style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; padding:16px 20px">
+    <a class="card" id="cardAdmin" href="admin.html" hidden style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; padding:16px 20px">
       <span class="head-ico"><svg class="ico"><use href="#i-shield"/></svg></span>
       <span><strong style="display:block">Administrar pagos</strong><span style="font-size:14px; color:var(--ink-2)">Solo tú ves esto (administrador)</span></span>
     </a>
@@ -366,6 +366,10 @@ const VISTAS = ['vCargando', 'vLogin', 'vNuevaClave', 'vHogar', 'vListo'];
 function mostrar(id){ VISTAS.forEach(v => { $(v).hidden = (v !== id); }); }
 
 const ESTA_PAGINA = location.origin + location.pathname;
+
+/* Al entrar con correo y contraseña (o unirse a un hogar) se va directo al menú.
+   Si se abre esta página ya con sesión, funciona como "Mi cuenta". */
+let irAlMenu = false;
 
 /* Código que llega en el link de invitación (entrar.html?codigo=ABC123).
    Se guarda por si la persona primero tiene que crear su cuenta. */
@@ -436,8 +440,9 @@ $('fLogin').addEventListener('submit', async e => {
   ocupado(btn, true);
   try{
     if(modo === 'entrar'){
+      irAlMenu = true;
       const { error } = await sb.auth.signInWithPassword({ email, password });
-      if(error) throw error;
+      if(error){ irAlMenu = false; throw error; }
       // onAuthStateChange se encarga de seguir
     } else {
       const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: ESTA_PAGINA } });
@@ -509,7 +514,7 @@ $('fUnir').addEventListener('submit', async e => {
   ocupado(btn, false);
   if(error) return aviso('unirMsg', 'err', traducir(error));
   olvidarInvitacion();
-  cargarHogar();
+  location.replace('./');
 });
 
 /* ============================================================
@@ -548,6 +553,7 @@ async function cargarHogar(){
       sb.from('miembros').select('user_id', { count: 'exact', head: true }).eq('hogar_id', hogarId)
     ]);
     if(e2) throw e2;
+    if(irAlMenu){ location.replace('./'); return; }
     pintarHogar(hogar, count || 1, session.user);
     mostrar('vListo');
     cargarPagos();

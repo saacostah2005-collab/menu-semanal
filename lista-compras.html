@@ -3,27 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Lista de compras — Menu Smart</title>
+<title>Lista de compras — WeekMenuIA</title>
 <meta name="description" content="Tu lista de compras de la semana con precios, para marcar en el mercado.">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#123D27">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Menu Smart">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Menu Smart">
+<meta property="og:site_name" content="WeekMenuIA">
 <meta property="og:locale" content="es_PE">
-<meta property="og:title" content="Lista de compras — Menu Smart">
+<meta property="og:title" content="Lista de compras — WeekMenuIA">
 <meta property="og:description" content="Tu lista de compras de la semana con precios.">
 <meta property="og:url" content="https://saacostah2005-collab.github.io/menu-semanal/lista-compras.html">
 <meta property="og:image" content="https://saacostah2005-collab.github.io/menu-semanal/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#123D27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WeekMenuIA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
 (function(){
   try{
@@ -34,6 +34,8 @@
 })();
 </script>
 <link rel="preload" as="image" href="banner.jpg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="wm.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -465,7 +467,7 @@
       </div>
       <div class="sync-note" id="syncNote" hidden>
         <svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>
-        <span><strong>La lista aún no se comparte.</strong> No se pudo conectar con tu hoja de Google, así que por ahora se guarda solo en este celular y se enviará cuando conecte. Si todavía no instalaste el script nuevo (<em>google-apps-script.gs</em>), ese es el paso que falta.</span>
+        <span><strong>Sin conexión.</strong> Tus cambios se guardan en este celular y se enviarán solos cuando vuelva el internet.</span></span>
       </div>
       <button class="lock-bar" id="lockBar" type="button" role="switch" aria-checked="true">
         <span class="lock-ico" aria-hidden="true"><svg class="ico"><use id="lockIcon" href="#i-unlock"/></svg></span>
@@ -492,7 +494,7 @@
             <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-sheet"/></svg></span>
             <h2 id="actTitle">Historial de gastos</h2>
           </div>
-          <p>Cuando termines de comprar, guarda la lista con sus precios en tu hoja de Google para llevar la cuenta de lo que gastas cada semana.</p>
+          <p>Cuando termines de comprar, guarda la lista con sus precios en tu historial para llevar la cuenta de lo que gastas cada semana.</p>
           <button class="btn primary" id="btnSave" type="button">
             <svg class="ico" aria-hidden="true"><use href="#i-sheet"/></svg><span>Guardar en historial</span>
           </button>
@@ -509,16 +511,13 @@
 
   </div>
 
-  <footer class="footer"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>Menu Smart · Planifica tus comidas, come mejor.</footer>
+  <footer class="footer"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>WeekMenuIA · Planifica tus comidas, come mejor. · <a href="entrar.html" id="footHogar" style="color:inherit">Mi cuenta</a></footer>
 </main>
 
 <script>
-/* Enlace del Google Apps Script (Web App) conectado a tu Google Sheet.
-   Es el mismo que usa index.html. */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbCbOFPrTG8yljjNXlSNPY0oR7YJOO0BKvyXfDy70Py8TJ3GJ2OAORbJh4_VFg9VG7/exec";
-
-/* Cada cuánto se revisan los cambios de los otros celulares (ms) */
-const REFRESH_MS = 15000;
+/* Revisión de respaldo de los cambios de otros celulares (ms).
+   Normalmente llegan al instante por "tiempo real". */
+const REFRESH_MS = 30000;
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const money = new Intl.NumberFormat('es-PE', { style:'currency', currency:'PEN', minimumFractionDigits:2 });
@@ -603,7 +602,7 @@ function fmtRange(monday){
 
 /* Semana para el historial: la que estabas viendo en el menú, o la actual */
 const WEEK = (function(){
-  const data = readJSON('menuSmartShoppingWeek', null);
+  const data = readJSON('wmShoppingWeek', null);
   if(data && data.monday) return { monday: data.monday, sunday: data.sunday, label: data.weekLabel || '' };
   const monday = getMonday(new Date());
   const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
@@ -611,52 +610,39 @@ const WEEK = (function(){
 })();
 
 /* ============================================================
-   LISTA COMPARTIDA
-   - La lista "oficial" vive en la hoja Lista_Actual de tu Google Sheet.
-   - Cada cambio (agregar, editar, marcar, quitar) se guarda al instante en
-     este celular y se envía a la hoja como una "operación".
-   - Si no hay señal, las operaciones esperan en cola y se envían solas
-     cuando vuelve la conexión.
-   - Cada 15 s (y al volver a la página) se leen los cambios de los demás.
+   LISTA COMPARTIDA (Supabase)
+   - La lista "oficial" vive en la tabla lista_items del hogar.
+   - Cada cambio se guarda al instante en este celular y se envía como una
+     "operación". Sin señal, las operaciones esperan en cola y se envían
+     solas cuando vuelve la conexión.
+   - Los cambios de los demás llegan al instante (tiempo real) y, por si
+     acaso, se revisa cada 30 s y al volver a la página.
    ============================================================ */
-const CACHE_KEY = 'menuSmartListaCompartida';
-const QUEUE_KEY = 'menuSmartListaCola';
+let CTX = null;            // { sb, user, hogar, soloLectura }
+let H = null;              // id del hogar
+function k(name){ return 'wmLista:' + H + ':' + name; }
 
-let ITEMS = readJSON(CACHE_KEY, []);   // { id, name, price, done }
-let QUEUE = readJSON(QUEUE_KEY, []);   // operaciones pendientes de enviar
-let EDITING = null;                    // id del ingrediente en edición
+let ITEMS = [];            // { id, name, price, done, category, orden }
+let QUEUE = [];            // operaciones pendientes de enviar
+let EDITING = null;        // id del ingrediente en edición
 let PENDING_RENDER = false;
 let LAST_DELETED = null;
-/* Bloqueo de edición: vive en el script de Google y vale para todos los
-   dispositivos. Aquí se guarda una copia para mostrarla al abrir. */
-const LOCK_KEY = 'menuSmartListaBloqueada';
-let LOCKED = !!readJSON(LOCK_KEY, false);
+let LOCKED = false;        // interruptor "Editar lista" (vale para todo el hogar)
+let READONLY = false;      // suscripción vencida: solo lectura
+function BLOCKED(){ return LOCKED || READONLY; }
 
-// lockShared: false si el script de Google aún es la versión sin bloqueo compartido
-const SYNC = { ready:false, busy:false, state:'connecting', last:null, lockShared:null };
+const SYNC = { ready:false, busy:false, state:'connecting', last:null };
 
-function saveLocal(){ writeJSON(CACHE_KEY, ITEMS); writeJSON(QUEUE_KEY, QUEUE); writeJSON(LOCK_KEY, LOCKED); }
-function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function saveLocal(){ if(!H) return; writeJSON(k('items'), ITEMS); writeJSON(k('cola'), QUEUE); writeJSON(k('bloqueo'), LOCKED); }
+function newId(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+function nowOrden(){ return Date.now() / 1000; }
 
-/* Pasa la lista de la versión anterior (guardada por semana en este
-   celular) a la lista compartida, una sola vez. */
-(function migrateLegacy(){
-  if(localStorage.getItem('menuSmartListaMigrada')) return;
-  try{ localStorage.setItem('menuSmartListaMigrada', '1'); }catch(e){}
-  if(ITEMS.length || QUEUE.length) return;
-  const keys = Object.keys(localStorage).filter(k => k.indexOf('menuSmartLista:') === 0).sort().reverse();
-  for(const k of keys){
-    const old = readJSON(k, []);
-    if(Array.isArray(old) && old.length){
-      ITEMS = old.filter(i => i && i.name).map(i => ({ id: i.id || newId(), name: String(i.name), price: i.price == null ? null : Number(i.price), done: !!i.done }));
-      QUEUE = ITEMS.map(i => ({ type:'add', item: i }));
-      saveLocal();
-      return;
-    }
-  }
-})();
-
-/* Misma lógica que el script de Google (aplicarOp) */
 function applyOp(items, op){
   if(!op || !op.type) return items;
   switch(op.type){
@@ -665,7 +651,7 @@ function applyOp(items, op){
       if(!it || !it.id || items.some(x => x.id === it.id)) return items;
       const copy = items.slice();
       const i = typeof op.index === 'number' ? Math.max(0, Math.min(op.index, copy.length)) : copy.length;
-      copy.splice(i, 0, { id: it.id, name: it.name, price: it.price == null ? null : it.price, done: !!it.done, category: cleanCat(it.category) });
+      copy.splice(i, 0, { id: it.id, name: it.name, price: it.price == null ? null : it.price, done: !!it.done, category: cleanCat(it.category), orden: it.orden });
       return copy;
     }
     case 'update':
@@ -684,11 +670,17 @@ function applyOp(items, op){
 function cleanItems(list){
   return (Array.isArray(list) ? list : [])
     .filter(i => i && i.id && i.name)
-    .map(i => ({ id: String(i.id), name: String(i.name), price: i.price == null || i.price === '' ? null : Number(i.price), done: !!i.done, category: cleanCat(i.category) }));
+    .map(i => ({ id: String(i.id), name: String(i.name), price: i.price == null || i.price === '' ? null : Number(i.price), done: !!i.done, category: cleanCat(i.category), orden: Number(i.orden) || 0 }));
 }
 
-/* Aplica un cambio aquí y lo manda a la hoja */
+/* Base de datos <-> formato de esta página */
+function fromDb(r){ return { id: r.id, name: r.nombre, price: r.precio, done: r.comprado, category: r.categoria, orden: r.orden }; }
+const DB_FIELD = { name:'nombre', price:'precio', done:'comprado', category:'categoria' };
+function fieldsToDb(f){ const o = {}; Object.keys(f).forEach(key => { if(DB_FIELD[key]) o[DB_FIELD[key]] = f[key]; }); return o; }
+
+/* Aplica un cambio aquí y lo manda a la base de datos */
 function commit(op, opts){
+  if(READONLY) return;
   if(op.type === 'setLock') LOCKED = !!op.locked;
   else if(LOCKED) return;               // bloqueada: no se cambia nada
   else ITEMS = applyOp(ITEMS, op);
@@ -700,7 +692,7 @@ function commit(op, opts){
   flush();
 }
 
-/* Igual que el script: con la lista bloqueada se ignoran los cambios */
+/* Igual que la base: con la lista bloqueada se ignoran los cambios */
 function replay(items, locked){
   QUEUE.forEach(op => {
     if(op.type === 'setLock') locked = !!op.locked;
@@ -709,72 +701,91 @@ function replay(items, locked){
   return { items, locked };
 }
 
-/* Lo que vino de la hoja + lo que aún no se envió desde aquí */
-function applyServer(serverItems, serverLocked){
-  const shared = typeof serverLocked === 'boolean';
-  const sharedChanged = shared !== SYNC.lockShared;
-  SYNC.lockShared = shared;
-  const next = replay(cleanItems(serverItems), shared ? serverLocked : LOCKED);
+/* Lo que vino de la base + lo que aún no se envió desde aquí */
+function applyServer(serverItems, serverLocked, serverReadonly){
+  const next = replay(cleanItems(serverItems), !!serverLocked);
   const changed = JSON.stringify(next.items) !== JSON.stringify(ITEMS);
-  const lockChanged = next.locked !== LOCKED;
+  const lockChanged = next.locked !== LOCKED || serverReadonly !== READONLY;
   ITEMS = next.items;
   LOCKED = next.locked;
+  READONLY = serverReadonly;
   saveLocal();
-  if(lockChanged || sharedChanged) applyLock();
+  if(lockChanged) applyLock();
   else if(changed){
     if(EDITING) PENDING_RENDER = true;
     else render();
   }
 }
 
+/* Envía una operación. Lanza error si falla. */
+async function sendOp(op){
+  const t = CTX.sb.from('lista_items');
+  let r;
+  switch(op.type){
+    case 'add': {
+      const it = op.item;
+      r = await t.insert({ id: it.id, hogar_id: H, nombre: it.name, precio: it.price == null ? null : it.price,
+                           comprado: !!it.done, categoria: it.category || '', orden: it.orden || nowOrden() });
+      if(r.error && r.error.code === '23505') return;   // ya estaba guardado
+      break;
+    }
+    case 'update':     r = await t.update(fieldsToDb(op.fields)).eq('id', op.id); break;
+    case 'delete':     r = await t.delete().eq('id', op.id); break;
+    case 'uncheckAll': r = await t.update({ comprado:false }).eq('hogar_id', H).eq('comprado', true); break;
+    case 'clear':      r = await t.delete().eq('hogar_id', H); break;
+    case 'setLock':    r = await CTX.sb.rpc('bloquear_lista', { p_bloqueada: !!op.locked }); break;
+    default: return;
+  }
+  if(r.error) throw r.error;
+}
+
 async function flush(){
   if(!SYNC.ready || SYNC.busy || !QUEUE.length) return;
   SYNC.busy = true;
   setSync('busy');
-  const batch = QUEUE.slice();
-  let ok = false;
+  let ok = true;
   try{
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action:'ops', ops: batch })
-    });
-    const data = await res.json();
-    if(!data || !data.ok || !Array.isArray(data.items)) throw new Error((data && data.error) || 'respuesta inesperada');
-    QUEUE = QUEUE.slice(batch.length);
-    applyServer(data.items, data.locked);
-    ok = true;
-    setSync('ok');
+    while(QUEUE.length){
+      try{
+        await sendOp(QUEUE[0]);
+      }catch(err){
+        if(WM.esDeRed(err)) throw err;
+        // La base lo rechazó (por ejemplo, alguien bloqueó la lista o venció la
+        // suscripción): se descarta y se vuelve a leer lo que hay.
+        console.warn('Cambio rechazado', QUEUE[0], err);
+      }
+      QUEUE.shift();
+      saveLocal();
+    }
   }catch(e){
+    ok = false;
     setSync('offline');
   }finally{
     SYNC.busy = false;
   }
-  if(ok && QUEUE.length) flush();
+  if(ok) pull();
 }
 
-/* Lee la lista de la hoja. Solo después de una lectura correcta se envían
-   cambios: así nunca se escribe en la hoja con un script antiguo. */
+/* Lee la lista y el bloqueo desde la base */
 async function pull(){
-  if(SYNC.busy) return;
+  if(!CTX || SYNC.busy) return;
   if(SYNC.ready && QUEUE.length) return flush();
   SYNC.busy = true;
   if(!SYNC.ready) setSync('busy');
-  let notReady = false, ok = false;
+  let ok = false;
   try{
-    const res = await fetch(SCRIPT_URL + '?action=lista&t=' + Date.now());
-    const text = await res.text();
-    let data = null;
-    try{ data = JSON.parse(text); }catch(e){ notReady = true; }
-    if(!data || !data.ok || !Array.isArray(data.items)){ notReady = true; throw new Error('sin lista'); }
+    const [li, ho] = await Promise.all([
+      CTX.sb.from('lista_items').select('id,nombre,precio,comprado,categoria,orden').eq('hogar_id', H).order('orden'),
+      CTX.sb.from('hogares').select('lista_bloqueada,activo_hasta').eq('id', H).single()
+    ]);
+    if(li.error) throw li.error;
+    if(ho.error) throw ho.error;
     SYNC.ready = true;
-    applyServer(data.items, data.locked);
+    applyServer(li.data.map(fromDb), ho.data.lista_bloqueada, ho.data.activo_hasta < WM.hoyISO());
     ok = true;
     setSync('ok');
   }catch(e){
-    // Nunca conectó con la hoja teniendo internet: lo más probable es que
-    // falte instalar el script nuevo (el antiguo no permite leer la lista).
-    setSync(SYNC.ready ? 'offline' : ((notReady || navigator.onLine !== false) ? 'off' : 'offline'));
+    setSync('offline');
   }finally{
     SYNC.busy = false;
   }
@@ -788,12 +799,11 @@ function setSync(state){
   const text = document.getElementById('syncText');
   const ico = document.getElementById('syncIcon');
   pill.className = 'sync-pill ' + state;
-  document.getElementById('syncNote').hidden = state !== 'off';
+  document.getElementById('syncNote').hidden = !(state === 'offline' && QUEUE.length);
   const hora = SYNC.last ? SYNC.last.toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' }) : '';
   if(state === 'busy'){ ico.setAttribute('href', '#i-refresh'); text.textContent = 'Sincronizando…'; }
   else if(state === 'ok'){ ico.setAttribute('href', '#i-users'); text.textContent = 'Compartida · ' + hora; }
   else if(state === 'offline'){ ico.setAttribute('href', '#i-wifi-off'); text.textContent = QUEUE.length ? 'Sin conexión · se enviará' : 'Sin conexión'; }
-  else if(state === 'off'){ ico.setAttribute('href', '#i-device'); text.textContent = 'Solo en este celular'; }
   else { ico.setAttribute('href', '#i-refresh'); text.textContent = 'Conectando…'; }
   pill.title = state === 'ok' ? 'Actualizada a las ' + hora + '. Toca para actualizar.' : 'Toca para actualizar';
 }
@@ -851,9 +861,9 @@ function updateSummary(){
   });
 
   document.getElementById('empty').hidden = count > 0;
-  document.getElementById('listFoot').hidden = count === 0 || LOCKED;
+  document.getElementById('listFoot').hidden = count === 0 || BLOCKED();
   document.getElementById('btnUncheck').disabled = doneCount === 0;
-  document.getElementById('btnSave').disabled = count === 0;
+  document.getElementById('btnSave').disabled = count === 0 || READONLY;
   document.getElementById('btnCopy').disabled = count === 0;
 }
 
@@ -910,11 +920,11 @@ function buildRow(item){
   const label = el('label');
   const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!item.done;
   // Con la lista bloqueada no se puede marcar ni desmarcar nada
-  if(LOCKED){ cb.disabled = true; label.classList.add('fixed'); }
+  if(BLOCKED()){ cb.disabled = true; label.classList.add('fixed'); }
   // Segunda protección (Safari y otros): se ignora cualquier toque
-  label.addEventListener('click', ev => { if(LOCKED) ev.preventDefault(); });
+  label.addEventListener('click', ev => { if(BLOCKED()) ev.preventDefault(); });
   cb.addEventListener('change', () => {
-    if(LOCKED){ cb.checked = !!item.done; return; }
+    if(BLOCKED()){ cb.checked = !!item.done; return; }
     commit({ type:'update', id:item.id, fields:{ done: cb.checked } }, { renderAll:false });
   });
   const box = el('span', 'check'); box.setAttribute('aria-hidden', 'true'); box.appendChild(icon('i-check'));
@@ -934,7 +944,7 @@ function buildRow(item){
   del.addEventListener('click', () => removeItem(item.id));
 
   li.append(label);
-  if(!LOCKED) li.append(edit, del);
+  if(!BLOCKED()) li.append(edit, del);
   return li;
 }
 
@@ -964,7 +974,7 @@ function removeItem(id){
 
 document.getElementById('addForm').addEventListener('submit', function(ev){
   ev.preventDefault();
-  if(LOCKED) return;
+  if(BLOCKED()) return;
   const nameInput = document.getElementById('newName');
   const priceInput = document.getElementById('newPrice');
   const name = nameInput.value.trim();
@@ -978,7 +988,7 @@ document.getElementById('addForm').addEventListener('submit', function(ev){
     priceInput.focus();
     return;
   }
-  commit({ type:'add', item:{ id: newId(), name: capitalize(name), price, done:false, category } });
+  commit({ type:'add', item:{ id: newId(), name: capitalize(name), price, done:false, category, orden: nowOrden() } });
   // La categoría se queda elegida: útil al anotar varias frutas seguidas
   nameInput.value = ''; priceInput.value = '';
   setStatus('');
@@ -1018,67 +1028,55 @@ document.getElementById('btnCopy').addEventListener('click', function(){
   });
 });
 
-/* Guarda una copia de la lista con precios en el historial de la hoja */
-document.getElementById('btnSave').addEventListener('click', function(){
+/* Guarda una copia de la lista con precios en el historial del hogar */
+document.getElementById('btnSave').addEventListener('click', async function(){
   const saveBtn = this;
-  const total = ITEMS.reduce((a, i) => a + (i.price || 0), 0);
-  const payload = {
-    action: 'historial',
-    fechaGenerado: new Date().toISOString(),
-    semanaInicio: WEEK.monday,
-    semanaFin: WEEK.sunday,
-    ingredientes: ITEMS.map(i => i.name + (i.price != null ? ' (' + fmt(i.price) + ')' : '')).join(', '),
-    total: Math.round(total * 100) / 100,
-    items: ITEMS.map(i => ({ nombre: i.name, precio: i.price, comprado: !!i.done, categoria: i.category || '' }))
-  };
-
+  if(READONLY) return;
   saveBtn.disabled = true;
   setStatus('Guardando en el historial…');
-
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  })
-  .then(res => res.json())
-  .then(resData => {
-    if(resData && resData.ok){
-      const hora = new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' });
-      setStatus('Guardado en tu historial de Google Sheets · ' + hora, 'ok');
-    } else {
-      throw new Error((resData && resData.error) || 'respuesta inesperada');
-    }
-  })
-  .catch(err => {
-    setStatus('No se pudo guardar (' + err.message + '). Revisa tu conexión e inténtalo otra vez.', 'err');
-  })
-  .finally(() => { saveBtn.disabled = ITEMS.length === 0; });
+  try{
+    const { error } = await CTX.sb.rpc('guardar_compra', {
+      p_semana_inicio: WEEK.monday,
+      p_semana_fin: WEEK.sunday,
+      p_items: ITEMS.map(i => ({ nombre: i.name, precio: i.price, comprado: !!i.done, categoria: i.category || '' }))
+    });
+    if(error) throw error;
+    const hora = new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' });
+    setStatus('Guardado en tu historial · ' + hora, 'ok');
+  }catch(err){
+    setStatus(WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo guardar: ' + WM.traducir(err), 'err');
+  }finally{
+    saveBtn.disabled = ITEMS.length === 0 || READONLY;
+  }
 });
 
 /* ---------- bloquear / desbloquear edición ---------- */
 function applyLock(){
+  const B = BLOCKED();
   const bar = document.getElementById('lockBar');
-  bar.setAttribute('aria-checked', String(!LOCKED));
-  document.getElementById('lockIcon').setAttribute('href', LOCKED ? '#i-lock' : '#i-unlock');
-  document.getElementById('lockTitle').textContent = LOCKED ? 'Editar lista: bloqueado' : 'Editar lista: activado';
-  const soloAqui = SYNC.lockShared === false;   // script de Google sin actualizar
-  document.getElementById('lockSub').textContent = LOCKED
-    ? (soloAqui ? 'Bloqueada solo en este dispositivo: falta actualizar el script de Google.'
-                : 'Bloqueada en todos los dispositivos. Toca para editar.')
-    : 'Puedes agregar, marcar y quitar ingredientes.';
+  bar.setAttribute('aria-checked', String(!B));
+  bar.disabled = READONLY;
+  document.getElementById('lockIcon').setAttribute('href', B ? '#i-lock' : '#i-unlock');
+  document.getElementById('lockTitle').textContent = READONLY ? 'Solo lectura' : (LOCKED ? 'Editar lista: bloqueado' : 'Editar lista: activado');
+  document.getElementById('lockSub').textContent = READONLY
+    ? 'Tu suscripción venció. Puedes ver la lista, pero no cambiarla.'
+    : LOCKED ? 'Bloqueada en todos los celulares del hogar. Toca para editar.'
+             : 'Puedes agregar, marcar y quitar ingredientes.';
 
   const add = document.querySelector('.add');
-  add.classList.toggle('locked', LOCKED);
-  add.querySelectorAll('input, select, button').forEach(c => { c.disabled = LOCKED; });
-  document.getElementById('addHintIcon').setAttribute('href', LOCKED ? '#i-lock' : '#i-leaf');
-  document.getElementById('addHintText').textContent = LOCKED
-    ? 'La lista está bloqueada. Activa «Editar lista» para agregar ingredientes.'
-    : 'El precio es opcional. Puedes cambiarlo después con el lápiz.';
+  add.classList.toggle('locked', B);
+  add.querySelectorAll('input, select, button').forEach(c => { c.disabled = B; });
+  document.getElementById('addHintIcon').setAttribute('href', B ? '#i-lock' : '#i-leaf');
+  document.getElementById('addHintText').textContent = READONLY
+    ? 'Renueva tu suscripción desde «Mi cuenta» para volver a editar.'
+    : LOCKED ? 'La lista está bloqueada. Activa «Editar lista» para agregar ingredientes.'
+             : 'El precio es opcional. Puedes cambiarlo después con el lápiz.';
 
-  if(LOCKED){ EDITING = null; PENDING_RENDER = false; }
+  if(B){ EDITING = null; PENDING_RENDER = false; }
   render();
 }
 document.getElementById('lockBar').addEventListener('click', function(){
+  if(READONLY) return;
   commit({ type:'setLock', locked: !LOCKED });
 });
 
@@ -1104,14 +1102,34 @@ document.getElementById('themeToggle').addEventListener('click', function(){
 
 /* ---------- inicio ---------- */
 document.getElementById('weekLabel').textContent = 'Lista compartida con tu familia';
-applyLock();
-setSync('connecting');
-pull();
-
 document.getElementById('syncPill').addEventListener('click', () => pull());
-setInterval(() => { if(document.visibilityState === 'visible') pull(); }, REFRESH_MS);
-document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') pull(); });
-window.addEventListener('online', () => pull());
+setSync('connecting');
+render();
+
+(async function start(){
+  try{
+    CTX = await WM.iniciar();
+  }catch(err){
+    setSync('offline');
+    setStatus('No se pudo conectar. Revisa tu internet y vuelve a abrir la página.', 'err');
+    return;
+  }
+  H = CTX.hogar.id;
+  document.getElementById('footHogar').textContent = CTX.hogar.nombre + ' · Mi cuenta';
+  ITEMS = cleanItems(readJSON(k('items'), []));
+  QUEUE = readJSON(k('cola'), []);
+  LOCKED = CTX.sinConexion ? !!readJSON(k('bloqueo'), false) : !!CTX.hogar.lista_bloqueada;
+  READONLY = CTX.soloLectura;
+  applyLock();
+  pull();
+
+  // Cambios de otros celulares del hogar: llegan al instante
+  WM.escuchar('lista_items', 'hogar_id=eq.' + H, pull);
+  WM.escuchar('hogares', 'id=eq.' + H, pull);
+  setInterval(() => { if(document.visibilityState === 'visible') pull(); }, REFRESH_MS);
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') pull(); });
+  window.addEventListener('online', () => pull());
+})();
 </script>
 </body>
 </html>

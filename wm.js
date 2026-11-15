@@ -6,7 +6,7 @@
 (function(){
   const SUPABASE_URL = "https://qnskxjdxaczepupdrajz.supabase.co";
   const SUPABASE_KEY = "sb_publishable_6k-RYwVTcTsRmT8v0eopHQ_2fMbOMQt";
-  const ENTRAR = '../entrar.html';
+  const ENTRAR = 'entrar.html';
   const HOGAR_KEY = 'wmHogar';
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);

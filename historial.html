@@ -3,27 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Historial de compras — Menu Smart</title>
+<title>Historial de compras — WeekMenuIA</title>
 <meta name="description" content="Tus compras guardadas por semana y cuánto gastaste.">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#123D27">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Menu Smart">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Menu Smart">
+<meta property="og:site_name" content="WeekMenuIA">
 <meta property="og:locale" content="es_PE">
-<meta property="og:title" content="Historial de compras — Menu Smart">
+<meta property="og:title" content="Historial de compras — WeekMenuIA">
 <meta property="og:description" content="Tus compras guardadas por semana y cuánto gastaste.">
 <meta property="og:url" content="https://saacostah2005-collab.github.io/menu-semanal/historial.html">
 <meta property="og:image" content="https://saacostah2005-collab.github.io/menu-semanal/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#123D27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WeekMenuIA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
 (function(){
   try{
@@ -34,6 +34,8 @@
 })();
 </script>
 <link rel="preload" as="image" href="banner.jpg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="wm.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -385,7 +387,8 @@
   </div>
 
   <footer class="footer">
-    <span class="brandline"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>Menu Smart · Planifica tus comidas, come mejor.</span>
+    <span class="brandline"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>WeekMenuIA · Planifica tus comidas, come mejor.</span>
+    <a href="entrar.html" id="footHogar" style="color:inherit; font-weight:600">Mi cuenta</a>
     <span id="updated"></span>
   </footer>
 </main>
@@ -393,9 +396,8 @@
 <div class="tooltip" id="tooltip" role="presentation" hidden></div>
 
 <script>
-/* Enlace del Google Apps Script (Web App) conectado a tu Google Sheet */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbCbOFPrTG8yljjNXlSNPY0oR7YJOO0BKvyXfDy70Py8TJ3GJ2OAORbJh4_VFg9VG7/exec";
-const CACHE_KEY = 'menuSmartHistorialCache';
+let CTX = null;   // { sb, user, hogar }
+function cacheKey(){ return 'wmHistorial:' + CTX.hogar.id; }
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const money = new Intl.NumberFormat('es-PE', { style:'currency', currency:'PEN', minimumFractionDigits:2 });
@@ -735,18 +737,27 @@ function setUpdated(date, fromCache){
 }
 
 async function load(){
-  const cache = readJSON(CACHE_KEY, null);
+  const cache = readJSON(cacheKey(), null);
   if(cache && Array.isArray(cache.registros) && !WEEKS.length){
     WEEKS = buildWeeks(cache.registros);
     render();
     setUpdated(cache.at, true);
   }
   try{
-    const res = await fetch(SCRIPT_URL + '?action=historial&t=' + Date.now());
-    const data = JSON.parse(await res.text());
-    if(!data || !data.ok || !Array.isArray(data.registros)) throw new Error('no-historial');
-    WEEKS = buildWeeks(data.registros);
-    writeJSON(CACHE_KEY, { at: Date.now(), registros: data.registros });
+    const { data, error } = await CTX.sb.from('compras')
+      .select('fecha, semana_inicio, total, ingredientes_texto, compra_items(nombre, precio, comprado, categoria)')
+      .order('fecha');
+    if(error) throw error;
+    // Mismo formato que usaba el historial de Google Sheets
+    const registros = data.map(c => ({
+      fecha: c.fecha,
+      semanaInicio: c.semana_inicio,
+      total: c.total == null ? null : Number(c.total),
+      ingredientes: c.ingredientes_texto || '',
+      items: (c.compra_items || []).map(i => ({ nombre: i.nombre, precio: i.precio == null ? null : Number(i.precio), comprado: i.comprado, categoria: i.categoria }))
+    }));
+    WEEKS = buildWeeks(registros);
+    writeJSON(cacheKey(), { at: Date.now(), registros });
     showNote('');
     render();
     setUpdated(Date.now(), false);
@@ -757,7 +768,7 @@ async function load(){
       WEEKS = [];
       document.getElementById('results').innerHTML = '';
       document.getElementById('results').appendChild(state('i-alert', 'No se pudo cargar el historial',
-        'Revisa tu conexión. Si es la primera vez, actualiza el script de tu hoja de Google con el archivo google-apps-script.gs (Implementar → Nueva versión).'));
+        'Revisa tu conexión a internet y vuelve a intentarlo.'));
     }
   }
 }
@@ -782,7 +793,18 @@ document.getElementById('themeToggle').addEventListener('click', function(){
   applyTheme(current === 'dark' ? 'light' : 'dark');
 });
 
-load();
+(async function start(){
+  try{
+    CTX = await WM.iniciar();
+  }catch(err){
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('results').appendChild(state('i-alert', 'No se pudo conectar', 'Revisa tu internet y vuelve a abrir la página.'));
+    return;
+  }
+  const f = document.getElementById('footHogar');
+  if(f) f.textContent = CTX.hogar.nombre + ' · Mi cuenta';
+  load();
+})();
 </script>
 </body>
 </html>

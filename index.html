@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Menu Smart — Menú de la semana</title>
+<title>Menú de la semana — WeekMenuIA</title>
 <meta name="description" content="Tu menú semanal inteligente: desayuno, media mañana, almuerzo y cena de cada día, con lista de compras de la semana.">
 
 <!-- Ícono de pestaña y app -->
@@ -11,24 +11,23 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#123D27">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Menu Smart">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- Vista previa al compartir (WhatsApp, Facebook, etc.) -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Menu Smart">
+<meta property="og:site_name" content="WeekMenuIA">
 <meta property="og:locale" content="es_PE">
-<meta property="og:title" content="Menu Smart — Menú de la semana">
+<meta property="og:title" content="WeekMenuIA — Menú de la semana">
 <meta property="og:description" content="Planifica tus comidas. Come mejor. Vive saludable.">
 <meta property="og:url" content="https://saacostah2005-collab.github.io/menu-semanal/">
 <meta property="og:image" content="https://saacostah2005-collab.github.io/menu-semanal/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Menu Smart, tu menú inteligente">
+<meta property="og:image:alt" content="WeekMenuIA, tu menú inteligente">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#123D27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WeekMenuIA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 
 <!-- Aplica el tema guardado antes de pintar (evita el parpadeo claro/oscuro) -->
 <script>
@@ -42,6 +41,8 @@
 </script>
 
 <link rel="preload" as="image" href="banner.jpg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="wm.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -379,6 +380,63 @@
     .hero{padding-top:20px;}
     .hero-img{width:min(calc(100% - 64px), 960px); margin:0 auto; border-radius:18px;}
   }
+
+  /* ---------- Editar el menú (versión WeekMenuIA) ---------- */
+  .notice{display:flex; gap:10px; align-items:flex-start; margin-top:20px; padding:12px 16px; border-radius:var(--r); font-size:14px; font-weight:600; background:var(--t-almuerzo); color:var(--c-almuerzo);}
+  .notice .ico{width:18px; height:18px; margin-top:1px;}
+  .notice a{color:inherit;}
+  .day-actions{display:flex; align-items:center; gap:8px; flex:none;}
+  .edit-btn{
+    display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 12px; border-radius:999px;
+    border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-2);
+    font-size:13px; font-weight:700; cursor:pointer; transition:background-color .15s ease, transform .12s var(--ease-out);
+  }
+  .edit-btn .ico{width:15px; height:15px;}
+  .edit-btn:active{transform:scale(.95);}
+  @media (hover:hover){ .edit-btn:hover{background:var(--surface-2); color:var(--ink);} }
+  .today-edit{display:flex; justify-content:flex-end; margin-top:12px;}
+  .empty-today .btn{margin-left:auto;}
+  @media (max-width:559px){ .empty-today{flex-wrap:wrap;} .empty-today .btn{margin-left:0; width:100%;} }
+  .week-hint{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink-3); margin:-6px 0 16px;}
+  .week-hint .ico{width:15px; height:15px;}
+  .p-cell.editable{cursor:pointer; transition:background-color .15s ease;}
+  @media (hover:hover){
+    .p-cell.editable:hover{background:var(--surface-2);}
+    .p-head.is-today.editable:hover{background:var(--brand-hover);}
+  }
+  .readonly .edit-btn, .readonly .today-edit, .readonly .week-hint, .readonly .empty-today .btn{display:none;}
+  .readonly .p-cell.editable{cursor:default;}
+
+  .editor{
+    border:0; padding:0; border-radius:22px; width:min(520px, calc(100% - 24px)); max-height:calc(100dvh - 24px);
+    background:var(--surface); color:var(--ink); box-shadow:0 24px 60px -12px rgba(0,0,0,.35);
+  }
+  .editor::backdrop{background:rgba(10,30,18,.5);}
+  .editor[open]{animation:edIn .22s var(--ease-out);}
+  @keyframes edIn{from{opacity:0; transform:translateY(12px);}}
+  @media (prefers-reduced-motion:reduce){ .editor[open]{animation:none;} }
+  @media (max-width:599px){
+    .editor{margin:auto 0 0; width:100%; max-width:100%; border-radius:22px 22px 0 0; padding-bottom:env(safe-area-inset-bottom,0px);}
+  }
+  .ed-form{padding:20px 20px 22px;}
+  @media (min-width:600px){ .ed-form{padding:24px 26px 26px;} }
+  .ed-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:18px;}
+  .ed-kicker{font-size:13px; font-weight:700; color:var(--leaf); margin:0 0 2px;}
+  .ed-head h2{margin:0; font-size:22px; font-weight:800; letter-spacing:-.02em; line-height:1.2;}
+  .ed-field{display:grid; grid-template-columns:30px 1fr; gap:12px; align-items:end; margin-bottom:12px;}
+  .ed-field .mi{margin-bottom:8px;}
+  .ed-lbl{display:block; font-size:12.5px; font-weight:700; color:var(--ink-2); margin-bottom:5px;}
+  .ed-field input{
+    width:100%; height:46px; border-radius:12px; border:1px solid var(--line-strong);
+    background:var(--surface); color:var(--ink); padding:0 12px; font:inherit; font-size:16px;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .ed-field input:focus{outline:none; border-color:var(--leaf); box-shadow:0 0 0 3px var(--leaf-soft);}
+  .ed-msg{font-size:13.5px; font-weight:600; color:var(--c-almuerzo); margin:6px 0 0;}
+  .ed-actions{display:flex; gap:10px; margin-top:18px;}
+  .ed-actions .btn{flex:1; height:48px;}
+  .foot-acc{display:inline-flex; align-items:center; gap:6px; color:inherit; font-weight:600;}
+  .foot-acc .ico{width:16px; height:16px;}
 </style>
 </head>
 <body>
@@ -399,6 +457,9 @@
   <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
   <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
   <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5Z"/><path d="m15 5 4 4"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
 </svg>
 
 <header class="hero">
@@ -424,6 +485,8 @@
 
 <main class="wrap">
 
+  <div class="notice" id="notice" hidden><svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg><span id="noticeText"></span></div>
+
   <section class="today" aria-label="Hoy">
     <div id="todayBox">
       <div class="skeleton sk-today" aria-hidden="true"><div></div><div></div></div>
@@ -445,34 +508,42 @@
         <button class="nav" id="nextWeek" type="button" aria-label="Semana siguiente"><svg class="ico" aria-hidden="true"><use href="#i-right"/></svg></button>
       </div>
     </div>
+    <p class="week-hint"><svg class="ico" aria-hidden="true"><use href="#i-pencil"/></svg>Toca un día (o su botón «Editar») para escribir o cambiar su menú.</p>
     <div id="app">
       <div class="skeleton" aria-hidden="true"><div></div><div></div><div></div><div></div></div>
     </div>
   </section>
 
   <footer class="footer">
-    <span class="sync" id="sync"><svg class="ico" aria-hidden="true"><use id="syncIcon" href="#i-refresh"/></svg><span id="syncText">Conectando con tu hoja de Google…</span></span>
-    <span class="foot-brand"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>Menu Smart · Planifica tus comidas, come mejor.</span>
+    <span class="sync" id="sync"><svg class="ico" aria-hidden="true"><use id="syncIcon" href="#i-refresh"/></svg><span id="syncText">Cargando tu menú…</span></span>
+    <a class="foot-acc" href="entrar.html"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg><span id="footHogar">Mi cuenta</span></a>
+    <span class="foot-brand"><svg class="ico" aria-hidden="true"><use href="#i-leaf"/></svg>WeekMenuIA · Planifica tus comidas, come mejor.</span>
   </footer>
 
 </main>
 
+<dialog class="editor" id="editor" aria-labelledby="edTitle">
+  <form class="ed-form" id="edForm" autocomplete="off">
+    <div class="ed-head">
+      <div><p class="ed-kicker">Menú del día</p><h2 id="edTitle">&nbsp;</h2></div>
+      <button class="btn icon" type="button" id="edClose" aria-label="Cerrar"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <div id="edFields"></div>
+    <p class="ed-msg" id="edMsg" role="status" hidden></p>
+    <div class="ed-actions">
+      <button class="btn" type="button" id="edCancel">Cancelar</button>
+      <button class="btn primary" type="submit" id="edSave">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
 <script>
-/* ============================================================
-   CONFIGURACIÓN — enlace CSV publicado de tu Google Sheet
-   ============================================================ */
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-0io3KEPeid20oEtEDmNwBGnYJHTSOnVsq3V8wUEmOGeMSMe_nfazhJb4HbhOXOjJfQfqbSNlMKbl/pub?output=csv";
-
-/* Enlace del Google Apps Script (Web App) que guarda el historial
-   de listas de compras en la hoja "Historial_Compras". */
-const HISTORIAL_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbCbOFPrTG8yljjNXlSNPY0oR7YJOO0BKvyXfDy70Py8TJ3GJ2OAORbJh4_VFg9VG7/exec";
-
 /* "hasta" = minuto del día hasta el que esa comida se considera la que toca */
 const MEAL_COLUMNS = [
-  { key: "Desayuno", label: "Desayuno",     cls: "m-desayuno", icon: "i-coffee",   hasta: 10*60 },
-  { key: "Med/Mañ",  label: "Media mañana", cls: "m-media",    icon: "i-apple",    hasta: 12*60 + 30 },
-  { key: "Almuerzo", label: "Almuerzo",     cls: "m-almuerzo", icon: "i-utensils", hasta: 16*60 },
-  { key: "Cena",     label: "Cena",         cls: "m-cena",     icon: "i-moon",     hasta: 24*60 }
+  { key: "Desayuno", db: "desayuno",     label: "Desayuno",     cls: "m-desayuno", icon: "i-coffee",   hasta: 10*60,      ej: "Avena con plátano" },
+  { key: "Med/Mañ",  db: "media_manana", label: "Media mañana", cls: "m-media",    icon: "i-apple",    hasta: 12*60 + 30, ej: "Fruta / yogur" },
+  { key: "Almuerzo", db: "almuerzo",     label: "Almuerzo",     cls: "m-almuerzo", icon: "i-utensils", hasta: 16*60,      ej: "Pollo al horno + ensalada" },
+  { key: "Cena",     db: "cena",         label: "Cena",         cls: "m-cena",     icon: "i-moon",     hasta: 24*60,      ej: "Sopa de verduras" }
 ];
 
 /* Nombres con tilde para mostrar, aunque la hoja los tenga sin tilde */
@@ -617,14 +688,21 @@ function renderToday(){
   document.getElementById('heroDate').textContent =
     capitalize(today.toLocaleDateString('es-PE', { weekday:'long' })) + ' ' + fmtShort(today);
 
-  if(!row){
+  if(!row || MEAL_COLUMNS.every(c => !row.values[c.key])){
     document.getElementById('heroSub').textContent = 'Sin menú para hoy';
     const empty = el('div', 'empty-today');
     const ic = el('span', 'sec-ico'); ic.appendChild(icon('i-calendar'));
     const txt = el('div');
     txt.appendChild(el('h1', '', 'Aún no hay menú para hoy'));
-    txt.appendChild(el('p', '', 'Agrega este día en tu hoja de Google y aparecerá aquí.'));
+    txt.appendChild(el('p', '', 'Escribe qué van a comer hoy y aparecerá aquí.'));
     empty.append(ic, txt);
+    if(row){
+      const b = el('button', 'btn primary');
+      b.type = 'button';
+      b.append(icon('i-pencil'), 'Escribir el menú de hoy');
+      b.addEventListener('click', () => openEditor(row));
+      empty.appendChild(b);
+    }
     box.appendChild(empty);
     return;
   }
@@ -683,6 +761,9 @@ function renderToday(){
     grid.appendChild(tile);
   });
   box.appendChild(grid);
+  const ed = el('div', 'today-edit');
+  ed.appendChild(editBtn(row, 'Editar el menú de hoy'));
+  box.appendChild(ed);
 }
 
 /* ---------- tabla de la semana (escritorio) ---------- */
@@ -697,6 +778,7 @@ function buildPlanner(week, today){
     const h = el('div', 'p-cell p-head' + (isToday ? ' is-today' : ''));
     h.appendChild(el('div', 'p-dow', isToday ? 'Hoy · ' + abbrDay(d.nombreDia) : displayDay(d.nombreDia)));
     h.appendChild(el('div', 'p-num', d.fecha ? String(d.fecha.getDate()) : '–'));
+    makeEditable(h, d);
     grid.appendChild(h);
   });
 
@@ -709,6 +791,7 @@ function buildPlanner(week, today){
       const v = d.values[col.key];
       const c = el('div', 'p-cell' + (isToday ? ' is-today' : ''));
       c.appendChild(el('span', isEmptyValue(v) ? 'empty' : '', mealText(v)));
+      makeEditable(c, d);
       grid.appendChild(c);
     });
   });
@@ -748,7 +831,10 @@ function buildDayList(week, today){
     const h3 = el('h3', 'day-title', displayDay(d.nombreDia));
     if(d.fecha) h3.appendChild(el('span', 'day-date', fmtShort(d.fecha)));
     head.appendChild(h3);
-    if(isToday) head.appendChild(el('span', 'badge solid', 'Hoy'));
+    const actions = el('div', 'day-actions');
+    if(isToday) actions.appendChild(el('span', 'badge solid', 'Hoy'));
+    actions.appendChild(editBtn(d));
+    head.appendChild(actions);
     art.appendChild(head);
 
     const dl = el('dl', 'day-meals');
@@ -821,7 +907,7 @@ function setSync(text, state){
 }
 
 function showError(message){
-  setSync('No se pudo conectar con tu hoja de Google', 'err');
+  setSync('No se pudo cargar el menú', 'err');
   document.getElementById('heroSub').textContent = 'No se pudo cargar el menú';
   document.getElementById('todayBox').innerHTML = '';
   document.getElementById('app').innerHTML =
@@ -829,122 +915,223 @@ function showError(message){
     '<h3>No se pudo cargar el menú</h3><p>' + message + '</p></div>';
 }
 
-/* ---------- carga y agrupamiento por semana ---------- */
-function render(rows){
-  const header = rows[0].map(h => h.trim());
-  const body = rows.slice(1);
-  const idx = {};
-  header.forEach((h, i) => idx[h] = i);
+/* ============================================================
+   DATOS — el menú del hogar vive en Supabase (tabla menu_dias)
+   ============================================================ */
+let CTX = null;                 // { sb, user, hogar, soloLectura }
+let MENU = new Map();           // 'AAAA-MM-DD' -> fila de menu_dias
+const DOW_KEYS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
 
-  if(idx['Fecha'] === undefined || idx['Nom_Dia'] === undefined){
-    showError('No encuentro las columnas <code>Fecha</code> y <code>Nom_Dia</code> en la hoja. Revisa que los encabezados coincidan.');
-    return;
-  }
+function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function parseISO(s){ const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function cacheKey(){ return 'wmMenu:' + CTX.hogar.id; }
 
-  const today = todayDate();
-  const weekMap = new Map(); // key: monday ISO -> { monday, days: [] }
-
-  body.forEach(r => {
-    const fechaStr = (r[idx['Fecha']] || "").trim();
-    const nombreDia = (r[idx['Nom_Dia']] || "").trim();
-    if(!nombreDia) return;
-    const fecha = parseFecha(fechaStr);
-
-    const values = {};
-    MEAL_COLUMNS.forEach(col => {
-      if(idx[col.key] !== undefined) values[col.key] = (r[idx[col.key]] || "").trim();
-    });
-
-    const dayRow = { fecha, fechaStr, nombreDia, values };
-    const monday = fecha ? getMonday(fecha) : getMonday(today);
-    const key = monday.toISOString().slice(0,10);
-    if(!weekMap.has(key)) weekMap.set(key, { monday, days: [] });
-    weekMap.get(key).days.push(dayRow);
+/* Semanas completas (lunes a domingo): desde la primera con menú (o esta)
+   hasta la última con menú (o la próxima), para poder escribir por adelantado */
+function buildWeeks(){
+  const thisMon = getMonday(todayDate());
+  let first = thisMon, last = addDays(thisMon, 7);
+  MENU.forEach((_, iso) => {
+    const m = getMonday(parseISO(iso));
+    if(m < first) first = m;
+    if(m > last) last = m;
   });
-
-  WEEKS = Array.from(weekMap.values()).sort((a,b) => a.monday - b.monday);
-  WEEKS.forEach(w => w.days.sort((a,b) => (a.fecha||0) - (b.fecha||0)));
-
-  if(!WEEKS.length){
-    showError('La hoja no tiene filas de menú todavía.');
-    return;
+  WEEKS = [];
+  for(let m = new Date(first); m <= last; m = addDays(m, 7)){
+    const days = [];
+    for(let i = 0; i < 7; i++){
+      const f = addDays(m, i);
+      const iso = isoDate(f);
+      const row = MENU.get(iso) || {};
+      const values = {};
+      MEAL_COLUMNS.forEach(c => { values[c.key] = row[c.db] || ''; });
+      days.push({ fecha: f, iso, fechaStr: f.toLocaleDateString('es-PE'), nombreDia: DOW_KEYS[f.getDay()], values });
+    }
+    WEEKS.push({ monday: new Date(m), days });
   }
+  TODAY_WEEK_INDEX = WEEKS.findIndex(w => isSameDay(w.monday, thisMon));
+  if(TODAY_WEEK_INDEX < 0) TODAY_WEEK_INDEX = null;
+}
 
-  const todayMonday = getMonday(today).toISOString().slice(0,10);
-  TODAY_WEEK_INDEX = null;
-  WEEKS.forEach((w, i) => { if(w.monday.toISOString().slice(0,10) === todayMonday) TODAY_WEEK_INDEX = i; });
-
-  if(TODAY_WEEK_INDEX !== null){
-    CURRENT_INDEX = TODAY_WEEK_INDEX;
-  } else {
-    // semana más cercana a hoy
-    let best = 0, bestDiff = Infinity;
-    WEEKS.forEach((w, i) => {
-      const diff = Math.abs(w.monday - today);
-      if(diff < bestDiff){ bestDiff = diff; best = i; }
-    });
-    CURRENT_INDEX = best;
-  }
-
+/* Vuelve a pintar; se queda en la semana que estabas viendo */
+function paint(){
+  const viendo = WEEKS[CURRENT_INDEX] ? WEEKS[CURRENT_INDEX].monday.getTime() : null;
+  buildWeeks();
+  const idx = viendo ? WEEKS.findIndex(w => w.monday.getTime() === viendo) : -1;
+  CURRENT_INDEX = idx >= 0 ? idx : (TODAY_WEEK_INDEX !== null ? TODAY_WEEK_INDEX : 0);
   renderToday();
   renderWeek(false);
-  const hora = new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' });
-  setSync('Sincronizado con tu hoja de Google · ' + hora, 'ok');
 }
 
-function loadMenu(){
-  if(!SHEET_CSV_URL || SHEET_CSV_URL.indexOf('http') !== 0){
-    showError('Todavía no configuraste el enlace de tu hoja. Abre este archivo, busca <code>SHEET_CSV_URL</code> y pega ahí el enlace CSV publicado de tu Google Sheet.');
-    return;
+function horaCorta(){ return new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' }); }
+
+async function loadMenu(){
+  try{
+    const { data, error } = await CTX.sb.from('menu_dias').select('*').order('fecha');
+    if(error) throw error;
+    MENU = new Map(data.map(r => [r.fecha, r]));
+    try{ localStorage.setItem(cacheKey(), JSON.stringify(data)); }catch(e){}
+    paint();
+    setSync('Actualizado · ' + horaCorta(), 'ok');
+  }catch(err){
+    let cache = null;
+    try{ cache = JSON.parse(localStorage.getItem(cacheKey())); }catch(e){}
+    if(Array.isArray(cache)){
+      MENU = new Map(cache.map(r => [r.fecha, r]));
+      paint();
+      setSync('Sin conexión · mostrando lo guardado en este celular', 'err');
+    } else {
+      showError('Revisa tu conexión a internet y vuelve a abrir la página. (' + WM.traducir(err) + ')');
+    }
   }
-  fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now())
-    .then(res => {
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      return res.text();
-    })
-    .then(text => {
-      const rows = parseCSV(text);
-      if(!rows.length) throw new Error('vacío');
-      render(rows);
-    })
-    .catch(err => {
-      showError('Hubo un problema al conectar con la hoja (' + err.message + '). Verifica que esté publicada en la Web como CSV y que el enlace sea correcto.');
-    });
 }
-
-loadMenu();
 
 /* ============================================================
-   LISTA DE COMPRAS — botón "Lista de compras" (abre en la misma pestaña)
+   EDITOR — escribir el menú de un día
+   ============================================================ */
+let ED_DAY = null;
+
+function editBtn(day, text){
+  const b = el('button', 'edit-btn');
+  b.type = 'button';
+  b.append(icon('i-pencil'), text || 'Editar');
+  b.setAttribute('aria-label', (text || 'Editar') + ' · ' + displayDay(day.nombreDia) + ' ' + fmtShort(day.fecha));
+  b.addEventListener('click', () => openEditor(day));
+  return b;
+}
+function makeEditable(node, day){
+  node.classList.add('editable');
+  node.title = 'Toca para editar el menú del ' + displayDay(day.nombreDia).toLowerCase();
+  node.addEventListener('click', () => openEditor(day));
+}
+
+function edMsg(text){
+  const m = document.getElementById('edMsg');
+  m.textContent = text || '';
+  m.hidden = !text;
+}
+
+function openEditor(day){
+  if(!CTX || CTX.soloLectura) return;
+  ED_DAY = day;
+  document.getElementById('edTitle').textContent = displayDay(day.nombreDia) + ' ' + fmtShort(day.fecha);
+  const box = document.getElementById('edFields');
+  box.innerHTML = '';
+  MEAL_COLUMNS.forEach(col => {
+    const f = el('label', 'ed-field');
+    const wrap = el('span');
+    wrap.appendChild(el('span', 'ed-lbl', col.label));
+    const inp = el('input');
+    inp.type = 'text';
+    inp.maxLength = 120;
+    inp.name = col.db;
+    inp.placeholder = 'Ej.: ' + col.ej;
+    inp.value = day.values[col.key] || '';
+    inp.enterKeyHint = 'next';
+    wrap.appendChild(inp);
+    f.append(mealIcon(col, true), wrap);
+    box.appendChild(f);
+  });
+  edMsg('');
+  const save = document.getElementById('edSave');
+  save.disabled = false;
+  save.textContent = 'Guardar';
+  const dlg = document.getElementById('editor');
+  dlg.showModal();
+  // En el celular no se abre el teclado de golpe: así se ve el día completo
+  if(window.matchMedia('(min-width:600px)').matches) box.querySelector('input').focus();
+}
+
+function closeEditor(){ document.getElementById('editor').close(); ED_DAY = null; }
+document.getElementById('edClose').addEventListener('click', closeEditor);
+document.getElementById('edCancel').addEventListener('click', closeEditor);
+document.getElementById('editor').addEventListener('click', ev => { if(ev.target.id === 'editor') closeEditor(); });
+
+/* Enter pasa a la siguiente comida; en la última, guarda */
+document.getElementById('edFields').addEventListener('keydown', ev => {
+  if(ev.key !== 'Enter' || ev.target.tagName !== 'INPUT') return;
+  const inputs = Array.from(document.querySelectorAll('#edFields input'));
+  const i = inputs.indexOf(ev.target);
+  if(i < inputs.length - 1){ ev.preventDefault(); inputs[i + 1].focus(); }
+});
+
+document.getElementById('edForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  if(!ED_DAY) return;
+  const day = ED_DAY;
+  const fila = { hogar_id: CTX.hogar.id, fecha: day.iso };
+  document.querySelectorAll('#edFields input').forEach(inp => { fila[inp.name] = inp.value.trim(); });
+  const vacio = MEAL_COLUMNS.every(c => !fila[c.db]);
+  const save = document.getElementById('edSave');
+  save.disabled = true;
+  save.textContent = 'Guardando…';
+  edMsg('');
+  try{
+    if(vacio){
+      const { error } = await CTX.sb.from('menu_dias').delete().eq('hogar_id', CTX.hogar.id).eq('fecha', day.iso);
+      if(error) throw error;
+      MENU.delete(day.iso);
+    } else {
+      const { data, error } = await CTX.sb.from('menu_dias').upsert(fila, { onConflict: 'hogar_id,fecha' }).select().single();
+      if(error) throw error;
+      MENU.set(day.iso, data);
+    }
+    try{ localStorage.setItem(cacheKey(), JSON.stringify(Array.from(MENU.values()))); }catch(e){}
+    closeEditor();
+    paint();
+    setSync('Guardado · ' + horaCorta(), 'ok');
+  }catch(err){
+    save.disabled = false;
+    save.textContent = 'Guardar';
+    edMsg(WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo guardar: ' + WM.traducir(err));
+  }
+});
+
+/* ============================================================
+   INICIO
+   ============================================================ */
+(async function start(){
+  try{
+    CTX = await WM.iniciar();
+  }catch(err){
+    showError('No se pudo conectar. Revisa tu internet y vuelve a abrir la página.');
+    return;
+  }
+  document.getElementById('footHogar').textContent = CTX.hogar.nombre + ' · Mi cuenta';
+  if(CTX.soloLectura){
+    document.body.classList.add('readonly');
+    document.getElementById('noticeText').innerHTML = 'Tu suscripción venció. Puedes ver tu menú, pero no cambiarlo. <a href="entrar.html#pagar">Renovar con Plin</a>';
+    document.getElementById('notice').hidden = false;
+  } else {
+    // Faltan 3 días o menos: aviso para pagar a tiempo
+    const dias = Math.round((parseISO(CTX.hogar.activo_hasta) - todayDate()) / 864e5);
+    if(dias <= 3){
+      document.getElementById('noticeText').innerHTML = (dias === 0 ? 'Hoy es tu último día de suscripción. ' : 'Te quedan ' + dias + (dias === 1 ? ' día' : ' días') + ' de suscripción. ') +
+        '<a href="entrar.html#pagar">Paga con Plin</a>';
+      document.getElementById('notice').hidden = false;
+    }
+  }
+  await loadMenu();
+  // Si alguien de la familia cambia el menú, se actualiza solo
+  WM.escuchar('menu_dias', 'hogar_id=eq.' + CTX.hogar.id, loadMenu);
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') loadMenu(); });
+})();
+
+/* ============================================================
+   LISTA DE COMPRAS — botón "Lista de compras"
    ============================================================ */
 document.getElementById('btnAhorraTiempo').addEventListener('click', function(){
   const week = WEEKS[CURRENT_INDEX];
-  // Sin menú cargado igual se abre la lista (usa la semana actual)
-  if(!week){ window.location.href = 'lista-compras.html'; return; }
-
-  const sunday = new Date(week.monday);
-  sunday.setDate(sunday.getDate() + 6);
-
-  const payload = {
-    weekLabel: fmtRange(week.monday),
-    monday: week.monday.toISOString().slice(0,10),
-    sunday: sunday.toISOString().slice(0,10),
-    days: week.days.map(d => ({
-      nombreDia: d.nombreDia,
-      fechaStr: d.fechaStr,
-      desayuno: d.values['Desayuno'] || '',
-      media: d.values['Med/Mañ'] || '',
-      almuerzo: d.values['Almuerzo'] || '',
-      cena: d.values['Cena'] || ''
-    })),
-    historialScriptUrl: HISTORIAL_SCRIPT_URL,
-    generatedAt: new Date().toISOString()
-  };
-
-  try{
-    localStorage.setItem('menuSmartShoppingWeek', JSON.stringify(payload));
-  }catch(e){}
-
+  if(week){
+    try{
+      localStorage.setItem('wmShoppingWeek', JSON.stringify({
+        weekLabel: fmtRange(week.monday),
+        monday: isoDate(week.monday),
+        sunday: isoDate(addDays(week.monday, 6))
+      }));
+    }catch(e){}
+  }
   window.location.href = 'lista-compras.html';
 });
 </script>

@@ -1,6 +1,6 @@
 {
-  "name": "Menu Smart — Menú de la semana",
-  "short_name": "Menu Smart",
+  "name": "WeekMenuIA — Menú de la semana",
+  "short_name": "WeekMenuIA",
   "description": "Tu menú semanal inteligente con lista de compras.",
   "lang": "es-PE",
   "start_url": "./",
