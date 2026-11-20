@@ -208,15 +208,79 @@
   .pill.aprobado{background:var(--leaf-soft); color:var(--brand);}
   :root[data-theme="dark"] .pill.aprobado{color:var(--leaf);}
   .pill.rechazado{background:var(--danger-soft); color:var(--danger);}
+
+  /* ---------- Login: tarjeta partida (formulario + banner) ---------- */
+  /* Campos con ícono adentro */
+  .in-wrap{position:relative; display:block;}
+  .in-wrap .ico{position:absolute; left:15px; top:14px; color:var(--leaf); pointer-events:none;}
+  .in-wrap .input{padding-left:46px;}
+  .login-art{display:none;}
+
+  /* Solo mientras se ve el login (clase que pone mostrar()) */
+  body.en-login{position:relative; min-height:100vh; min-height:100dvh;}
+  body.en-login::before{
+    content:""; position:fixed; inset:-60px; z-index:-1;
+    background:url(banner.jpg) center/cover; filter:blur(30px) saturate(1.1); opacity:.5;
+  }
+  :root[data-theme="dark"] body.en-login::before{opacity:.18;}
+  body.sin-hero .hero{display:none;}
+  body.en-login .main{padding-top:16px;}
+  .login-split{border-radius:24px;}
+  body.en-login .login-split{
+    overflow:hidden; background:var(--surface); border:1px solid var(--line);
+    box-shadow:0 30px 70px -28px rgba(18,61,39,.45), 0 2px 6px rgba(18,61,39,.08);
+  }
+  body.en-login #vLogin{border:0; box-shadow:none; border-radius:0; background:transparent;}
+  body.en-login .login-art{
+    display:block; position:relative; background:#fff;
+  }
+  .login-art img{display:block; width:100%; height:auto; aspect-ratio:1600/534;}
+  .login-art .tag{display:none;}
+  body.en-login .input{border-color:var(--line); box-shadow:0 2px 10px -4px rgba(18,61,39,.18);}
+  :root[data-theme="dark"] body.en-login .input{box-shadow:none; border-color:var(--line-strong);}
+  body.en-login .input:focus{border-color:var(--leaf); box-shadow:0 0 0 3px var(--leaf-soft);}
+  body.en-login #btnLogin{
+    border:0; border-radius:12px; letter-spacing:.02em;
+    background:linear-gradient(135deg, #7DB85A 0%, #1E5B3A 100%);
+    box-shadow:0 10px 22px -10px rgba(30,91,58,.7);
+  }
+  @media (hover:hover){ body.en-login #btnLogin:hover:not(:disabled){background:linear-gradient(135deg, #6CA84A 0%, #174A2F 100%);} }
+
+  /* Computadora: formulario a la izquierda, banner a la derecha */
+  @media (min-width:860px){
+    body.en-login .main{max-width:1040px; min-height:100vh; min-height:100dvh; display:grid; align-content:center; padding:32px 32px;}
+    body.en-login .login-split{display:grid; grid-template-columns:44% 56%; min-height:500px;}
+    body.en-login #vLogin{align-self:center; padding:44px 44px;}
+    body.en-login .login-art{
+      display:grid; place-items:center; padding:56px 28px;
+      background:linear-gradient(160deg, #FFFFFF 0%, #F3F9EE 55%, #E3F1D8 100%);
+      border-left:1px solid var(--line);
+    }
+    :root[data-theme="dark"] body.en-login .login-art{background:linear-gradient(160deg, #182B21 0%, #163323 100%);}
+    body.en-login .login-art img{border-radius:16px; box-shadow:0 14px 32px -16px rgba(18,61,39,.4);}
+    body.en-login .login-art .tag{
+      display:block; position:absolute; left:0; right:0; text-align:center; font-size:13.5px; font-weight:700;
+    }
+    .login-art .tag.top{top:24px; color:var(--ink-3);}
+    .login-art .tag.bottom{bottom:24px; color:var(--brand);}
+    :root[data-theme="dark"] .login-art .tag.bottom{color:var(--leaf);}
+  }
+  /* Celular: banner arriba dentro de la tarjeta, formulario debajo */
+  @media (max-width:859.98px){
+    body.en-login .login-split{display:flex; flex-direction:column;}
+    body.en-login .login-art{order:-1;}
+  }
 </style>
 </head>
-<body>
+<body class="sin-hero">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
   <symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></symbol>
   <symbol id="i-home"viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></symbol>
   <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3"/><path d="m16 7 3 3"/><path d="m19 4 2 2"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></symbol>
   <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></symbol>
@@ -237,12 +301,13 @@
 
   <div class="card loading" id="vCargando">Cargando…</div>
 
-  <!-- ===== 1. Entrar / Crear cuenta ===== -->
+  <!-- ===== 1. Entrar / Crear cuenta (tarjeta partida: formulario + banner) ===== -->
+  <div class="login-split">
   <section class="card" id="vLogin" hidden>
    <div id="loginInner">
     <div class="head">
       <span class="head-ico"><svg class="ico" id="loginIco"><use id="loginIcoUse" href="#i-user"/></svg></span>
-      <div><h1 id="loginTitle">Bienvenido</h1><p id="loginSub">Entra para ver el menú de tu hogar.</p></div>
+      <div><h1 id="loginTitle">¡Bienvenido!</h1><p id="loginSub">Entra para ver el menú de tu hogar.</p></div>
     </div>
 
     <div class="tabs" role="tablist" id="loginTabs" data-active="entrar">
@@ -254,14 +319,22 @@
 
     <form id="fLogin" novalidate>
       <label class="field"><span>Correo</span>
-        <input class="input" id="email" type="email" autocomplete="email" inputmode="email" required placeholder="tucorreo@gmail.com"></label>
+        <span class="in-wrap"><svg class="ico"><use href="#i-mail"/></svg>
+        <input class="input" id="email" type="email" autocomplete="email" inputmode="email" required placeholder="tucorreo@gmail.com"></span></label>
       <label class="field"><span>Contraseña</span>
-        <input class="input" id="pass" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo 6 caracteres"></label>
+        <span class="in-wrap"><svg class="ico"><use href="#i-lock"/></svg>
+        <input class="input" id="pass" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo 6 caracteres"></span></label>
       <button class="btn primary" id="btnLogin" type="submit"><span class="btn-lbl" id="btnLoginLbl">Entrar</span></button>
     </form>
     <div class="row-center" id="olvideWrap"><button class="link" id="btnOlvide" type="button">Olvidé mi contraseña</button></div>
    </div>
   </section>
+  <aside class="login-art" aria-hidden="true">
+    <span class="tag top">Prueba gratis 14 días</span>
+    <img src="banner.jpg" width="1600" height="534" alt="">
+    <span class="tag bottom">Tu menú y tu lista de compras, en familia</span>
+  </aside>
+  </div>
 
   <!-- ===== 1b. Nueva contraseña (al volver del correo de recuperación) ===== -->
   <section class="card" id="vNuevaClave" hidden>
@@ -393,7 +466,12 @@ const PLANES = [
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 const VISTAS = ['vCargando', 'vLogin', 'vNuevaClave', 'vHogar', 'vListo'];
-function mostrar(id){ VISTAS.forEach(v => { $(v).hidden = (v !== id); }); }
+function mostrar(id){
+  VISTAS.forEach(v => { $(v).hidden = (v !== id); });
+  // Login: tarjeta partida con el banner adentro, sin el banner de arriba
+  document.body.classList.toggle('en-login', id === 'vLogin');
+  document.body.classList.toggle('sin-hero', id === 'vLogin' || id === 'vCargando');
+}
 
 const ESTA_PAGINA = location.origin + location.pathname;
 
@@ -446,7 +524,7 @@ function ocupado(btn, si, texto){
    ============================================================ */
 let modo = 'entrar';
 const TEXTOS = {
-  entrar: { titulo:'Bienvenido', sub:'Entra para ver el menú de tu hogar.', boton:'Entrar', ico:'#i-user' },
+  entrar: { titulo:'¡Bienvenido!', sub:'Entra para ver el menú de tu hogar.', boton:'Entrar', ico:'#i-user' },
   crear:  { titulo:'Crea tu cuenta', sub:'Gratis por 14 días. No necesitas tarjeta.', boton:'Crear mi cuenta', ico:'#i-user-plus' }
 };
 const SUAVE = 'cubic-bezier(.22,1,.36,1)';
