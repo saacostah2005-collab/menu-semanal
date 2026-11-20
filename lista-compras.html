@@ -150,14 +150,21 @@
   h1{font-size:clamp(26px, 4vw, 36px); font-weight:800; letter-spacing:-.025em; line-height:1.1; margin:0;}
 
   /* ---------- Pestañas: lista semanal / del mes ---------- */
-  .tabs{display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; margin:0 0 8px; max-width:540px; background:var(--surface); border:1px solid var(--line); border-radius:999px; box-shadow:var(--shadow-sm);}
-  .tab{display:flex; align-items:center; justify-content:center; gap:8px; min-width:0; height:44px; padding:0 10px; border:0; border-radius:999px; background:transparent; color:var(--ink-2); font-weight:800; font-size:14.5px; cursor:pointer; transition:background-color .15s ease, color .15s ease;}
-  .tab .ico{width:18px; height:18px;}
+  /* La píldora verde es una sola y se desliza de una pestaña a la otra */
+  .tabs{position:relative; isolation:isolate; display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; margin:0 0 8px; max-width:540px; background:var(--surface); border:1px solid var(--line); border-radius:999px; box-shadow:var(--shadow-sm);}
+  .tabs::before{content:""; position:absolute; z-index:-1; top:5px; bottom:5px; left:5px; width:calc((100% - 16px) / 2); border-radius:999px; background:var(--brand); box-shadow:0 1px 2px rgba(18,61,39,.18), 0 6px 14px -6px rgba(18,61,39,.45);}
+  .tabs.ready::before{transition:transform .42s cubic-bezier(.32,.72,0,1);}
+  .tabs[data-active="mensual"]::before{transform:translateX(calc(100% + 6px));}
+  .tab{display:flex; align-items:center; justify-content:center; gap:8px; min-width:0; height:44px; padding:0 10px; border:0; border-radius:999px; background:transparent; color:var(--ink-2); font-weight:800; font-size:14.5px; cursor:pointer; transition:background-color .15s ease, color .25s ease, transform .12s var(--ease-out);}
+  .tab:active{transform:scale(.97);}
+  .tab .ico{width:18px; height:18px; transition:transform .42s cubic-bezier(.32,.72,0,1);}
+  .tab[aria-selected="true"] .ico{transform:scale(1.08);}
   .tab .lbl{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .tab .cnt{flex:none; min-width:22px; height:22px; padding:0 6px; border-radius:999px; font-size:12px; font-weight:800; display:inline-grid; place-items:center; background:var(--brand-soft); color:var(--brand);}
-  .tab[aria-selected="true"]{background:var(--brand); color:#fff;}
+  .tab .cnt{flex:none; min-width:22px; height:22px; padding:0 6px; border-radius:999px; font-size:12px; font-weight:800; display:inline-grid; place-items:center; background:var(--brand-soft); color:var(--brand); transition:background-color .25s ease, color .25s ease;}
+  .tab[aria-selected="true"]{color:#fff;}
   .tab[aria-selected="true"] .cnt{background:rgba(255,255,255,.22); color:#fff;}
   @media (hover:hover){ .tab:hover:not([aria-selected="true"]){background:var(--surface-2); color:var(--ink);} }
+  @media (prefers-reduced-motion:reduce){ .tabs.ready::before, .tab .ico{transition:none;} }
   .tab-hint{font-size:13.5px; color:var(--ink-2); margin:0 0 16px; max-width:540px;}
   .empty .btn{margin-top:14px;}
 
@@ -859,6 +866,7 @@ function setStatus(text, state, action){
 
 function updateSummary(){
   const LIST = CUR();
+  ['sTotal', 'sDone', 'sLeft'].forEach(id => { delete document.getElementById(id).dataset.anim; });
   const total = LIST.reduce((a, i) => a + (i.price || 0), 0);
   const done = LIST.filter(i => i.done).reduce((a, i) => a + (i.price || 0), 0);
   const count = LIST.length;
@@ -999,6 +1007,7 @@ function mesActual(){ return new Date().toLocaleDateString('es-PE', { month:'lon
 function applyTab(){
   const m = LISTA === 'mensual';
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tipo === LISTA)));
+  document.querySelector('.tabs').dataset.active = LISTA;
   document.getElementById('tabHint').textContent = m
     ? 'Arroz, azúcar, aceite… lo que compran una vez y les dura todo el mes. Lo que guarden aquí se suma al gasto de ' + mesActual() + '.'
     : 'Verduras, pollo, fruta… lo que compran cada semana.';
@@ -1024,7 +1033,37 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
   EDITING = null; PENDING_RENDER = false; LAST_DELETED = null;
   setStatus('');
   applyTab();
+  entrarContenido(LISTA === 'mensual' ? 1 : -1);
 }));
+
+/* El contenido nuevo entra desde el lado hacia donde se movió la píldora */
+function entrarContenido(dir){
+  if(!Element.prototype.animate) return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const piezas = ['#tabHint', '#items', '#empty', '.sum .stats', '#catList'];
+  piezas.forEach((sel, i) => {
+    const e = document.querySelector(sel);
+    if(!e || e.hidden) return;
+    e.animate([
+      { opacity: 0, transform: 'translateX(' + (dir * 18) + 'px)' },
+      { opacity: 1, transform: 'none' }
+    ], { duration: 320, delay: i * 25, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+  });
+  // Los totales del resumen cuentan hasta su nuevo valor
+  ['sTotal', 'sDone', 'sLeft'].forEach(id => contar(document.getElementById(id)));
+}
+function contar(node){
+  const fin = Number(String(node.textContent).replace(/[^\d.,]/g, '').replace(/,/g, '')) || 0;
+  const t0 = performance.now(), dur = 420, token = String(t0);
+  node.dataset.anim = token;
+  const paso = now => {
+    if(node.dataset.anim !== token) return;     // llegó un valor más nuevo: se deja ese
+    const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    node.textContent = fmt(fin * e);
+    if(p < 1) requestAnimationFrame(paso); else node.textContent = fmt(fin);
+  };
+  requestAnimationFrame(paso);
+}
 
 /* Copia a la lista del mes lo que guardaron en la última compra del mes */
 document.getElementById('btnPrev').addEventListener('click', async function(){
@@ -1211,6 +1250,8 @@ document.getElementById('weekLabel').textContent = 'Lista compartida con tu fami
 document.getElementById('syncPill').addEventListener('click', () => pull());
 setSync('connecting');
 applyTab();
+// La píldora se anima solo cuando la tocan, no al abrir la página
+requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.tabs').classList.add('ready')));
 
 (async function start(){
   try{
