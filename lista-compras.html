@@ -149,6 +149,18 @@
   .kicker{font-size:13.5px; font-weight:600; color:var(--ink-2); margin:0 0 2px;}
   h1{font-size:clamp(26px, 4vw, 36px); font-weight:800; letter-spacing:-.025em; line-height:1.1; margin:0;}
 
+  /* ---------- Pestañas: lista semanal / del mes ---------- */
+  .tabs{display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; margin:0 0 8px; max-width:540px; background:var(--surface); border:1px solid var(--line); border-radius:999px; box-shadow:var(--shadow-sm);}
+  .tab{display:flex; align-items:center; justify-content:center; gap:8px; min-width:0; height:44px; padding:0 10px; border:0; border-radius:999px; background:transparent; color:var(--ink-2); font-weight:800; font-size:14.5px; cursor:pointer; transition:background-color .15s ease, color .15s ease;}
+  .tab .ico{width:18px; height:18px;}
+  .tab .lbl{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .tab .cnt{flex:none; min-width:22px; height:22px; padding:0 6px; border-radius:999px; font-size:12px; font-weight:800; display:inline-grid; place-items:center; background:var(--brand-soft); color:var(--brand);}
+  .tab[aria-selected="true"]{background:var(--brand); color:#fff;}
+  .tab[aria-selected="true"] .cnt{background:rgba(255,255,255,.22); color:#fff;}
+  @media (hover:hover){ .tab:hover:not([aria-selected="true"]){background:var(--surface-2); color:var(--ink);} }
+  .tab-hint{font-size:13.5px; color:var(--ink-2); margin:0 0 16px; max-width:540px;}
+  .empty .btn{margin-top:14px;}
+
   /* ---------- Distribución ---------- */
   /* minmax(0,1fr): la columna nunca es más ancha que la pantalla del celular */
   .layout{display:grid; gap:14px; grid-template-columns:minmax(0,1fr); grid-template-areas:"add" "sum" "list" "act";}
@@ -369,7 +381,8 @@
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
   <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
   <symbol id="i-basket" viewBox="0 0 24 24"><path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/></symbol>
-  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-package" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></symbol>
+  <symbol id="i-plus"viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
   <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
@@ -413,6 +426,16 @@
       <h1>Lista de compras</h1>
     </div>
   </section>
+
+  <div class="tabs" role="tablist" aria-label="Qué lista ver">
+    <button class="tab" id="tabSemanal" type="button" role="tab" data-tipo="semanal" aria-selected="true">
+      <svg class="ico" aria-hidden="true"><use href="#i-basket"/></svg><span class="lbl">Semanal</span><span class="cnt num" id="cntSemanal">0</span>
+    </button>
+    <button class="tab" id="tabMensual" type="button" role="tab" data-tipo="mensual" aria-selected="false">
+      <svg class="ico" aria-hidden="true"><use href="#i-package"/></svg><span class="lbl">Del mes</span><span class="cnt num" id="cntMensual">0</span>
+    </button>
+  </div>
+  <p class="tab-hint" id="tabHint">Verduras, pollo, fruta… lo que compran cada semana.</p>
 
   <div class="layout">
 
@@ -481,9 +504,10 @@
       </button>
       <ul class="items" id="items"></ul>
       <div class="empty" id="empty">
-        <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-basket"/></svg></span>
-        <h3>Tu lista está vacía</h3>
-        <p>Escribe arriba lo que necesitas comprar y cuánto cuesta.</p>
+        <span class="mini" aria-hidden="true"><svg class="ico"><use id="emptyIcon" href="#i-basket"/></svg></span>
+        <h3 id="emptyTitle">Tu lista está vacía</h3>
+        <p id="emptyText">Escribe arriba lo que necesitas comprar y cuánto cuesta.</p>
+        <button class="btn" id="btnPrev" type="button" hidden><svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg><span>Traer la compra del mes pasado</span></button>
       </div>
       <div class="list-foot" id="listFoot" hidden>
         <button class="btn ghost" id="btnUncheck" type="button"><svg class="ico" aria-hidden="true"><use href="#i-rotate"/></svg><span>Desmarcar todo</span></button>
@@ -499,7 +523,7 @@
             <span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-sheet"/></svg></span>
             <h2 id="actTitle">Historial de gastos</h2>
           </div>
-          <p>Cuando termines de comprar, guarda la lista con sus precios en tu historial para llevar la cuenta de lo que gastas cada semana.</p>
+          <p id="actText">Cuando termines de comprar, guarda la lista con sus precios en tu historial para llevar la cuenta de lo que gastas cada semana.</p>
           <button class="btn primary" id="btnSave" type="button">
             <svg class="ico" aria-hidden="true"><use href="#i-sheet"/></svg><span>Guardar en historial</span>
           </button>
@@ -627,7 +651,11 @@ let CTX = null;            // { sb, user, hogar, soloLectura }
 let H = null;              // id del hogar
 function k(name){ return 'wmLista:' + H + ':' + name; }
 
-let ITEMS = [];            // { id, name, price, done, category, orden }
+let ITEMS = [];            // { id, name, price, done, category, orden, tipo } — las dos listas juntas
+/* Lista que se está viendo: 'semanal' o 'mensual' (se recuerda en este celular) */
+function tipoDe(t){ return t === 'mensual' ? 'mensual' : 'semanal'; }
+let LISTA = tipoDe(readJSON('wmListaTipo', 'semanal'));
+function CUR(){ return ITEMS.filter(i => i.tipo === LISTA); }
 let QUEUE = [];            // operaciones pendientes de enviar
 let EDITING = null;        // id del ingrediente en edición
 let PENDING_RENDER = false;
@@ -656,7 +684,7 @@ function applyOp(items, op){
       if(!it || !it.id || items.some(x => x.id === it.id)) return items;
       const copy = items.slice();
       const i = typeof op.index === 'number' ? Math.max(0, Math.min(op.index, copy.length)) : copy.length;
-      copy.splice(i, 0, { id: it.id, name: it.name, price: it.price == null ? null : it.price, done: !!it.done, category: cleanCat(it.category), orden: it.orden });
+      copy.splice(i, 0, { id: it.id, name: it.name, price: it.price == null ? null : it.price, done: !!it.done, category: cleanCat(it.category), orden: it.orden, tipo: tipoDe(it.tipo) });
       return copy;
     }
     case 'update':
@@ -664,9 +692,9 @@ function applyOp(items, op){
     case 'delete':
       return items.filter(x => x.id !== op.id);
     case 'uncheckAll':
-      return items.map(x => Object.assign({}, x, { done:false }));
+      return items.map(x => x.tipo === tipoDe(op.tipo) ? Object.assign({}, x, { done:false }) : x);
     case 'clear':
-      return [];
+      return items.filter(x => x.tipo !== tipoDe(op.tipo));
     default:
       return items;
   }
@@ -675,11 +703,11 @@ function applyOp(items, op){
 function cleanItems(list){
   return (Array.isArray(list) ? list : [])
     .filter(i => i && i.id && i.name)
-    .map(i => ({ id: String(i.id), name: String(i.name), price: i.price == null || i.price === '' ? null : Number(i.price), done: !!i.done, category: cleanCat(i.category), orden: Number(i.orden) || 0 }));
+    .map(i => ({ id: String(i.id), name: String(i.name), price: i.price == null || i.price === '' ? null : Number(i.price), done: !!i.done, category: cleanCat(i.category), orden: Number(i.orden) || 0, tipo: tipoDe(i.tipo) }));
 }
 
 /* Base de datos <-> formato de esta página */
-function fromDb(r){ return { id: r.id, name: r.nombre, price: r.precio, done: r.comprado, category: r.categoria, orden: r.orden }; }
+function fromDb(r){ return { id: r.id, name: r.nombre, price: r.precio, done: r.comprado, category: r.categoria, orden: r.orden, tipo: r.tipo }; }
 const DB_FIELD = { name:'nombre', price:'precio', done:'comprado', category:'categoria' };
 function fieldsToDb(f){ const o = {}; Object.keys(f).forEach(key => { if(DB_FIELD[key]) o[DB_FIELD[key]] = f[key]; }); return o; }
 
@@ -730,14 +758,14 @@ async function sendOp(op){
     case 'add': {
       const it = op.item;
       r = await t.insert({ id: it.id, hogar_id: H, nombre: it.name, precio: it.price == null ? null : it.price,
-                           comprado: !!it.done, categoria: it.category || '', orden: it.orden || nowOrden() });
+                           comprado: !!it.done, categoria: it.category || '', orden: it.orden || nowOrden(), tipo: tipoDe(it.tipo) });
       if(r.error && r.error.code === '23505') return;   // ya estaba guardado
       break;
     }
     case 'update':     r = await t.update(fieldsToDb(op.fields)).eq('id', op.id); break;
     case 'delete':     r = await t.delete().eq('id', op.id); break;
-    case 'uncheckAll': r = await t.update({ comprado:false }).eq('hogar_id', H).eq('comprado', true); break;
-    case 'clear':      r = await t.delete().eq('hogar_id', H); break;
+    case 'uncheckAll': r = await t.update({ comprado:false }).eq('hogar_id', H).eq('tipo', tipoDe(op.tipo)).eq('comprado', true); break;
+    case 'clear':      r = await t.delete().eq('hogar_id', H).eq('tipo', tipoDe(op.tipo)); break;
     case 'setLock':    r = await CTX.sb.rpc('bloquear_lista', { p_bloqueada: !!op.locked }); break;
     default: return;
   }
@@ -780,7 +808,7 @@ async function pull(){
   let ok = false;
   try{
     const [li, ho] = await Promise.all([
-      CTX.sb.from('lista_items').select('id,nombre,precio,comprado,categoria,orden').eq('hogar_id', H).order('orden'),
+      CTX.sb.from('lista_items').select('id,nombre,precio,comprado,categoria,orden,tipo').eq('hogar_id', H).order('orden'),
       CTX.sb.from('hogares').select('lista_bloqueada,activo_hasta').eq('id', H).single()
     ]);
     if(li.error) throw li.error;
@@ -830,10 +858,13 @@ function setStatus(text, state, action){
 }
 
 function updateSummary(){
-  const total = ITEMS.reduce((a, i) => a + (i.price || 0), 0);
-  const done = ITEMS.filter(i => i.done).reduce((a, i) => a + (i.price || 0), 0);
-  const count = ITEMS.length;
-  const doneCount = ITEMS.filter(i => i.done).length;
+  const LIST = CUR();
+  const total = LIST.reduce((a, i) => a + (i.price || 0), 0);
+  const done = LIST.filter(i => i.done).reduce((a, i) => a + (i.price || 0), 0);
+  const count = LIST.length;
+  const doneCount = LIST.filter(i => i.done).length;
+  document.getElementById('cntSemanal').textContent = ITEMS.filter(i => i.tipo === 'semanal').length;
+  document.getElementById('cntMensual').textContent = ITEMS.filter(i => i.tipo === 'mensual').length;
   const pct = count ? Math.round(doneCount / count * 100) : 0;
 
   document.getElementById('sTotal').textContent = fmt(total);
@@ -847,8 +878,8 @@ function updateSummary(){
   document.getElementById('progressBar').style.width = pct + '%';
 
   // Total por categoría (y "Sin categoría" solo si hay alguno sin asignar)
-  const groups = CATEGORIES.map(c => ({ c, items: ITEMS.filter(i => i.category === c.id) }));
-  const sinCat = ITEMS.filter(i => !catInfo(i.category));
+  const groups = CATEGORIES.map(c => ({ c, items: LIST.filter(i => i.category === c.id) }));
+  const sinCat = LIST.filter(i => !catInfo(i.category));
   if(sinCat.length) groups.push({ c:{ id:'', label:'Sin categoría', emoji:'❔' }, items: sinCat });
   const catList = document.getElementById('catList');
   catList.innerHTML = '';
@@ -866,6 +897,7 @@ function updateSummary(){
   });
 
   document.getElementById('empty').hidden = count > 0;
+  document.getElementById('btnPrev').hidden = LISTA !== 'mensual' || count > 0 || BLOCKED();
   document.getElementById('listFoot').hidden = count === 0 || BLOCKED();
   document.getElementById('btnUncheck').disabled = doneCount === 0;
   document.getElementById('btnSave').disabled = count === 0 || READONLY;
@@ -958,9 +990,66 @@ function render(){
   if(EDITING && !ITEMS.some(i => i.id === EDITING)) EDITING = null;
   const ul = document.getElementById('items');
   ul.innerHTML = '';
-  ITEMS.forEach(item => ul.appendChild(buildRow(item)));
+  CUR().forEach(item => ul.appendChild(buildRow(item)));
   updateSummary();
 }
+
+/* ---------- pestañas: lista de la semana / del mes ---------- */
+function mesActual(){ return new Date().toLocaleDateString('es-PE', { month:'long' }).toLowerCase(); }
+function applyTab(){
+  const m = LISTA === 'mensual';
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tipo === LISTA)));
+  document.getElementById('tabHint').textContent = m
+    ? 'Arroz, azúcar, aceite… lo que compran una vez y les dura todo el mes. Lo que guarden aquí se suma al gasto de ' + mesActual() + '.'
+    : 'Verduras, pollo, fruta… lo que compran cada semana.';
+  document.getElementById('listTitle').lastChild.textContent = m ? 'Compras del mes' : 'Nuestra lista';
+  document.getElementById('newName').placeholder = m ? 'Ej.: Arroz 5 kg' : 'Ej.: Pollo 1 kg';
+  const cat = document.getElementById('newCat');
+  if(m && !cat.value) cat.value = 'Abarrotes';
+  document.getElementById('emptyIcon').setAttribute('href', m ? '#i-package' : '#i-basket');
+  document.getElementById('emptyTitle').textContent = m ? 'Aún no anotan las compras del mes' : 'Tu lista está vacía';
+  document.getElementById('emptyText').textContent = m
+    ? 'Escriban arriba lo que compran para todo el mes. También pueden traer lo del mes pasado y solo cambiar los precios.'
+    : 'Escribe arriba lo que necesitas comprar y cuánto cuesta.';
+  document.getElementById('actText').textContent = m
+    ? 'Cuando terminen la compra del mes, guárdenla: su monto se suma a ' + mesActual() + ' en el historial. Si la guardan otra vez este mes, se reemplaza por la nueva.'
+    : 'Cuando termines de comprar, guarda la lista con sus precios en tu historial para llevar la cuenta de lo que gastas cada semana.';
+  document.querySelector('#btnSave span').textContent = m ? 'Guardar compra del mes' : 'Guardar en historial';
+  render();
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  if(t.dataset.tipo === LISTA) return;
+  LISTA = tipoDe(t.dataset.tipo);
+  writeJSON('wmListaTipo', LISTA);
+  EDITING = null; PENDING_RENDER = false; LAST_DELETED = null;
+  setStatus('');
+  applyTab();
+}));
+
+/* Copia a la lista del mes lo que guardaron en la última compra del mes */
+document.getElementById('btnPrev').addEventListener('click', async function(){
+  if(BLOCKED() || !CTX) return;
+  const b = this;
+  b.disabled = true;
+  setStatus('Buscando la última compra del mes…');
+  try{
+    const { data, error } = await CTX.sb.from('compras')
+      .select('fecha, compra_items(nombre, precio, categoria)')
+      .eq('tipo', 'mensual').order('fecha', { ascending:false }).limit(1);
+    if(error) throw error;
+    const items = data.length ? (data[0].compra_items || []).filter(i => i.nombre) : [];
+    if(!items.length){ setStatus('Todavía no han guardado ninguna compra del mes en el historial.', 'err'); return; }
+    const base = nowOrden();
+    items.forEach((i, n) => commit({ type:'add', item:{ id: newId(), name: i.nombre, price: i.precio == null ? null : Number(i.precio),
+      done:false, category: cleanCat(i.categoria), orden: base + n / 1000, tipo:'mensual' } }));
+    const cuando = new Date(data[0].fecha).toLocaleDateString('es-PE', { day:'numeric', month:'long' });
+    setStatus('Listo: trajimos ' + items.length + ' productos de la compra del ' + cuando + '. Cambien los precios si subieron.', 'ok');
+  }catch(err){
+    setStatus(WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo traer: ' + WM.traducir(err), 'err');
+  }finally{
+    b.disabled = false;
+  }
+});
 
 /* ---------- acciones ---------- */
 function removeItem(id){
@@ -993,7 +1082,7 @@ document.getElementById('addForm').addEventListener('submit', function(ev){
     priceInput.focus();
     return;
   }
-  commit({ type:'add', item:{ id: newId(), name: capitalize(name), price, done:false, category, orden: nowOrden() } });
+  commit({ type:'add', item:{ id: newId(), name: capitalize(name), price, done:false, category, orden: nowOrden(), tipo: LISTA } });
   // La categoría se queda elegida: útil al anotar varias frutas seguidas
   nameInput.value = ''; priceInput.value = '';
   setStatus('');
@@ -1011,21 +1100,24 @@ document.getElementById('newName').addEventListener('keydown', function(ev){
 fillCatSelect(document.getElementById('newCat'), '', 'Categoría');
 
 document.getElementById('btnUncheck').addEventListener('click', function(){
-  commit({ type:'uncheckAll' });
+  commit({ type:'uncheckAll', tipo: LISTA });
 });
 
 document.getElementById('btnClear').addEventListener('click', function(){
-  if(!ITEMS.length) return;
-  if(!confirm('¿Vaciar toda la lista? Se borrarán ' + ITEMS.length + ' ingredientes en todos los celulares.')) return;
+  const n = CUR().length;
+  if(!n) return;
+  const cual = LISTA === 'mensual' ? 'la lista del mes' : 'toda la lista';
+  if(!confirm('¿Vaciar ' + cual + '? Se borrarán ' + n + ' productos en todos los celulares.')) return;
   EDITING = null;
-  commit({ type:'clear' });
+  commit({ type:'clear', tipo: LISTA });
   setStatus('Lista vaciada.');
 });
 
 document.getElementById('btnCopy').addEventListener('click', function(){
-  const total = ITEMS.reduce((a, i) => a + (i.price || 0), 0);
-  const lines = ITEMS.map(i => (i.done ? '✅ ' : '⬜ ') + i.name + (i.price != null ? ' — ' + fmt(i.price) : ''));
-  const text = '🛒 Lista de compras\n' + lines.join('\n') + '\n\nTotal: ' + fmt(total);
+  const LIST = CUR();
+  const total = LIST.reduce((a, i) => a + (i.price || 0), 0);
+  const lines = LIST.map(i => (i.done ? '✅ ' : '⬜ ') + i.name + (i.price != null ? ' — ' + fmt(i.price) : ''));
+  const text = (LISTA === 'mensual' ? '📦 Compras del mes' : '🛒 Lista de compras') + '\n' + lines.join('\n') + '\n\nTotal: ' + fmt(total);
   navigator.clipboard.writeText(text).then(function(){
     setStatus('Lista copiada. Pégala en WhatsApp o en tus notas.', 'ok');
   }).catch(function(){
@@ -1039,19 +1131,28 @@ document.getElementById('btnSave').addEventListener('click', async function(){
   if(READONLY) return;
   saveBtn.disabled = true;
   setStatus('Guardando en el historial…');
+  const mensual = LISTA === 'mensual';
+  // La compra del mes se guarda en el mes de hoy (del día 1 al último día)
+  const hoy = new Date();
+  const desde = mensual ? isoDate(new Date(hoy.getFullYear(), hoy.getMonth(), 1)) : WEEK.monday;
+  const hasta = mensual ? isoDate(new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)) : WEEK.sunday;
   try{
     const { error } = await CTX.sb.rpc('guardar_compra', {
-      p_semana_inicio: WEEK.monday,
-      p_semana_fin: WEEK.sunday,
-      p_items: ITEMS.map(i => ({ nombre: i.name, precio: i.price, comprado: !!i.done, categoria: i.category || '' }))
+      p_semana_inicio: desde,
+      p_semana_fin: hasta,
+      p_items: CUR().map(i => ({ nombre: i.name, precio: i.price, comprado: !!i.done, categoria: i.category || '' })),
+      p_tipo: LISTA
     });
     if(error) throw error;
     const hora = new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' });
-    setStatus('Guardado en tu historial · ' + hora, 'ok');
+    setStatus((mensual ? 'Guardado en el gasto de ' + mesActual() : 'Guardado en tu historial') + ' · ' + hora, 'ok');
   }catch(err){
-    setStatus(WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo guardar: ' + WM.traducir(err), 'err');
+    const m = String((err && err.message) || '') + ' ' + ((err && err.code) || '');
+    setStatus(WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.'
+      : /p_tipo|PGRST202|42883/.test(m) ? 'Falta activar las compras del mes en Supabase (archivo 04-compras-del-mes.sql).'
+      : 'No se pudo guardar: ' + WM.traducir(err), 'err');
   }finally{
-    saveBtn.disabled = ITEMS.length === 0 || READONLY;
+    saveBtn.disabled = CUR().length === 0 || READONLY;
   }
 });
 
@@ -1109,7 +1210,7 @@ document.getElementById('themeToggle').addEventListener('click', function(){
 document.getElementById('weekLabel').textContent = 'Lista compartida con tu familia';
 document.getElementById('syncPill').addEventListener('click', () => pull());
 setSync('connecting');
-render();
+applyTab();
 
 (async function start(){
   try{
@@ -1126,6 +1227,7 @@ render();
   LOCKED = CTX.sinConexion ? !!readJSON(k('bloqueo'), false) : !!CTX.hogar.lista_bloqueada;
   READONLY = CTX.soloLectura;
   applyLock();
+  applyTab();
   pull();
 
   // Cambios de otros celulares del hogar: llegan al instante

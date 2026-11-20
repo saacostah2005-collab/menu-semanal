@@ -245,6 +245,8 @@
   .week-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
   .week-num{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--brand); background:var(--leaf-soft); padding:4px 9px; border-radius:999px; margin-bottom:6px;}
   :root[data-theme="dark"] .week-num{color:var(--leaf);}
+  .week-num.mensual{color:var(--sun); background:var(--sun-soft);}
+  :root[data-theme="dark"] .week-num.mensual{color:var(--sun);}
   .week-range{font-size:16.5px; font-weight:800; letter-spacing:-.01em; margin:0;}
   .week-meta{font-size:13px; color:var(--ink-3); margin:3px 0 0;}
   .week-total{text-align:right; flex:none;}
@@ -412,7 +414,8 @@
   <symbol id="i-filter" viewBox="0 0 24 24"><path d="M10 20a1 1 0 0 0 .55.9l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .52-1.34L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.74 1.67l7.22 7.99A2 2 0 0 1 10 14z"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
-  <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-package" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></symbol>
+  <symbol id="i-calendar"viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
   <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="m5 7-3 7a3 3 0 0 0 6 0Z"/><path d="m19 7-3 7a3 3 0 0 0 6 0Z"/><path d="M8 21h8"/></symbol>
   <symbol id="i-up" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></symbol>
   <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
@@ -440,7 +443,7 @@
   <section class="head">
     <span class="head-ico" aria-hidden="true"><svg class="ico"><use href="#i-chart"/></svg></span>
     <div>
-      <p class="kicker">Lo que gastaste cada semana</p>
+      <p class="kicker">Lo que gastaste cada semana y cada mes</p>
       <h1>Historial de compras</h1>
     </div>
   </section>
@@ -475,7 +478,7 @@
 
       <section class="card pad" aria-labelledby="trendTitle">
         <div class="card-head"><span class="mini" aria-hidden="true"><svg class="ico"><use href="#i-up"/></svg></span><h2 id="trendTitle">Tendencia</h2></div>
-        <p class="card-sub">Gasto promedio por semana en los últimos 6 meses.</p>
+        <p class="card-sub" id="trendSub">Gasto promedio por semana en los últimos 6 meses.</p>
         <div class="chips trend-chips" id="trendChips"></div>
         <div id="trendBox"></div>
       </section>
@@ -595,34 +598,52 @@ function fmtRange(monday){
 }
 
 /* ---------- datos ---------- */
+let ALL = [];        // todo lo guardado: semanas y compras del mes
 let WEEKS = [];      // una entrada por semana (el último guardado de esa semana)
+let MENSUAL = [];    // una entrada por mes con compra del mes (el último guardado de ese mes)
 const FILTER = { range:'all', from:null, to:null, query:'' };
+function esMensual(w){ return w.tipo === 'mensual'; }
 
-/* Agrupa los guardados por semana; si una semana se guardó varias veces,
-   cuenta el último (es el más completo) para no sumar dos veces. */
+/* Agrupa los guardados por semana (o por mes, si es compra del mes); si se
+   guardó varias veces, cuenta el último (es el más completo) para no sumar dos veces. */
 function buildWeeks(registros){
   const map = new Map();
   (registros || []).forEach(r => {
     const fecha = new Date(r.fecha);
-    const start = r.semanaInicio && /^\d{4}-\d{2}-\d{2}$/.test(r.semanaInicio)
-      ? r.semanaInicio : isoDate(getMonday(isNaN(fecha) ? new Date() : fecha));
+    const tipo = r.tipo === 'mensual' ? 'mensual' : 'semanal';
+    const valida = r.semanaInicio && /^\d{4}-\d{2}-\d{2}$/.test(r.semanaInicio);
+    const base = isNaN(fecha) ? new Date() : fecha;
+    const start = tipo === 'mensual'
+      ? (valida ? r.semanaInicio.slice(0, 7) : isoDate(base).slice(0, 7)) + '-01'
+      : (valida ? r.semanaInicio : isoDate(getMonday(base)));
+    const key = (tipo === 'mensual' ? 'm-' : 'w-') + start;
     const items = Array.isArray(r.items) ? r.items.filter(i => i && i.nombre) : [];
     const sumItems = items.reduce((a, i) => a + (Number(i.precio) || 0), 0);
     const total = (r.total != null && !isNaN(r.total)) ? Number(r.total) : (items.length ? sumItems : null);
-    const entry = { start, fecha: isNaN(fecha) ? null : fecha, items, texto: r.ingredientes || '', total, saves: 1 };
-    const prev = map.get(start);
-    if(!prev) map.set(start, entry);
+    const entry = { key, tipo, start, fecha: isNaN(fecha) ? null : fecha, items, texto: r.ingredientes || '', total, saves: 1 };
+    const prev = map.get(key);
+    if(!prev) map.set(key, entry);
     else{
       entry.saves = prev.saves + 1;
-      if(!prev.fecha || (entry.fecha && entry.fecha >= prev.fecha)) map.set(start, entry);
+      if(!prev.fecha || (entry.fecha && entry.fecha >= prev.fecha)) map.set(key, entry);
       else prev.saves = entry.saves;
     }
   });
   return Array.from(map.values()).map(w => {
     const monday = parseISO(w.start);
+    if(esMensual(w)){
+      const fin = new Date(monday.getFullYear(), monday.getMonth() + 1, 0);
+      // en la lista se ordena por el día en que la guardaron
+      return Object.assign(w, { monday, end: isoDate(fin), week: null, year: monday.getFullYear(), orden: w.fecha || monday });
+    }
     const wk = isoWeek(monday);
-    return Object.assign(w, { monday, end: isoDate(addDays(monday, 6)), week: wk.week, year: wk.year });
-  }).sort((a, b) => b.monday - a.monday);
+    return Object.assign(w, { monday, end: isoDate(addDays(monday, 6)), week: wk.week, year: wk.year, orden: monday });
+  }).sort((a, b) => b.orden - a.orden);
+}
+function setData(registros){
+  ALL = buildWeeks(registros);
+  WEEKS = ALL.filter(w => !esMensual(w));
+  MENSUAL = ALL.filter(esMensual);
 }
 
 /* ---------- filtros ---------- */
@@ -640,7 +661,7 @@ function rangeFor(key){
 
 function applyFilter(){
   const q = normalize(FILTER.query);
-  return WEEKS
+  return ALL
     .filter(w => (!FILTER.from || w.end >= FILTER.from) && (!FILTER.to || w.start <= FILTER.to))
     .map(w => {
       if(!q) return Object.assign({}, w, { shown: w.items, amount: w.total });
@@ -664,10 +685,15 @@ function highlight(text, q){
 
 function renderStats(list){
   const q = FILTER.query.trim();
-  const withAmount = list.filter(w => w.amount != null);
-  const total = withAmount.reduce((a, w) => a + w.amount, 0);
-  const avg = withAmount.length ? total / withAmount.length : 0;
+  const conMonto = list.filter(w => w.amount != null);
+  const total = conMonto.reduce((a, w) => a + w.amount, 0);
+  // Promedio y semana más alta: solo las compras semanales
+  const withAmount = conMonto.filter(w => !esMensual(w));
+  const totalSem = withAmount.reduce((a, w) => a + w.amount, 0);
+  const delMes = total - totalSem;
+  const avg = withAmount.length ? totalSem / withAmount.length : 0;
   const max = withAmount.reduce((m, w) => (!m || w.amount > m.amount) ? w : m, null);
+  const nSem = list.filter(w => !esMensual(w)).length;
 
   const box = el('div', 'stats');
   const stat = (cls, iconId, label, value, sub) => {
@@ -679,8 +705,10 @@ function renderStats(list){
   };
   box.append(
     stat('hero-stat', 'i-wallet', q ? 'Gastado en «' + q + '»' : 'Total gastado', fmt(total),
-      withAmount.length ? 'En ' + withAmount.length + (withAmount.length === 1 ? ' semana' : ' semanas') : 'Sin montos en este periodo'),
-    stat('', 'i-calendar', 'Semanas', String(list.length), 'guardadas'),
+      conMonto.length
+        ? (withAmount.length ? 'En ' + withAmount.length + (withAmount.length === 1 ? ' semana' : ' semanas') : 'Solo compras del mes') + (delMes > 0 && withAmount.length ? ' + ' + fmt(delMes) + ' del mes' : '')
+        : 'Sin montos en este periodo'),
+    stat('', 'i-calendar', 'Semanas', String(nSem), 'guardadas'),
     stat('', 'i-scale', 'Promedio semanal', fmt(avg), withAmount.length ? 'por semana' : '—'),
     stat('wide-sm', 'i-up', 'Semana más alta', max ? fmt(max.amount) : '—', max ? 'Semana ' + max.week + ' · ' + fmtRange(max.monday) : '—')
   );
@@ -688,7 +716,7 @@ function renderStats(list){
 }
 
 function renderChart(list){
-  const data = list.filter(w => w.amount != null).slice().sort((a, b) => a.monday - b.monday);
+  const data = list.filter(w => w.amount != null && !esMensual(w)).slice().sort((a, b) => a.monday - b.monday);
   if(data.length < 2) return null;
   const card = el('section', 'card chart-card');
   card.setAttribute('aria-labelledby', 'chartTitle');
@@ -768,17 +796,18 @@ function goToWeek(start){
 
 function renderWeek(w, q){
   const card = el('article', 'card week');
-  card.id = 'w-' + w.start;
+  card.id = w.key;
   const top = el('div', 'week-top');
   const left = el('div');
-  const num = el('span', 'week-num'); num.append(icon('i-calendar'), 'Semana ' + w.week);
+  const num = el('span', 'week-num' + (esMensual(w) ? ' mensual' : ''));
+  num.append(icon(esMensual(w) ? 'i-package' : 'i-calendar'), esMensual(w) ? 'Compra del mes' : 'Semana ' + w.week);
   num.firstChild.style.cssText = 'width:13px;height:13px';
-  left.append(num, el('p', 'week-range', fmtRange(w.monday)));
+  left.append(num, el('p', 'week-range', esMensual(w) ? mayus(mesNombre(w.start.slice(0, 7)).toLowerCase()) : fmtRange(w.monday)));
   const bought = w.items.filter(i => i.comprado).length;
   const meta = [];
   if(w.fecha) meta.push('Guardado el ' + w.fecha.toLocaleDateString('es-PE', { weekday:'short', day:'numeric', month:'short' }).replace('.', ''));
   if(w.items.length) meta.push(w.items.length + (w.items.length === 1 ? ' ingrediente' : ' ingredientes'));
-  if(w.saves > 1) meta.push('guardada ' + w.saves + ' veces, se muestra la última');
+  if(w.saves > 1) meta.push((esMensual(w) ? 'guardada ' + w.saves + ' veces en el mes' : 'guardada ' + w.saves + ' veces') + ', se muestra la última');
   left.appendChild(el('p', 'week-meta', meta.join(' · ')));
   const right = el('div', 'week-total');
   right.appendChild(el('strong', 'num', w.amount != null ? fmt(w.amount) : '—'));
@@ -821,7 +850,7 @@ function render(){
   const box = document.getElementById('results');
   box.innerHTML = '';
   hideTip();
-  if(!WEEKS.length){
+  if(!ALL.length){
     box.appendChild(state('i-basket', 'Aún no hay compras guardadas',
       'Cuando termines de comprar, toca «Guardar en historial» en tu lista de compras y aparecerá aquí.'));
     return;
@@ -837,7 +866,11 @@ function render(){
   const chart = renderChart(list);
   if(chart) box.appendChild(chart);
   const head = el('div', 'weeks-head');
-  head.append(el('h2', '', 'Semanas'), el('span', '', list.length + (list.length === 1 ? ' semana' : ' semanas')));
+  const nS = list.filter(w => !esMensual(w)).length, nM = list.length - nS;
+  const cuenta = [];
+  if(nS) cuenta.push(nS + (nS === 1 ? ' semana' : ' semanas'));
+  if(nM) cuenta.push(nM + (nM === 1 ? ' compra del mes' : ' compras del mes'));
+  head.append(el('h2', '', nM ? 'Compras' : 'Semanas'), el('span', '', cuenta.join(' · ')));
   box.appendChild(head);
   const grid = el('div', 'weeks');
   list.forEach(w => grid.appendChild(renderWeek(w, q)));
@@ -913,11 +946,25 @@ function mesSolo(m){ const [y, mm] = m.split('-').map(Number); return new Date(y
 function mayus(t){ return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
 function montoSemana(w){ if(w.total != null) return Number(w.total); return w.items.length ? w.items.reduce((a, i) => a + (Number(i.precio) || 0), 0) : null; }
 function semanasDel(m){ return WEEKS.filter(w => mesDe(w) === m); }
+function compraDelMes(m){ return MENSUAL.find(w => mesDe(w) === m) || null; }
+function montoMensual(m){ const c = compraDelMes(m); return c ? (montoSemana(c) || 0) : 0; }
 function nSemanas(m){ return semanasDel(m).filter(w => montoSemana(w) != null).length; }
-function totalMes(m){ const ws = semanasDel(m); return ws.length ? ws.reduce((a, w) => a + (montoSemana(w) || 0), 0) : null; }
-function gastoPorCat(m){
+function totalSemanal(m){ return semanasDel(m).reduce((a, w) => a + (montoSemana(w) || 0), 0); }
+/* Total del mes = compras semanales + compra del mes */
+function totalMes(m){ return semanasDel(m).length || compraDelMes(m) ? totalSemanal(m) + montoMensual(m) : null; }
+/* Para comparar meses se usa el gasto POR SEMANA; la compra del mes se reparte
+   entre las ~4.35 semanas del mes. Así un mes que recién empieza no parece más barato. */
+const SEM_MES = 4.35;
+function porSemana(m, semanal, mensual){
+  const n = nSemanas(m), c = compraDelMes(m);
+  if(!n && !c) return null;
+  return (n ? semanal / n : 0) + (c ? mensual / SEM_MES : 0);
+}
+function hayMensual(){ return MENSUAL.length > 0; }
+function gastoPorCat(m, cual){
   const out = new Map(TODAS.map(c => [c.id, 0]));
-  semanasDel(m).forEach(w => {
+  const fuentes = cual === 'semanal' ? semanasDel(m) : cual === 'mensual' ? [compraDelMes(m)].filter(Boolean) : semanasDel(m).concat([compraDelMes(m)].filter(Boolean));
+  fuentes.forEach(w => {
     if(w.items.length) w.items.forEach(i => { const p = Number(i.precio) || 0; if(p) out.set(catDe(i.categoria).id, out.get(catDe(i.categoria).id) + p); });
     else if(w.total) out.set('', out.get('') + Number(w.total));   // guardados antiguos sin detalle
   });
@@ -955,10 +1002,10 @@ function conTip(node, fuerte, texto){
 
 function renderMes(){
   const box = $id('mes');
-  if(!WEEKS.length){ box.hidden = true; return; }
+  if(!ALL.length){ box.hidden = true; return; }
   box.hidden = false;
   const actual = hoyMes();
-  const primero = WEEKS.reduce((m, w) => mesDe(w) < m ? mesDe(w) : m, actual);
+  const primero = ALL.reduce((m, w) => mesDe(w) < m ? mesDe(w) : m, actual);
   if(!MES) MES = actual;
   $id('mesTitulo').textContent = mayus(mesNombre(MES).toLowerCase()) + (MES === actual ? ' (este mes)' : '');
   $id('mesPrev').disabled = MES <= primero;
@@ -971,8 +1018,10 @@ $id('mesNext').addEventListener('click', () => { MES = mesMas(MES, 1); renderMes
 /* ---------- Tarjetas del mes ---------- */
 function pintarStats(){
   const ws = semanasDel(MES).filter(w => montoSemana(w) != null);
-  const total = ws.reduce((a, w) => a + montoSemana(w), 0);
-  const antes = totalMes(mesMas(MES, -1));
+  const totalSem = ws.reduce((a, w) => a + montoSemana(w), 0);
+  const cm = compraDelMes(MES), mensual = montoMensual(MES);
+  const total = totalSem + mensual;
+  const antes = totalSemanal(mesMas(MES, -1));
   const max = ws.reduce((m, w) => !m || montoSemana(w) > montoSemana(m) ? w : m, null);
   const box = $id('mesStats');
   box.innerHTML = '';
@@ -983,10 +1032,12 @@ function pintarStats(){
     if(sub) s.appendChild(sub instanceof Node ? sub : el('p', 'stat-sub', sub));
     return s;
   };
-  const sub = ws.length ? 'En ' + ws.length + (ws.length === 1 ? ' semana' : ' semanas') : 'Aún no hay compras guardadas';
-  // Se compara el gasto POR SEMANA, así un mes que recién empieza no parece más barato
+  const sub = cm
+    ? 'Semanal ' + fmt(totalSem) + ' · del mes ' + fmt(mensual)
+    : ws.length ? 'En ' + ws.length + (ws.length === 1 ? ' semana' : ' semanas') : 'Aún no hay compras guardadas';
+  // Se compara el gasto POR SEMANA (solo compras semanales), así un mes que recién empieza no parece más barato
   const nAntes = nSemanas(mesMas(MES, -1));
-  const pct = ws.length && nAntes ? cambio(total / ws.length, antes / nAntes) : null;
+  const pct = ws.length && nAntes ? cambio(totalSem / ws.length, antes / nAntes) : null;
   let subProm = ws.length ? 'por semana' : '—';
   if(pct !== null){
     subProm = el('p', 'stat-sub');
@@ -994,9 +1045,11 @@ function pintarStats(){
   }
   box.append(
     tile('hero-stat', 'i-wallet', 'Total gastado', fmt(total), sub),
-    tile('', 'i-scale', 'Promedio semanal', ws.length ? fmt(total / ws.length) : '—', subProm),
+    tile('', 'i-scale', 'Promedio semanal', ws.length ? fmt(totalSem / ws.length) : '—', subProm),
     tile('', 'i-up', 'Semana más cara', max ? fmt(montoSemana(max)) : '—', max ? 'Semana del ' + max.monday.toLocaleDateString('es-PE', { day:'numeric', month:'short' }).replace('.', '') : '—'),
-    tile('wide-sm', 'i-calendar', 'Compras guardadas', String(semanasDel(MES).length), semanasDel(MES).length === 1 ? 'semana' : 'semanas')
+    tile('wide-sm', 'i-package', 'Compra del mes', cm ? fmt(mensual) : '—',
+      cm ? (cm.fecha ? 'Guardada el ' + cm.fecha.toLocaleDateString('es-PE', { day:'numeric', month:'short' }).replace('.', '') : 'Guardada')
+         : 'Arroz, aceite… en «Lista de compras › Del mes»')
   );
 }
 
@@ -1071,8 +1124,10 @@ function pintarCategorias(){
   box.innerHTML = '';
   const g = gastoPorCat(MES), prev = gastoPorCat(mesMas(MES, -1));
   const total = Array.from(g.values()).reduce((a, b) => a + b, 0);
-  const nA = Math.max(1, nSemanas(MES)), nB = Math.max(1, nSemanas(mesMas(MES, -1)));
-  const porSem = (mapa, n, id) => mapa.get(id) / n;      // gasto por semana
+  // gasto por semana de cada categoría (la compra del mes se reparte entre sus semanas)
+  const partesDe = m => ({ m, s: gastoPorCat(m, 'semanal'), c: gastoPorCat(m, 'mensual') });
+  const nA = partesDe(MES), nB = partesDe(mesMas(MES, -1));
+  const porSem = (mapa, p, id) => porSemana(p.m, p.s.get(id), p.c.get(id)) || 0;
   if(!total){ box.appendChild(el('p', 'empty-mini', 'No hay compras con precio guardadas en este mes.')); return; }
   const mesAntes = mesSolo(mesMas(MES, -1));
   const bar = el('div', 'seg-bar');
@@ -1087,7 +1142,7 @@ function pintarCategorias(){
     bar.appendChild(s);
   });
   box.appendChild(bar);
-  const nota = el('p', 'card-sub', 'La flecha compara el gasto por semana con ' + mesAntes + '.');
+  const nota = el('p', 'card-sub', 'La flecha compara el gasto por semana con ' + mesAntes + '.' + (hayMensual() ? ' La compra del mes se reparte entre sus semanas.' : ''));
   nota.style.margin = '0 0 4px';
   box.appendChild(nota);
   const ul = el('ul', 'cat-rows');
@@ -1130,12 +1185,12 @@ function niceMax(v){
 }
 function pintarTendencia(){
   const meses = [5, 4, 3, 2, 1, 0].map(n => mesMas(MES, -n));
-  const serie = c => meses.map(m => {
-    const n = nSemanas(m);
-    if(!n) return null;
-    // promedio por semana: así el mes en curso no aparece como una caída
-    return (c === 'total' ? totalMes(m) : gastoPorCat(m).get(c)) / n;
-  });
+  // promedio por semana: así el mes en curso no aparece como una caída
+  // (la compra del mes se reparte entre sus semanas)
+  const serie = c => meses.map(m => c === 'total'
+    ? porSemana(m, totalSemanal(m), montoMensual(m))
+    : porSemana(m, gastoPorCat(m, 'semanal').get(c), gastoPorCat(m, 'mensual').get(c)));
+  $id('trendSub').textContent = 'Gasto promedio por semana en los últimos 6 meses.' + (hayMensual() ? ' La compra del mes se reparte entre sus semanas.' : '');
   // Chips: total + las categorías con gasto en esos meses
   const chips = $id('trendChips');
   chips.innerHTML = '';
@@ -1210,7 +1265,7 @@ function pintarTop(){
   const ul = $id('topBox');
   ul.innerHTML = '';
   const mapa = new Map();
-  semanasDel(MES).forEach(w => {
+  semanasDel(MES).concat([compraDelMes(MES)].filter(Boolean)).forEach(w => {
     const vistos = new Set();
     w.items.forEach(i => {
       const k = normalize(i.nombre);
@@ -1236,7 +1291,9 @@ function pintarTop(){
 /* ---------- Precio de cada producto ---------- */
 function preciosPorProducto(){
   const mapa = new Map();
-  WEEKS.slice().sort((a, b) => a.monday - b.monday).forEach(w => {
+  // la compra del mes cuenta en el día que la guardaron
+  const dia = w => esMensual(w) && w.fecha ? w.fecha : w.monday;
+  ALL.slice().sort((a, b) => dia(a) - dia(b)).forEach(w => {
     w.items.forEach(i => {
       const p = Number(i.precio);
       const k = normalize(i.nombre);
@@ -1244,8 +1301,8 @@ function preciosPorProducto(){
       const e = mapa.get(k) || { name: i.nombre, pts: [] };
       e.name = i.nombre;
       const ult = e.pts[e.pts.length - 1];
-      if(ult && ult.start === w.start) ult.p = p;          // una vez por semana
-      else e.pts.push({ start: w.start, d: w.monday, p });
+      if(ult && ult.start === w.key) ult.p = p;          // una vez por semana (o por mes)
+      else e.pts.push({ start: w.key, d: dia(w), p });
       mapa.set(k, e);
     });
   });
@@ -1313,26 +1370,27 @@ window.addEventListener('resize', () => { clearTimeout(rzTimer); rzTimer = setTi
 
 async function load(){
   const cache = readJSON(cacheKey(), null);
-  if(cache && Array.isArray(cache.registros) && !WEEKS.length){
-    WEEKS = buildWeeks(cache.registros);
+  if(cache && Array.isArray(cache.registros) && !ALL.length){
+    setData(cache.registros);
     render();
     renderMes();
     setUpdated(cache.at, true);
   }
   try{
     const { data, error } = await CTX.sb.from('compras')
-      .select('fecha, semana_inicio, total, ingredientes_texto, compra_items(nombre, precio, comprado, categoria)')
+      .select('fecha, semana_inicio, total, tipo, ingredientes_texto, compra_items(nombre, precio, comprado, categoria)')
       .order('fecha');
     if(error) throw error;
-    // Mismo formato que usaba el historial de Google Sheets
+    // Mismo formato que usaba el historial de Google Sheets (+ tipo de compra)
     const registros = data.map(c => ({
       fecha: c.fecha,
+      tipo: c.tipo,
       semanaInicio: c.semana_inicio,
       total: c.total == null ? null : Number(c.total),
       ingredientes: c.ingredientes_texto || '',
       items: (c.compra_items || []).map(i => ({ nombre: i.nombre, precio: i.precio == null ? null : Number(i.precio), comprado: i.comprado, categoria: i.categoria }))
     }));
-    WEEKS = buildWeeks(registros);
+    setData(registros);
     writeJSON(cacheKey(), { at: Date.now(), registros });
     showNote('');
     render();
@@ -1342,7 +1400,7 @@ async function load(){
     if(cache){
       showNote('<strong>No se pudo actualizar.</strong> Te mostramos el historial que quedó guardado en este celular.');
     } else {
-      WEEKS = [];
+      ALL = []; WEEKS = []; MENSUAL = [];
       document.getElementById('results').innerHTML = '';
       document.getElementById('results').appendChild(state('i-alert', 'No se pudo cargar el historial',
         'Revisa tu conexión a internet y vuelve a intentarlo.'));
