@@ -63,7 +63,8 @@
   .top a{color:#fff; font-size:14px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px; background:rgba(255,255,255,.12);}
 
   .stats{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin:22px 0 28px;}
-  @media (min-width:768px){ .stats{grid-template-columns:repeat(5, minmax(0,1fr));} }
+  @media (min-width:600px){ .stats{grid-template-columns:repeat(3, minmax(0,1fr));} }
+  @media (min-width:960px){ .stats{grid-template-columns:repeat(6, minmax(0,1fr));} }
   .stat{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px;}
   .stat p{margin:0;}
   .stat .l{font-size:12.5px; font-weight:700; color:var(--ink-3);}
@@ -119,6 +120,28 @@
   .state.vencido, .state.rechazado{background:var(--danger-soft); color:var(--danger);}
   .empty{background:var(--surface); border:1px dashed var(--line-strong); border-radius:var(--r-lg); padding:24px; text-align:center; color:var(--ink-2);}
   .msg{margin:40px auto; max-width:480px; text-align:center; color:var(--ink-2);}
+
+  /* Cuentas y usuarios */
+  .intro{margin:-6px 0 14px; font-size:13.5px; color:var(--ink-2);}
+  .sec-head{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px;}
+  .sec-head h2{margin:0;}
+  .seg{display:inline-grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; background:var(--surface-2); border-radius:999px;}
+  .seg button{height:34px; padding:0 16px; border:0; border-radius:999px; background:transparent; font-weight:700; font-size:13.5px; color:var(--ink-3); cursor:pointer;}
+  .seg button[aria-checked="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(18,61,39,.12);}
+  .ucard h3{overflow-wrap:anywhere;}
+  .urow{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; align-items:center; padding:12px 16px; border-top:1px solid var(--line);}
+  .urow:first-child{border-top:0;}
+  .urow .n{font-weight:700; overflow-wrap:anywhere;}
+  .urow .d{font-size:13px; color:var(--ink-3);}
+  .urow .side{display:flex; align-items:center; gap:8px; justify-self:end;}
+  .urow .d.wide{display:none;}
+  @media (min-width:700px){
+    .urow{grid-template-columns:minmax(0,2fr) minmax(0,1.3fr) auto;}
+    .urow .d.wide{display:block;}
+  }
+  .state.bloqueada{background:var(--danger-soft); color:var(--danger);}
+  .state.admin{background:var(--surface-2); color:var(--ink-2);}
+  .urow .result{grid-column:1 / -1; margin:2px 0 0;}
 </style>
 </head>
 <body>
@@ -143,6 +166,23 @@
 
   <div id="panel" hidden>
     <div class="stats" id="stats"></div>
+
+    <section>
+      <h2>Cuentas por aprobar <span class="count" id="nCtaPend">0</span></h2>
+      <p class="intro">Personas que se registraron y esperan tu aprobación. Hasta que las apruebes no pueden usar la app.</p>
+      <div class="pend" id="ctaPend"></div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <h2>Usuarios <span class="count" id="nUsu">0</span></h2>
+        <div class="seg" role="radiogroup" aria-label="Filtrar usuarios" id="filtroUsu">
+          <button type="button" role="radio" data-f="activa" aria-checked="true">Activos</button>
+          <button type="button" role="radio" data-f="bloqueada" aria-checked="false">Bloqueados</button>
+        </div>
+      </div>
+      <div class="table" id="usuarios"></div>
+    </section>
 
     <section>
       <h2>Pagos por revisar <span class="count" id="nPend">0</span></h2>
@@ -181,13 +221,17 @@ function estadoHogar(h, pagosAprobados){
 }
 
 async function cargar(){
-  const [pg, ho, mi] = await Promise.all([
+  const [pg, ho, mi, ct] = await Promise.all([
     CTX.sb.from('pagos').select('id, creado_en, metodo, monto, numero_operacion, estado, meses, revisado_en, hogar_id, hogares(nombre, activo_hasta)').order('creado_en', { ascending:false }),
     CTX.sb.from('hogares').select('id, nombre, activo_hasta, creado_en').order('creado_en', { ascending:false }),
-    CTX.sb.from('miembros').select('hogar_id')
+    CTX.sb.from('miembros').select('hogar_id'),
+    CTX.sb.rpc('admin_cuentas')
   ]);
   const err = pg.error || ho.error || mi.error;
   if(err) throw err;
+  CUENTAS = ct.error ? null : (ct.data || []);   // null: falta ejecutar supabase/05-aprobar-cuentas.sql
+  pintarCuentas();
+  const ctaPend = CUENTAS ? CUENTAS.filter(c => c.estado === 'pendiente').length : 0;
   const pagos = pg.data, hogares = ho.data;
   const personas = {};
   mi.data.forEach(m => { personas[m.hogar_id] = (personas[m.hogar_id] || 0) + 1; });
@@ -201,7 +245,8 @@ async function cargar(){
   const stats = $('stats');
   stats.innerHTML = '';
   [
-    ['Por revisar', String(pendientes.length), pendientes.length ? 'hot' : ''],
+    ['Cuentas por aprobar', String(ctaPend), ctaPend ? 'hot' : ''],
+    ['Pagos por revisar', String(pendientes.length), pendientes.length ? 'hot' : ''],
     ['Hogares pagando', String(est.filter(x => x === 'activo').length)],
     ['En prueba', String(est.filter(x => x === 'prueba').length)],
     ['Vencidos', String(est.filter(x => x === 'vencido').length)],
@@ -242,6 +287,94 @@ async function cargar(){
     tr.appendChild(r);
   });
 }
+
+/* ---------- Cuentas: aprobar, bloquear y activar ---------- */
+let CUENTAS = null, FILTRO = 'activa';
+
+function pintarCuentas(){
+  const pend = $('ctaPend'), lista = $('usuarios');
+  pend.innerHTML = ''; lista.innerHTML = '';
+  if(!CUENTAS){
+    $('nCtaPend').textContent = '–'; $('nUsu').textContent = '–';
+    pend.appendChild(el('div', 'empty', 'Falta activar la aprobación de cuentas: ejecuta el archivo supabase/05-aprobar-cuentas.sql en Supabase.'));
+    return;
+  }
+  const pendientes = CUENTAS.filter(c => c.estado === 'pendiente');
+  $('nCtaPend').textContent = pendientes.length;
+  if(!pendientes.length) pend.appendChild(el('div', 'empty', 'No hay cuentas nuevas por aprobar.'));
+  pendientes.forEach(c => pend.appendChild(tarjetaCuenta(c)));
+
+  const filtradas = CUENTAS.filter(c => c.estado === FILTRO);
+  $('nUsu').textContent = filtradas.length;
+  if(!filtradas.length) lista.appendChild(el('div', 'empty', FILTRO === 'activa' ? 'Aún no hay usuarios activos.' : 'No hay usuarios bloqueados.'));
+  filtradas.forEach(c => lista.appendChild(filaUsuario(c)));
+}
+
+// Cambia el estado de una cuenta y deja el resultado escrito en "res"
+async function cambiarCuenta(c, estado, botones, res){
+  botones.forEach(b => { b.disabled = true; });
+  const { error } = await CTX.sb.rpc('admin_cambiar_cuenta', { p_user: c.user_id, p_estado: estado });
+  res.hidden = false;
+  if(error){
+    botones.forEach(b => { b.disabled = false; });
+    res.className = 'result err'; res.textContent = 'No se pudo: ' + WM.traducir(error);
+    return;
+  }
+  res.className = 'result ' + (estado === 'activa' ? 'ok' : 'err');
+  res.textContent = estado === 'activa' ? 'Cuenta activada: ya puede usar la app.' : 'Cuenta bloqueada: ya no puede entrar.';
+  setTimeout(cargarSeguro, 1500);
+}
+
+function tarjetaCuenta(c){
+  const card = el('article', 'pcard ucard');
+  card.append(el('h3', '', c.email || 'Sin correo'),
+              el('p', 'sub', 'Se registró ' + fechaHora(c.creado_en) + ' · ' + (c.correo_confirmado ? 'correo confirmado' : 'aún no confirma su correo')));
+  const act = el('div', 'actions');
+  act.style.marginTop = '14px';
+  const no = el('button', 'btn danger'); no.type = 'button'; no.append(icon('i-x'), 'Rechazar');
+  const si = el('button', 'btn primary'); si.type = 'button'; si.append(icon('i-check'), 'Aprobar');
+  act.append(no, si);
+  const res = el('p', 'result'); res.hidden = true;
+  card.append(act, res);
+  si.addEventListener('click', () => cambiarCuenta(c, 'activa', [si, no], res));
+  no.addEventListener('click', () => {
+    if(!confirm('¿Rechazar la cuenta ' + c.email + '? Quedará bloqueada (puedes activarla después desde "Bloqueados").')) return;
+    cambiarCuenta(c, 'bloqueada', [si, no], res);
+  });
+  return card;
+}
+
+function filaUsuario(c){
+  const r = el('div', 'urow');
+  const n = el('div');
+  n.append(el('div', 'n', c.email || 'Sin correo'),
+           el('div', 'd', c.hogar ? c.hogar + (c.rol === 'dueño' ? ' · dueño' : ' · miembro') : 'Sin hogar todavía'));
+  const ing = el('div', 'd wide', c.ultimo_ingreso ? 'Último ingreso ' + fechaHora(c.ultimo_ingreso) : 'Nunca entró');
+  const side = el('div', 'side');
+  const res = el('p', 'result'); res.hidden = true;
+  if(c.es_admin){
+    side.appendChild(el('span', 'state admin', 'Administrador'));
+  }else if(c.estado === 'activa'){
+    const b = el('button', 'btn small danger', 'Bloquear'); b.type = 'button';
+    b.addEventListener('click', () => {
+      if(!confirm('¿Bloquear a ' + c.email + '? No podrá entrar a la app hasta que lo actives otra vez. Su hogar y sus datos no se borran.')) return;
+      cambiarCuenta(c, 'bloqueada', [b], res);
+    });
+    side.append(el('span', 'state activo', 'Activo'), b);
+  }else{
+    const b = el('button', 'btn small', 'Activar'); b.type = 'button';
+    b.addEventListener('click', () => cambiarCuenta(c, 'activa', [b], res));
+    side.append(el('span', 'state bloqueada', 'Bloqueado'), b);
+  }
+  r.append(n, ing, side, res);
+  return r;
+}
+
+document.querySelectorAll('#filtroUsu button').forEach(b => b.addEventListener('click', () => {
+  FILTRO = b.dataset.f;
+  document.querySelectorAll('#filtroUsu button').forEach(x => x.setAttribute('aria-checked', x === b));
+  pintarCuentas();
+}));
 
 function tarjetaPago(p){
   const c = el('article', 'pcard');
