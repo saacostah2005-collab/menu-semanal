@@ -234,8 +234,8 @@
   body.en-login .login-art{
     display:block; position:relative; background:#fff;
   }
+  .login-art picture{display:contents;}
   .login-art img{display:block; width:100%; height:auto; aspect-ratio:1600/534;}
-  .login-art .tag{display:none;}
   body.en-login .input{border-color:var(--line); box-shadow:0 2px 10px -4px rgba(18,61,39,.18);}
   :root[data-theme="dark"] body.en-login .input{box-shadow:none; border-color:var(--line-strong);}
   body.en-login .input:focus{border-color:var(--leaf); box-shadow:0 0 0 3px var(--leaf-soft);}
@@ -249,21 +249,11 @@
   /* Computadora: formulario a la izquierda, banner a la derecha */
   @media (min-width:860px){
     body.en-login .main{max-width:1040px; min-height:100vh; min-height:100dvh; display:grid; align-content:center; padding:32px 32px;}
-    body.en-login .login-split{display:grid; grid-template-columns:44% 56%; min-height:500px;}
+    /* Mitad y mitad: la imagen cuadrada ocupa toda la mitad derecha */
+    body.en-login .login-split{display:grid; grid-template-columns:1fr 1fr;}
     body.en-login #vLogin{align-self:center; padding:44px 44px;}
-    body.en-login .login-art{
-      display:grid; place-items:center; padding:56px 28px;
-      background:linear-gradient(160deg, #FFFFFF 0%, #F3F9EE 55%, #E3F1D8 100%);
-      border-left:1px solid var(--line);
-    }
-    :root[data-theme="dark"] body.en-login .login-art{background:linear-gradient(160deg, #182B21 0%, #163323 100%);}
-    body.en-login .login-art img{border-radius:16px; box-shadow:0 14px 32px -16px rgba(18,61,39,.4);}
-    body.en-login .login-art .tag{
-      display:block; position:absolute; left:0; right:0; text-align:center; font-size:13.5px; font-weight:700;
-    }
-    .login-art .tag.top{top:24px; color:var(--ink-3);}
-    .login-art .tag.bottom{bottom:24px; color:var(--brand);}
-    :root[data-theme="dark"] .login-art .tag.bottom{color:var(--leaf);}
+    body.en-login .login-art{aspect-ratio:1/1; min-height:100%;}
+    body.en-login .login-art img{width:100%; height:100%; aspect-ratio:auto; object-fit:cover;}
   }
   /* Celular: banner arriba dentro de la tarjeta, formulario debajo */
   @media (max-width:859.98px){
@@ -330,9 +320,11 @@
    </div>
   </section>
   <aside class="login-art" aria-hidden="true">
-    <span class="tag top">Prueba gratis 14 días</span>
-    <img src="banner.jpg" width="1600" height="534" alt="">
-    <span class="tag bottom">Tu menú y tu lista de compras, en familia</span>
+    <picture>
+      <!-- Computadora: imagen cuadrada; celular: el banner ancho de siempre -->
+      <source media="(min-width:860px)" srcset="login-cuadrado.webp" width="1024" height="1024">
+      <img src="banner.jpg" width="1600" height="534" alt="">
+    </picture>
   </aside>
   </div>
 
