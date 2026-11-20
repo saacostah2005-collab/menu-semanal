@@ -97,9 +97,25 @@
   .head p{margin:2px 0 0; font-size:14px; color:var(--ink-2);}
 
   /* Pestañas Entrar / Crear cuenta */
-  .tabs{display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; background:var(--surface-2); border-radius:999px; margin-bottom:20px;}
-  .tab{height:40px; border:0; border-radius:999px; background:transparent; font-weight:700; font-size:14.5px; color:var(--ink-2); cursor:pointer; transition:background-color .15s ease, color .15s ease;}
-  .tab[aria-selected="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(18,61,39,.12);}
+  /* Una sola "píldora" blanca que se desliza entre las dos pestañas */
+  .tabs{position:relative; isolation:isolate; display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; background:var(--surface-2); border-radius:999px; margin-bottom:20px;}
+  .tabs::before{content:""; position:absolute; z-index:-1; top:4px; bottom:4px; left:4px; width:calc((100% - 12px) / 2); border-radius:999px; background:var(--surface); box-shadow:0 1px 2px rgba(16,24,20,.08), 0 4px 12px -4px rgba(16,24,20,.16);}
+  :root[data-theme="dark"] .tabs::before{background:var(--surface-2); box-shadow:0 0 0 1px var(--line-strong), 0 4px 12px -4px rgba(0,0,0,.6);}
+  :root[data-theme="dark"] .tabs{background:var(--bg);}
+  .tabs.ready::before{transition:transform .45s cubic-bezier(.32,.72,0,1);}
+  .tabs[data-active="crear"]::before{transform:translateX(calc(100% + 4px));}
+  .tab{height:40px; border:0; border-radius:999px; background:transparent; font-weight:700; font-size:14.5px; color:var(--ink-3); cursor:pointer; transition:color .3s ease, transform .12s cubic-bezier(.22,1,.36,1);}
+  .tab:active{transform:scale(.97);}
+  .tab[aria-selected="true"]{color:var(--ink);}
+  @media (hover:hover){ .tab:hover:not([aria-selected="true"]){color:var(--ink-2);} }
+  /* Lo que cambia de texto se anima por partes (título, botón) */
+  .head h1, .head p{will-change:transform, opacity, filter;}
+  .btn-lbl{display:inline-block;}
+  .btn.primary{position:relative; overflow:hidden;}
+  /* Un brillo que cruza el botón cuando cambia de acción */
+  .btn.primary.sheen::after{content:""; position:absolute; inset:0; background:linear-gradient(105deg, transparent 30%, rgba(255,255,255,.28) 50%, transparent 70%); transform:translateX(-100%); animation:sheen .8s cubic-bezier(.22,1,.36,1) .12s forwards; pointer-events:none;}
+  @keyframes sheen{ to{ transform:translateX(100%); } }
+  @media (prefers-reduced-motion:reduce){ .tabs.ready::before{transition:none;} .btn.primary.sheen::after{animation:none; display:none;} }
 
   /* Formularios */
   .field{display:block; margin-bottom:14px;}
@@ -198,7 +214,8 @@
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
-  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></symbol>
+  <symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></symbol>
+  <symbol id="i-home"viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></symbol>
   <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3"/><path d="m16 7 3 3"/><path d="m19 4 2 2"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></symbol>
@@ -222,12 +239,13 @@
 
   <!-- ===== 1. Entrar / Crear cuenta ===== -->
   <section class="card" id="vLogin" hidden>
+   <div id="loginInner">
     <div class="head">
-      <span class="head-ico"><svg class="ico"><use href="#i-user"/></svg></span>
+      <span class="head-ico"><svg class="ico" id="loginIco"><use id="loginIcoUse" href="#i-user"/></svg></span>
       <div><h1 id="loginTitle">Bienvenido</h1><p id="loginSub">Entra para ver el menú de tu hogar.</p></div>
     </div>
 
-    <div class="tabs" role="tablist">
+    <div class="tabs" role="tablist" id="loginTabs" data-active="entrar">
       <button class="tab" role="tab" id="tabEntrar" aria-selected="true" type="button">Entrar</button>
       <button class="tab" role="tab" id="tabCrear" aria-selected="false" type="button">Crear cuenta</button>
     </div>
@@ -239,9 +257,10 @@
         <input class="input" id="email" type="email" autocomplete="email" inputmode="email" required placeholder="tucorreo@gmail.com"></label>
       <label class="field"><span>Contraseña</span>
         <input class="input" id="pass" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo 6 caracteres"></label>
-      <button class="btn primary" id="btnLogin" type="submit">Entrar</button>
+      <button class="btn primary" id="btnLogin" type="submit"><span class="btn-lbl" id="btnLoginLbl">Entrar</span></button>
     </form>
     <div class="row-center" id="olvideWrap"><button class="link" id="btnOlvide" type="button">Olvidé mi contraseña</button></div>
+   </div>
   </section>
 
   <!-- ===== 1b. Nueva contraseña (al volver del correo de recuperación) ===== -->
@@ -426,19 +445,132 @@ function ocupado(btn, si, texto){
    1. ENTRAR / CREAR CUENTA
    ============================================================ */
 let modo = 'entrar';
-function ponerModo(m){
+const TEXTOS = {
+  entrar: { titulo:'Bienvenido', sub:'Entra para ver el menú de tu hogar.', boton:'Entrar', ico:'#i-user' },
+  crear:  { titulo:'Crea tu cuenta', sub:'Gratis por 14 días. No necesitas tarjeta.', boton:'Crear mi cuenta', ico:'#i-user-plus' }
+};
+const SUAVE = 'cubic-bezier(.22,1,.36,1)';
+function sinMovimiento(){ return !Element.prototype.animate || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+
+/* Cambia un texto: el viejo se va hacia un lado desenfocándose y el nuevo
+   llega del otro lado enfocándose. Si tocan rápido varias veces, gana el último. */
+function cambiarTexto(el, texto, dx, dy, retraso){
+  const tok = (el._tok || 0) + 1;
+  el._tok = tok;
+  el.getAnimations().forEach(a => a.cancel());
+  if(el.textContent === texto && !el._saliendo) return;
+  el._saliendo = true;
+  const sale = el.animate([
+    { opacity:1, transform:'none', filter:'blur(0)' },
+    { opacity:0, transform:'translate(' + (-dx * .6) + 'px,' + (-dy * .6) + 'px)', filter:'blur(4px)' }
+  ], { duration:150, delay:retraso || 0, easing:'cubic-bezier(.4,0,1,1)', fill:'forwards' });
+  sale.onfinish = () => {
+    if(el._tok !== tok) return;
+    el.textContent = texto;
+    el._saliendo = false;
+    sale.cancel();
+    el.animate([
+      { opacity:0, transform:'translate(' + dx + 'px,' + dy + 'px)', filter:'blur(5px)' },
+      { opacity:1, transform:'none', filter:'blur(0)' }
+    ], { duration:380, easing:SUAVE });
+  };
+}
+
+/* Muestra u oculta un bloque con un fundido; el alto de la tarjeta lo anima seguirAlto() */
+/* Aparece o desaparece justo cuando cambia el subtítulo (a los 190 ms), así la
+   tarjeta cambia de alto una sola vez y sin ir y volver. */
+const CAMBIO_MS = 190;
+function fundir(el, mostrar){
+  el.getAnimations().forEach(a => a.cancel());
+  clearTimeout(el._t);
+  if(mostrar){
+    if(!el.hidden) return;
+    el._t = setTimeout(() => {
+      if(modo !== 'entrar') return;
+      el.hidden = false;
+      el.animate([{ opacity:0, transform:'translateY(-4px)' }, { opacity:1, transform:'none' }], { duration:320, delay:80, easing:SUAVE, fill:'backwards' });
+    }, CAMBIO_MS);
+  } else if(!el.hidden){
+    const a = el.animate([{ opacity:1 }, { opacity:0 }], { duration:140, delay:CAMBIO_MS - 140, easing:'ease-out', fill:'forwards' });
+    a.onfinish = () => { if(modo !== 'entrar'){ el.hidden = true; } a.cancel(); };
+  }
+}
+
+/* La tarjeta cambia de alto con suavidad cuando cambia lo que tiene adentro
+   (por ejemplo, un subtítulo que ocupa dos líneas), en vez de dar un salto. */
+let animarAltoHasta = 0;
+(function seguirAlto(){
+  const card = $('vLogin'), inner = $('loginInner');
+  if(!card || !inner || !window.ResizeObserver) return;
+  let previo = null;
+  const extra = () => { const s = getComputedStyle(card); return ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'].reduce((a, k) => a + (parseFloat(s[k]) || 0), 0); };
+  new ResizeObserver(() => {
+    if(card.hidden) { previo = null; return; }
+    const nuevo = inner.offsetHeight + extra();
+    if(previo != null && Math.abs(nuevo - previo) > 1 && Date.now() < animarAltoHasta && !sinMovimiento()){
+      // Cuando avisa, la tarjeta ya tomó su alto nuevo: se parte del alto anterior
+      // (o del alto a mitad de camino, si ya se estaba animando)
+      const enCurso = card.getAnimations().length > 0;
+      const desde = enCurso ? card.getBoundingClientRect().height : previo;
+      card.getAnimations().forEach(a => a.cancel());
+      card.style.overflow = 'hidden';
+      const a = card.animate([{ height: desde + 'px' }, { height: nuevo + 'px' }], { duration:340, easing:SUAVE });
+      a.onfinish = () => { card.style.overflow = ''; };
+    }
+    previo = nuevo;
+  }).observe(inner);
+})();
+
+function ponerModo(m, animar){
+  const antes = modo;
   modo = m;
+  const t = TEXTOS[m];
   $('tabEntrar').setAttribute('aria-selected', m === 'entrar');
   $('tabCrear').setAttribute('aria-selected', m === 'crear');
-  $('btnLogin').textContent = m === 'entrar' ? 'Entrar' : 'Crear mi cuenta';
+  $('loginTabs').dataset.active = m;
   $('pass').autocomplete = m === 'entrar' ? 'current-password' : 'new-password';
-  $('loginTitle').textContent = m === 'entrar' ? 'Bienvenido' : 'Crea tu cuenta';
-  $('loginSub').textContent = m === 'entrar' ? 'Entra para ver el menú de tu hogar.' : 'Gratis por 14 días. No necesitas tarjeta.';
-  $('olvideWrap').hidden = (m !== 'entrar');
   aviso('loginMsg');
+
+  const lbl = $('btnLoginLbl');
+  if(!animar || antes === m || sinMovimiento()){
+    $('loginTitle').textContent = t.titulo;
+    $('loginSub').textContent = t.sub;
+    if(lbl) lbl.textContent = t.boton; else $('btnLogin').textContent = t.boton;
+    $('loginIcoUse').setAttribute('href', t.ico);
+    $('olvideWrap').hidden = (m !== 'entrar');
+    return;
+  }
+
+  // La coreografía sigue la dirección de la píldora: a la derecha al crear cuenta
+  const dir = m === 'crear' ? 1 : -1;
+  cambiarTexto($('loginTitle'), t.titulo, dir * 16, 0, 0);
+  cambiarTexto($('loginSub'), t.sub, dir * 16, 0, 40);
+  if(lbl) cambiarTexto(lbl, t.boton, 0, 14, 60);      // el texto del botón "rueda" hacia arriba
+
+  // El ícono gira y se achica, cambia, y vuelve con un pequeño rebote
+  const ico = $('loginIco');
+  ico.getAnimations().forEach(a => a.cancel());
+  const out = ico.animate([{ transform:'none', opacity:1 }, { transform:'scale(.5) rotate(' + (-dir * 30) + 'deg)', opacity:0 }],
+    { duration:150, easing:'cubic-bezier(.4,0,1,1)', fill:'forwards' });
+  out.onfinish = () => {
+    if(modo !== m) return;
+    $('loginIcoUse').setAttribute('href', t.ico);
+    out.cancel();
+    ico.animate([{ transform:'scale(.5) rotate(' + (dir * 30) + 'deg)', opacity:0 }, { transform:'none', opacity:1 }],
+      { duration:520, easing:'cubic-bezier(.34,1.56,.64,1)' });
+  };
+
+  // Brillo que cruza el botón
+  const b = $('btnLogin');
+  b.classList.remove('sheen'); void b.offsetWidth; b.classList.add('sheen');
+
+  animarAltoHasta = Date.now() + 900;
+  fundir($('olvideWrap'), m === 'entrar');
 }
-$('tabEntrar').onclick = () => ponerModo('entrar');
-$('tabCrear').onclick  = () => ponerModo('crear');
+$('tabEntrar').onclick = () => ponerModo('entrar', true);
+$('tabCrear').onclick  = () => ponerModo('crear', true);
+// La píldora se anima solo cuando la tocan, no al abrir la página
+requestAnimationFrame(() => requestAnimationFrame(() => $('loginTabs').classList.add('ready')));
 
 $('fLogin').addEventListener('submit', async e => {
   e.preventDefault();
@@ -471,6 +603,8 @@ $('fLogin').addEventListener('submit', async e => {
     aviso('loginMsg', 'err', traducir(err));
   }finally{
     ocupado(btn, false);
+    // el texto guardado puede ser del modo anterior (p. ej. si pasó a "Entrar")
+    if($('btnLoginLbl')) $('btnLoginLbl').textContent = TEXTOS[modo].boton;
   }
 });
 
