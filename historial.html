@@ -858,19 +858,18 @@ function renderWeek(w, q){
 
 /* Devuelve los productos de una semana cerrada a la lista de compras */
 async function reabrir(w, b, msg){
-  if(!confirm('¿Volver a abrir la semana ' + w.week + ' (' + fmtRange(w.monday) + ')?\n\nSus productos regresan a la lista de compras para que sigas marcándolos o cambiándolos.')) return;
+  if(!confirm('¿Volver a abrir la semana ' + w.week + ' (' + fmtRange(w.monday) + ')?\n\nSus productos regresan a la lista de compras, en su propia semana: no se mezclan con la lista de otra semana.')) return;
   b.disabled = true;
   msg.textContent = 'Abriendo…';
   const { error } = await CTX.sb.rpc('reabrir_semana', { p_compra: w.id });
   b.disabled = false;
   if(error){
     const m = String(error.message || '') + ' ' + (error.code || '');
-    msg.textContent = /LISTA_CON_PRODUCTOS/.test(m) ? 'Tu lista de compras tiene productos de otra semana. Ciérrala o vacíala primero.'
-      : /PGRST202|42883/.test(m) ? 'Falta activar esta función en Supabase (archivo 06-cerrar-semana.sql).'
+    msg.textContent = /PGRST202|42883/.test(m) ? 'Falta activar esta función en Supabase (archivo 06-cerrar-semana.sql).'
       : 'No se pudo abrir: ' + WM.traducir(error);
     return;
   }
-  location.href = 'lista-compras.html';
+  location.href = 'lista-compras.html?semana=' + w.start;
 }
 
 function state(iconId, title, text){

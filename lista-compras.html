@@ -177,6 +177,25 @@
   .week-txt{display:flex; flex-direction:column; line-height:1.25; min-width:0;}
   .week-txt strong{font-size:15.5px; font-weight:800;}
   .week-txt span{font-size:13px; font-weight:600; color:var(--ink-2);}
+  /* Aviso de la semana: parpadea suave cuando no es la semana actual */
+  .week-note{display:flex; gap:12px; align-items:flex-start; max-width:540px; margin:-6px 0 16px; padding:14px; border-radius:var(--r-lg); background:var(--brand-soft); border:1.5px solid transparent;}
+  .week-note-ico{width:36px; height:36px; border-radius:11px; background:var(--surface); color:var(--brand); display:grid; place-items:center; flex:none;}
+  :root[data-theme="dark"] .week-note-ico{color:var(--leaf);}
+  .week-note-ico .ico{width:18px; height:18px;}
+  .week-note-body{min-width:0; flex:1;}
+  .week-note strong{display:block; font-size:15px; font-weight:800; color:var(--ink);}
+  .week-note p{margin:2px 0 0; font-size:13.5px; color:var(--ink-2);}
+  .week-note-acts{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+  .week-note-acts:empty{display:none;}
+  .btn.sm{height:38px; padding:0 14px; font-size:13.5px;}
+  .week-note.closed .week-note-ico{color:var(--ink-2);}
+  .week-note.pulse{background:var(--sun-soft); border-color:var(--sun); animation:semanaPulso 1.6s ease-in-out infinite;}
+  .week-note.pulse .week-note-ico{color:var(--sun);}
+  @keyframes semanaPulso{
+    0%, 100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--sun) 45%, transparent); border-color:var(--sun);}
+    50%{box-shadow:0 0 0 6px color-mix(in srgb, var(--sun) 0%, transparent); border-color:color-mix(in srgb, var(--sun) 35%, transparent);}
+  }
+  @media (prefers-reduced-motion:reduce){ .week-note.pulse{animation:none;} }
   .empty .btn{margin-top:14px;}
 
   /* ---------- Distribución ---------- */
@@ -465,6 +484,14 @@
     </div>
     <button class="row-btn" id="weekNext" type="button" aria-label="Semana siguiente"><svg class="ico" aria-hidden="true" style="transform:scaleX(-1)"><use href="#i-left"/></svg></button>
   </div>
+  <div class="week-note" id="weekNote" role="status" aria-live="polite" hidden>
+    <span class="week-note-ico" aria-hidden="true"><svg class="ico"><use id="weekNoteIcon" href="#i-calendar"/></svg></span>
+    <div class="week-note-body">
+      <strong id="weekNoteTitle"></strong>
+      <p id="weekNoteText"></p>
+      <div class="week-note-acts" id="weekNoteActs"></div>
+    </div>
+  </div>
 
   <div class="layout">
 
@@ -537,7 +564,6 @@
         <h3 id="emptyTitle">Tu lista está vacía</h3>
         <p id="emptyText">Escribe arriba lo que necesitas comprar y cuánto cuesta.</p>
         <button class="btn" id="btnPrev" type="button" hidden><svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg><span>Traer la compra del mes pasado</span></button>
-        <button class="btn" id="btnReopen" type="button" hidden><svg class="ico" aria-hidden="true"><use href="#i-rotate"/></svg><span id="btnReopenText">Volver a abrir la semana</span></button>
       </div>
       <div class="list-foot" id="listFoot" hidden>
         <button class="btn ghost" id="btnUncheck" type="button"><svg class="ico" aria-hidden="true"><use href="#i-rotate"/></svg><span>Desmarcar todo</span></button>
@@ -686,10 +712,19 @@ function weekInfo(mondayISO){
   const f = d => d.toLocaleDateString('es-PE', { day:'numeric', month:'short' }).replace('.', '');
   return { monday: mondayISO, sunday: isoDate(sunday), num: isoWeek(monday), range: f(monday) + ' – ' + f(sunday) };
 }
-let SEMANA = semanaPorDefecto();   // lunes (AAAA-MM-DD) de la semana de la lista
-let SEMANA_OK = true;              // falso si falta el archivo 06 en Supabase
-let ULTIMA_CERRADA = null;         // { id, semana } la última semana cerrada (para reabrirla)
-function W(){ return weekInfo(SEMANA); }
+const ACTUAL = semanaPorDefecto();  // la semana de compras de hoy
+/* Semana que se está viendo con las flechas (solo en este celular).
+   Se puede abrir en una semana concreta con ?semana=AAAA-MM-DD */
+let VER = (function(){
+  const q = new URLSearchParams(location.search).get('semana');
+  return q && /^\d{4}-\d{2}-\d{2}$/.test(q) ? isoDate(getMonday(parseISO(q))) : ACTUAL;
+})();
+let SEMANA_LISTA = null;           // semana de la lista del hogar (para productos antiguos sin semana)
+let COMPRAS = [];                  // semanas guardadas en el historial: { id, semana, cerrada, items }
+function W(){ return weekInfo(VER); }
+function compraDe(sem){ return COMPRAS.find(c => c.semana === sem) || null; }
+/* Semana de un producto de la lista semanal */
+function semanaDe(i){ return i.semana || SEMANA_LISTA || ACTUAL; }
 
 /* ============================================================
    LISTA COMPARTIDA (Supabase)
@@ -708,14 +743,28 @@ let ITEMS = [];            // { id, name, price, done, category, orden, tipo } �
 /* Lista que se está viendo: 'semanal' o 'mensual' (se recuerda en este celular) */
 function tipoDe(t){ return t === 'mensual' ? 'mensual' : 'semanal'; }
 let LISTA = tipoDe(readJSON('wmListaTipo', 'semanal'));
-function CUR(){ return ITEMS.filter(i => i.tipo === LISTA); }
+/* Productos editables de lo que se está viendo */
+function CUR(){ return ITEMS.filter(i => i.tipo === LISTA && (LISTA === 'mensual' || semanaDe(i) === VER)); }
+/* Semana guardada en el historial que se está viendo sin poder cambiarla
+   (cerrada, o guardada y sin productos en la lista) */
+function ARCHIVO(){
+  if(LISTA !== 'semanal' || CUR().length) return null;
+  return compraDe(VER);
+}
+function VIEWONLY(){ return !!ARCHIVO(); }
+/* Lo que se muestra: la lista editable o los productos guardados de esa semana */
+function SHOWN(){
+  const a = ARCHIVO();
+  if(!a) return CUR();
+  return a.items.map((i, n) => ({ id: 'arch-' + n, name: i.nombre, price: i.precio == null ? null : Number(i.precio), done: !!i.comprado, category: cleanCat(i.categoria), tipo: 'semanal', semana: VER }));
+}
 let QUEUE = [];            // operaciones pendientes de enviar
 let EDITING = null;        // id del ingrediente en edición
 let PENDING_RENDER = false;
 let LAST_DELETED = null;
 let LOCKED = false;        // interruptor "Editar lista" (vale para todo el hogar)
 let READONLY = false;      // suscripción vencida: solo lectura
-function BLOCKED(){ return LOCKED || READONLY; }
+function BLOCKED(){ return LOCKED || READONLY || VIEWONLY(); }
 
 const SYNC = { ready:false, busy:false, state:'connecting', last:null };
 
@@ -737,7 +786,7 @@ function applyOp(items, op){
       if(!it || !it.id || items.some(x => x.id === it.id)) return items;
       const copy = items.slice();
       const i = typeof op.index === 'number' ? Math.max(0, Math.min(op.index, copy.length)) : copy.length;
-      copy.splice(i, 0, { id: it.id, name: it.name, price: it.price == null ? null : it.price, done: !!it.done, category: cleanCat(it.category), orden: it.orden, tipo: tipoDe(it.tipo) });
+      copy.splice(i, 0, { id: it.id, name: it.name, price: it.price == null ? null : it.price, done: !!it.done, category: cleanCat(it.category), orden: it.orden, tipo: tipoDe(it.tipo), semana: tipoDe(it.tipo) === 'semanal' ? (it.semana || null) : null });
       return copy;
     }
     case 'update':
@@ -745,22 +794,28 @@ function applyOp(items, op){
     case 'delete':
       return items.filter(x => x.id !== op.id);
     case 'uncheckAll':
-      return items.map(x => x.tipo === tipoDe(op.tipo) ? Object.assign({}, x, { done:false }) : x);
+      return items.map(x => deLaOp(x, op) ? Object.assign({}, x, { done:false }) : x);
     case 'clear':
-      return items.filter(x => x.tipo !== tipoDe(op.tipo));
+      return items.filter(x => !deLaOp(x, op));
     default:
       return items;
   }
 }
 
+/* ¿El producto es de la lista (y semana) a la que se refiere la operación? */
+function deLaOp(x, op){
+  if(x.tipo !== tipoDe(op.tipo)) return false;
+  return x.tipo === 'mensual' || !op.semana || semanaDe(x) === op.semana;
+}
+
 function cleanItems(list){
   return (Array.isArray(list) ? list : [])
     .filter(i => i && i.id && i.name)
-    .map(i => ({ id: String(i.id), name: String(i.name), price: i.price == null || i.price === '' ? null : Number(i.price), done: !!i.done, category: cleanCat(i.category), orden: Number(i.orden) || 0, tipo: tipoDe(i.tipo) }));
+    .map(i => ({ id: String(i.id), name: String(i.name), price: i.price == null || i.price === '' ? null : Number(i.price), done: !!i.done, category: cleanCat(i.category), orden: Number(i.orden) || 0, tipo: tipoDe(i.tipo), semana: i.semana ? String(i.semana).slice(0, 10) : null }));
 }
 
 /* Base de datos <-> formato de esta página */
-function fromDb(r){ return { id: r.id, name: r.nombre, price: r.precio, done: r.comprado, category: r.categoria, orden: r.orden, tipo: r.tipo }; }
+function fromDb(r){ return { id: r.id, name: r.nombre, price: r.precio, done: r.comprado, category: r.categoria, orden: r.orden, tipo: r.tipo, semana: r.semana || null }; }
 const DB_FIELD = { name:'nombre', price:'precio', done:'comprado', category:'categoria' };
 function fieldsToDb(f){ const o = {}; Object.keys(f).forEach(key => { if(DB_FIELD[key]) o[DB_FIELD[key]] = f[key]; }); return o; }
 
@@ -810,15 +865,21 @@ async function sendOp(op){
   switch(op.type){
     case 'add': {
       const it = op.item;
-      r = await t.insert({ id: it.id, hogar_id: H, nombre: it.name, precio: it.price == null ? null : it.price,
-                           comprado: !!it.done, categoria: it.category || '', orden: it.orden || nowOrden(), tipo: tipoDe(it.tipo) });
+      const fila = { id: it.id, hogar_id: H, nombre: it.name, precio: it.price == null ? null : it.price,
+                     comprado: !!it.done, categoria: it.category || '', orden: it.orden || nowOrden(), tipo: tipoDe(it.tipo) };
+      if(fila.tipo === 'semanal' && it.semana) fila.semana = it.semana;
+      r = await t.insert(fila);
       if(r.error && r.error.code === '23505') return;   // ya estaba guardado
       break;
     }
     case 'update':     r = await t.update(fieldsToDb(op.fields)).eq('id', op.id); break;
     case 'delete':     r = await t.delete().eq('id', op.id); break;
-    case 'uncheckAll': r = await t.update({ comprado:false }).eq('hogar_id', H).eq('tipo', tipoDe(op.tipo)).eq('comprado', true); break;
-    case 'clear':      r = await t.delete().eq('hogar_id', H).eq('tipo', tipoDe(op.tipo)); break;
+    case 'uncheckAll': { let qq = t.update({ comprado:false }).eq('hogar_id', H).eq('tipo', tipoDe(op.tipo)).eq('comprado', true);
+                         if(tipoDe(op.tipo) === 'semanal' && op.semana) qq = qq.eq('semana', op.semana);
+                         r = await qq; break; }
+    case 'clear':      { let qq = t.delete().eq('hogar_id', H).eq('tipo', tipoDe(op.tipo));
+                         if(tipoDe(op.tipo) === 'semanal' && op.semana) qq = qq.eq('semana', op.semana);
+                         r = await qq; break; }
     case 'setLock':    r = await CTX.sb.rpc('bloquear_lista', { p_bloqueada: !!op.locked }); break;
     default: return;
   }
@@ -861,15 +922,19 @@ async function pull(){
   let ok = false;
   try{
     const [li, ho, ce] = await Promise.all([
-      CTX.sb.from('lista_items').select('id,nombre,precio,comprado,categoria,orden,tipo').eq('hogar_id', H).order('orden'),
+      CTX.sb.from('lista_items').select('*').eq('hogar_id', H).order('orden'),
       CTX.sb.from('hogares').select('*').eq('id', H).single(),
-      CTX.sb.from('compras').select('id,semana_inicio').eq('tipo', 'semanal').eq('cerrada', true).order('semana_inicio', { ascending:false }).limit(1)
+      CTX.sb.from('compras').select('*, compra_items(nombre, precio, comprado, categoria)').eq('tipo', 'semanal').order('semana_inicio', { ascending:false }).limit(80)
     ]);
     if(li.error) throw li.error;
     if(ho.error) throw ho.error;
     SYNC.ready = true;
     setSemana(ho.data);
-    ULTIMA_CERRADA = !ce.error && ce.data && ce.data.length ? { id: ce.data[0].id, semana: ce.data[0].semana_inicio } : null;
+    if(!ce.error && ce.data){
+      COMPRAS = ce.data.filter(c => c.semana_inicio).map(c => ({ id: c.id, semana: String(c.semana_inicio).slice(0, 10), cerrada: !!c.cerrada,
+        items: (c.compra_items || []).filter(i => i.nombre) }));
+      writeJSON(k('compras'), COMPRAS);
+    }
     applyServer(li.data.map(fromDb), ho.data.lista_bloqueada, ho.data.activo_hasta < WM.hoyISO());
     updateSummary();
     ok = true;
@@ -915,13 +980,13 @@ function setStatus(text, state, action){
 }
 
 function updateSummary(){
-  const LIST = CUR();
+  const LIST = SHOWN();
   ['sTotal', 'sDone', 'sLeft'].forEach(id => { delete document.getElementById(id).dataset.anim; });
   const total = LIST.reduce((a, i) => a + (i.price || 0), 0);
   const done = LIST.filter(i => i.done).reduce((a, i) => a + (i.price || 0), 0);
   const count = LIST.length;
   const doneCount = LIST.filter(i => i.done).length;
-  document.getElementById('cntSemanal').textContent = ITEMS.filter(i => i.tipo === 'semanal').length;
+  document.getElementById('cntSemanal').textContent = LISTA === 'semanal' ? count : ITEMS.filter(i => i.tipo === 'semanal' && semanaDe(i) === VER).length;
   document.getElementById('cntMensual').textContent = ITEMS.filter(i => i.tipo === 'mensual').length;
   const pct = count ? Math.round(doneCount / count * 100) : 0;
 
@@ -958,50 +1023,79 @@ function updateSummary(){
   document.getElementById('btnPrev').hidden = LISTA !== 'mensual' || count > 0 || BLOCKED();
   document.getElementById('listFoot').hidden = count === 0 || BLOCKED();
   document.getElementById('btnUncheck').disabled = doneCount === 0;
-  document.getElementById('btnSave').disabled = count === 0 || READONLY;
+  document.getElementById('btnSave').disabled = count === 0 || READONLY || VIEWONLY();
   document.getElementById('btnClose').hidden = LISTA === 'mensual';
-  document.getElementById('btnClose').disabled = count === 0 || READONLY;
+  document.getElementById('btnClose').disabled = count === 0 || READONLY || VIEWONLY();
+  document.querySelector('#btnClose span').textContent = 'Guardar y cerrar la semana ' + W().num;
   document.getElementById('btnCopy').disabled = count === 0;
-  const reab = document.getElementById('btnReopen');
-  reab.hidden = !(LISTA === 'semanal' && count === 0 && ULTIMA_CERRADA && !READONLY);
-  if(!reab.hidden) document.getElementById('btnReopenText').textContent = 'Volver a abrir la semana ' + weekInfo(ULTIMA_CERRADA.semana).num;
   renderWeekBar();
 }
 
-/* ---------- barra de la semana ---------- */
+/* ---------- barra y aviso de la semana ---------- */
 function setSemana(hogar){
   if(!hogar) return;
-  SEMANA_OK = Object.prototype.hasOwnProperty.call(hogar, 'lista_semana');
-  SEMANA = hogar.lista_semana ? String(hogar.lista_semana).slice(0, 10) : (readJSON(k('semana'), null) || semanaPorDefecto());
-  writeJSON(k('semana'), SEMANA);
-  renderWeekBar();
+  SEMANA_LISTA = hogar.lista_semana ? String(hogar.lista_semana).slice(0, 10) : null;
 }
 function renderWeekBar(){
-  const bar = document.getElementById('weekBar');
-  bar.hidden = LISTA === 'mensual';
+  const semanal = LISTA === 'semanal';
+  document.getElementById('weekBar').hidden = !semanal;
   const w = W();
-  document.getElementById('weekNum').textContent = 'Semana ' + w.num;
+  document.getElementById('weekNum').textContent = 'Semana ' + w.num + (VER === ACTUAL ? ' · actual' : '');
   document.getElementById('weekRange').textContent = w.range;
-  const fijo = READONLY || !SYNC.ready || !SEMANA_OK;
-  document.getElementById('weekPrev').disabled = fijo;
-  document.getElementById('weekNext').disabled = fijo;
-}
-async function moverSemana(n){
-  if(READONLY || !CTX || !SEMANA_OK) return;
-  const nueva = isoDate(addDays(parseISO(SEMANA), n * 7));
-  const antes = SEMANA;
-  SEMANA = nueva; renderWeekBar();
-  const { error } = await CTX.sb.rpc('fijar_semana_lista', { p_semana: nueva });
-  if(error){
-    SEMANA = antes; renderWeekBar();
-    setStatus(WM.esDeRed(error) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo cambiar la semana: ' + WM.traducir(error), 'err');
-    return;
+
+  const note = document.getElementById('weekNote');
+  const arch = ARCHIVO();
+  const otras = [...new Set(ITEMS.filter(i => i.tipo === 'semanal' && semanaDe(i) !== VER).map(semanaDe))].sort();
+  const fuera = VER !== ACTUAL;
+  note.hidden = !semanal || (!fuera && !arch && !otras.length);
+  if(note.hidden) return;
+  note.classList.toggle('pulse', fuera);
+  note.classList.toggle('closed', !!arch);
+  document.getElementById('weekNoteIcon').setAttribute('href', arch ? '#i-lock' : '#i-calendar');
+  document.getElementById('weekNoteTitle').textContent = fuera
+    ? 'Estás en la semana ' + w.num + ' · ' + w.range
+    : arch ? 'Semana ' + w.num + ' cerrada' : 'Semana ' + w.num + ' · semana actual';
+  const textos = [];
+  if(arch) textos.push(arch.cerrada
+    ? 'Esta semana está cerrada: solo puedes ver lo que compraron. Para cambiar algo, vuélvela a abrir.'
+    : 'Esta semana está guardada en el historial. Ábrela para cambiar sus productos.');
+  else if(fuera) textos.push('Lo que anotes, marques o guardes aquí queda en la semana ' + w.num + ', no en la semana actual (' + weekInfo(ACTUAL).num + ').');
+  if(otras.length) textos.push('Tienen productos sin cerrar en la ' + otras.map(sem => 'semana ' + weekInfo(sem).num).join(', ') + '.');
+  document.getElementById('weekNoteText').textContent = textos.join(' ');
+
+  const acts = document.getElementById('weekNoteActs');
+  acts.innerHTML = '';
+  if(arch && !READONLY){
+    const b = el('button', 'btn primary sm');
+    b.type = 'button';
+    b.append(icon('i-rotate'), arch.cerrada ? 'Volver a abrir la semana ' + w.num : 'Abrir para editar');
+    b.addEventListener('click', () => reabrirSemana(arch, b));
+    acts.appendChild(b);
   }
-  writeJSON(k('semana'), SEMANA);
-  setStatus('Esta lista ahora es de la semana ' + W().num + ' (' + W().range + ').', 'ok');
+  otras.forEach(sem => {
+    const b = el('button', 'btn sm', (sem === ACTUAL ? 'Ir a la semana actual (' : 'Ver semana ') + weekInfo(sem).num + (sem === ACTUAL ? ')' : ''));
+    b.type = 'button';
+    b.addEventListener('click', () => irASemana(sem));
+    acts.appendChild(b);
+  });
+  if(fuera && !otras.includes(ACTUAL)){
+    const b = el('button', 'btn sm', 'Ir a la semana actual');
+    b.type = 'button';
+    b.addEventListener('click', () => irASemana(ACTUAL));
+    acts.appendChild(b);
+  }
 }
-document.getElementById('weekPrev').addEventListener('click', () => moverSemana(-1));
-document.getElementById('weekNext').addEventListener('click', () => moverSemana(1));
+function irASemana(sem){
+  if(sem === VER) return;
+  const dir = sem > VER ? 1 : -1;
+  VER = sem;
+  EDITING = null; PENDING_RENDER = false; LAST_DELETED = null;
+  setStatus('');
+  render();
+  entrarContenido(dir);
+}
+document.getElementById('weekPrev').addEventListener('click', () => irASemana(isoDate(addDays(parseISO(VER), -7))));
+document.getElementById('weekNext').addEventListener('click', () => irASemana(isoDate(addDays(parseISO(VER), 7))));
 
 /* ---------- filas ---------- */
 function finishEditing(){
@@ -1089,7 +1183,8 @@ function render(){
   if(EDITING && !ITEMS.some(i => i.id === EDITING)) EDITING = null;
   const ul = document.getElementById('items');
   ul.innerHTML = '';
-  CUR().forEach(item => ul.appendChild(buildRow(item)));
+  pintarBloqueo();
+  SHOWN().forEach(item => ul.appendChild(buildRow(item)));
   updateSummary();
 }
 
@@ -1131,7 +1226,7 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
 function entrarContenido(dir){
   if(!Element.prototype.animate) return;
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const piezas = ['#tabHint', '#items', '#empty', '.sum .stats', '#catList'];
+  const piezas = ['#tabHint', '#weekNote', '#items', '#empty', '.sum .stats', '#catList'];
   piezas.forEach((sel, i) => {
     const e = document.querySelector(sel);
     if(!e || e.hidden) return;
@@ -1212,7 +1307,7 @@ document.getElementById('addForm').addEventListener('submit', function(ev){
     priceInput.focus();
     return;
   }
-  commit({ type:'add', item:{ id: newId(), name: capitalize(name), price, done:false, category, orden: nowOrden(), tipo: LISTA } });
+  commit({ type:'add', item:{ id: newId(), name: capitalize(name), price, done:false, category, orden: nowOrden(), tipo: LISTA, semana: LISTA === 'semanal' ? VER : null } });
   // La categoría se queda elegida: útil al anotar varias frutas seguidas
   nameInput.value = ''; priceInput.value = '';
   setStatus('');
@@ -1230,24 +1325,24 @@ document.getElementById('newName').addEventListener('keydown', function(ev){
 fillCatSelect(document.getElementById('newCat'), '', 'Categoría');
 
 document.getElementById('btnUncheck').addEventListener('click', function(){
-  commit({ type:'uncheckAll', tipo: LISTA });
+  commit({ type:'uncheckAll', tipo: LISTA, semana: LISTA === 'semanal' ? VER : null });
 });
 
 document.getElementById('btnClear').addEventListener('click', function(){
   const n = CUR().length;
   if(!n) return;
-  const cual = LISTA === 'mensual' ? 'la lista del mes' : 'toda la lista';
+  const cual = LISTA === 'mensual' ? 'la lista del mes' : 'la lista de la semana ' + W().num;
   if(!confirm('¿Vaciar ' + cual + '? Se borrarán ' + n + ' productos en todos los celulares.')) return;
   EDITING = null;
-  commit({ type:'clear', tipo: LISTA });
+  commit({ type:'clear', tipo: LISTA, semana: LISTA === 'semanal' ? VER : null });
   setStatus('Lista vaciada.');
 });
 
 document.getElementById('btnCopy').addEventListener('click', function(){
-  const LIST = CUR();
+  const LIST = SHOWN();
   const total = LIST.reduce((a, i) => a + (i.price || 0), 0);
   const lines = LIST.map(i => (i.done ? '✅ ' : '⬜ ') + i.name + (i.price != null ? ' — ' + fmt(i.price) : ''));
-  const text = (LISTA === 'mensual' ? '📦 Compras del mes' : '🛒 Lista de compras') + '\n' + lines.join('\n') + '\n\nTotal: ' + fmt(total);
+  const text = (LISTA === 'mensual' ? '📦 Compras del mes' : '🛒 Lista de compras · Semana ' + W().num + ' (' + W().range + ')') + '\n' + lines.join('\n') + '\n\nTotal: ' + fmt(total);
   navigator.clipboard.writeText(text).then(function(){
     setStatus('Lista copiada. Pégala en WhatsApp o en tus notas.', 'ok');
   }).catch(function(){
@@ -1275,11 +1370,12 @@ function setActBusy(b){
 }
 
 /* Guarda una copia de la lista con precios en el historial del hogar.
-   La semanal reemplaza lo que ya estaba guardado para esa misma semana. */
+   La semanal se guarda en la semana que se está viendo y reemplaza lo que
+   ya estaba guardado para esa misma semana. */
 document.getElementById('btnSave').addEventListener('click', async function(){
-  if(READONLY || !CTX) return;
+  if(READONLY || !CTX || VIEWONLY()) return;
   const mensual = LISTA === 'mensual';
-  if(!mensual && !SEMANA_OK){ setStatus('Falta activar la semana de la lista en Supabase (archivo 06-cerrar-semana.sql).', 'err'); return; }
+  const semana = VER, w = W();
   setActBusy(true);
   setStatus('Guardando en el historial…');
   try{
@@ -1295,86 +1391,89 @@ document.getElementById('btnSave').addEventListener('click', async function(){
         p_tipo: 'mensual'
       });
     } else {
-      r = await CTX.sb.rpc('guardar_semana', { p_semana: SEMANA, p_items: itemsParaGuardar(), p_cerrar: false });
+      r = await CTX.sb.rpc('guardar_semana', { p_semana: semana, p_items: itemsParaGuardar(), p_cerrar: false });
     }
     if(r.error) throw r.error;
     const hora = new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' });
-    setStatus((mensual ? 'Guardado en el gasto de ' + mesActual() : 'Guardado en la semana ' + W().num + ' (' + W().range + ')') + ' · ' + hora, 'ok');
+    setStatus((mensual ? 'Guardado en el gasto de ' + mesActual() : 'Guardado en la semana ' + w.num + ' (' + w.range + ')') + ' · ' + hora, 'ok');
+    if(!mensual) pull();
   }catch(err){
-    setStatus(errorGuardar(err, mensual ? '04-compras-del-mes.sql' : '06-cerrar-semana.sql'), 'err');
+    setStatus(errorGuardar(err, mensual ? '04-compras-del-mes.sql' : '07-lista-por-semana.sql'), 'err');
   }finally{
     setActBusy(false);
   }
 });
 
-/* Guardar y cerrar: la semana queda en el historial y la lista se vacía
-   para anotar la semana siguiente. */
+/* Guardar y cerrar: la semana queda cerrada en el historial, sus productos
+   salen de la lista y se pasa a la semana siguiente. */
 document.getElementById('btnClose').addEventListener('click', async function(){
-  if(READONLY || !CTX || LISTA !== 'semanal') return;
-  if(!SEMANA_OK){ setStatus('Falta activar «cerrar semana» en Supabase (archivo 06-cerrar-semana.sql).', 'err'); return; }
+  if(READONLY || !CTX || LISTA !== 'semanal' || VIEWONLY()) return;
   const list = CUR();
   if(!list.length) return;
-  const w = W();
+  const semana = VER, w = W();
+  const sig = weekInfo(isoDate(addDays(parseISO(semana), 7)));
   const sinMarcar = list.filter(i => !i.done).length;
   const aviso = '¿Guardar y cerrar la semana ' + w.num + ' (' + w.range + ')?\n\n' +
     (sinMarcar ? '⚠ ' + sinMarcar + (sinMarcar === 1 ? ' producto no está marcado' : ' productos no están marcados') + ' como comprado' + (sinMarcar === 1 ? '' : 's') + '.\n\n' : '') +
-    'La lista se vaciará en todos los celulares para anotar la semana ' + weekInfo(isoDate(addDays(parseISO(SEMANA), 7))).num + '. Si te equivocas, puedes volver a abrirla.';
+    'Sus productos saldrán de la lista en todos los celulares y pasarás a la semana ' + sig.num + '. Si te equivocas, puedes volver a abrirla.';
   if(!confirm(aviso)) return;
   setActBusy(true);
   setStatus('Cerrando la semana ' + w.num + '…');
   try{
     if(!(await listoParaGuardar())) throw new Error('network');
-    const { data, error } = await CTX.sb.rpc('guardar_semana', { p_semana: SEMANA, p_items: itemsParaGuardar(), p_cerrar: true });
+    const items = itemsParaGuardar();
+    const { data, error } = await CTX.sb.rpc('guardar_semana', { p_semana: semana, p_items: items, p_cerrar: true });
     if(error) throw error;
     EDITING = null;
-    ULTIMA_CERRADA = { id: data, semana: SEMANA };
-    ITEMS = ITEMS.filter(i => i.tipo !== 'semanal');
-    SEMANA = isoDate(addDays(parseISO(SEMANA), 7));
-    writeJSON(k('semana'), SEMANA);
+    const cerrada = { id: data, semana, cerrada: true, items };
+    COMPRAS = [cerrada].concat(COMPRAS.filter(c => c.semana !== semana));
+    ITEMS = ITEMS.filter(i => !(i.tipo === 'semanal' && semanaDe(i) === semana));
+    VER = sig.monday;
     saveLocal();
     render();
-    setStatus('Semana ' + w.num + ' cerrada y guardada. La lista ya es de la semana ' + W().num + '.', 'ok', { label:'Volver a abrir', run: reabrirSemana });
+    entrarContenido(1);
+    setStatus('Semana ' + w.num + ' cerrada y guardada. Ahora estás en la semana ' + sig.num + '.', 'ok',
+      { label:'Volver a abrir', run: () => reabrirSemana(cerrada) });
     pull();
   }catch(err){
-    setStatus(errorGuardar(err, '06-cerrar-semana.sql'), 'err');
+    setStatus(errorGuardar(err, '07-lista-por-semana.sql'), 'err');
   }finally{
     setActBusy(false);
   }
 });
 
-/* Volver a abrir la última semana cerrada: sus productos regresan a la lista */
-async function reabrirSemana(){
-  if(READONLY || !CTX || !ULTIMA_CERRADA) return;
-  const w = weekInfo(ULTIMA_CERRADA.semana);
-  if(ITEMS.some(i => i.tipo === 'semanal')){
-    setStatus('Tu lista tiene productos. Ciérrala o vacíala antes de volver a abrir la semana ' + w.num + '.', 'err');
-    return;
-  }
-  const b = document.getElementById('btnReopen');
-  b.disabled = true;
-  setStatus('Abriendo otra vez la semana ' + w.num + '…');
+/* Volver a abrir una semana guardada: sus productos regresan a la lista
+   con su semana, sin mezclarse con los de otras semanas. */
+async function reabrirSemana(compra, boton){
+  if(READONLY || !CTX || !compra) return;
+  const w = weekInfo(compra.semana);
+  if(boton) boton.disabled = true;
+  setStatus('Abriendo la semana ' + w.num + '…');
   try{
     if(!(await listoParaGuardar())) throw new Error('network');
-    const { error } = await CTX.sb.rpc('reabrir_semana', { p_compra: ULTIMA_CERRADA.id });
+    const { error } = await CTX.sb.rpc('reabrir_semana', { p_compra: compra.id });
     if(error) throw error;
     if(LISTA !== 'semanal'){ LISTA = 'semanal'; writeJSON('wmListaTipo', LISTA); applyTab(); }
-    SEMANA = ULTIMA_CERRADA.semana;
-    ULTIMA_CERRADA = null;
+    const dir = compra.semana > VER ? 1 : -1;
+    VER = compra.semana;
+    compra.cerrada = false;
     await pull();
+    render();
+    if(dir) entrarContenido(dir);
     setStatus('La semana ' + w.num + ' está abierta otra vez con sus productos.', 'ok');
   }catch(err){
-    const m = String((err && err.message) || '');
-    setStatus(/LISTA_CON_PRODUCTOS/.test(m) ? 'Tu lista tiene productos. Ciérrala o vacíala antes de volver a abrir la semana ' + w.num + '.'
-      : errorGuardar(err, '06-cerrar-semana.sql').replace('No se pudo guardar', 'No se pudo abrir'), 'err');
+    setStatus(errorGuardar(err, '07-lista-por-semana.sql').replace('No se pudo guardar', 'No se pudo abrir'), 'err');
   }finally{
-    b.disabled = false;
+    if(boton) boton.disabled = false;
   }
 }
-document.getElementById('btnReopen').addEventListener('click', reabrirSemana);
 
 /* ---------- bloquear / desbloquear edición ---------- */
-function applyLock(){
+function applyLock(){ render(); }
+function pintarBloqueo(){
   const B = BLOCKED();
+  const V = VIEWONLY();
+  document.getElementById('lockBar').hidden = V;
   const bar = document.getElementById('lockBar');
   bar.setAttribute('aria-checked', String(!B));
   bar.disabled = READONLY;
@@ -1391,11 +1490,11 @@ function applyLock(){
   document.getElementById('addHintIcon').setAttribute('href', B ? '#i-lock' : '#i-leaf');
   document.getElementById('addHintText').textContent = READONLY
     ? 'Renueva tu suscripción desde «Mi cuenta» para volver a editar.'
+    : V ? 'La semana ' + W().num + ' está guardada. Vuélvela a abrir para agregar o cambiar productos.'
     : LOCKED ? 'La lista está bloqueada. Activa «Editar lista» para agregar ingredientes.'
              : 'El precio es opcional. Puedes cambiarlo después con el lápiz.';
 
   if(B){ EDITING = null; PENDING_RENDER = false; }
-  render();
 }
 document.getElementById('lockBar').addEventListener('click', function(){
   if(READONLY) return;
@@ -1444,6 +1543,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('
   QUEUE = readJSON(k('cola'), []);
   LOCKED = CTX.sinConexion ? !!readJSON(k('bloqueo'), false) : !!CTX.hogar.lista_bloqueada;
   setSemana(CTX.hogar);
+  COMPRAS = readJSON(k('compras'), []);
   READONLY = CTX.soloLectura;
   applyLock();
   applyTab();
