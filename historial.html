@@ -248,6 +248,11 @@
   .week-num.mensual{color:var(--sun); background:var(--sun-soft);}
   :root[data-theme="dark"] .week-num.mensual{color:var(--sun);}
   .week-range{font-size:16.5px; font-weight:800; letter-spacing:-.01em; margin:0;}
+  .week-closed{display:inline-flex; align-items:center; gap:5px; margin-left:6px; font-size:12px; font-weight:800; color:var(--ink-2); background:var(--surface-2); padding:4px 9px; border-radius:999px;}
+  .week-closed:empty{display:none;}
+  .week-closed .ico{width:12px; height:12px;}
+  .week-foot{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line);}
+  .week-msg{font-size:13px; color:var(--ink-2);}
   .week-meta{font-size:13px; color:var(--ink-3); margin:3px 0 0;}
   .week-total{text-align:right; flex:none;}
   .week-total strong{display:block; font-size:21px; font-weight:800; letter-spacing:-.015em; white-space:nowrap;}
@@ -415,6 +420,7 @@
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
   <symbol id="i-package" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
   <symbol id="i-calendar"viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
   <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="m5 7-3 7a3 3 0 0 0 6 0Z"/><path d="m19 7-3 7a3 3 0 0 0 6 0Z"/><path d="M8 21h8"/></symbol>
   <symbol id="i-up" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></symbol>
@@ -620,7 +626,7 @@ function buildWeeks(registros){
     const items = Array.isArray(r.items) ? r.items.filter(i => i && i.nombre) : [];
     const sumItems = items.reduce((a, i) => a + (Number(i.precio) || 0), 0);
     const total = (r.total != null && !isNaN(r.total)) ? Number(r.total) : (items.length ? sumItems : null);
-    const entry = { key, tipo, start, fecha: isNaN(fecha) ? null : fecha, items, texto: r.ingredientes || '', total, saves: 1 };
+    const entry = { key, tipo, start, id: r.id || null, cerrada: !!r.cerrada, fecha: isNaN(fecha) ? null : fecha, items, texto: r.ingredientes || '', total, saves: 1 };
     const prev = map.get(key);
     if(!prev) map.set(key, entry);
     else{
@@ -802,7 +808,9 @@ function renderWeek(w, q){
   const num = el('span', 'week-num' + (esMensual(w) ? ' mensual' : ''));
   num.append(icon(esMensual(w) ? 'i-package' : 'i-calendar'), esMensual(w) ? 'Compra del mes' : 'Semana ' + w.week);
   num.firstChild.style.cssText = 'width:13px;height:13px';
-  left.append(num, el('p', 'week-range', esMensual(w) ? mayus(mesNombre(w.start.slice(0, 7)).toLowerCase()) : fmtRange(w.monday)));
+  const closed = el('span', 'week-closed');
+  if(w.cerrada) closed.append(icon('i-lock'), 'Cerrada');
+  left.append(num, closed, el('p', 'week-range', esMensual(w) ? mayus(mesNombre(w.start.slice(0, 7)).toLowerCase()) : fmtRange(w.monday)));
   const bought = w.items.filter(i => i.comprado).length;
   const meta = [];
   if(w.fecha) meta.push('Guardado el ' + w.fecha.toLocaleDateString('es-PE', { weekday:'short', day:'numeric', month:'short' }).replace('.', ''));
@@ -836,7 +844,33 @@ function renderWeek(w, q){
     det.appendChild(el('p', 'old-text', w.texto || 'Sin detalle guardado.'));
   }
   card.appendChild(det);
+  if(w.cerrada && w.id && !esMensual(w) && !q && !CTX.soloLectura){
+    const foot = el('div', 'week-foot');
+    const b = el('button', 'link-btn', 'Volver a abrir esta semana');
+    b.type = 'button';
+    const msg = el('span', 'week-msg');
+    b.addEventListener('click', () => reabrir(w, b, msg));
+    foot.append(b, msg);
+    card.appendChild(foot);
+  }
   return card;
+}
+
+/* Devuelve los productos de una semana cerrada a la lista de compras */
+async function reabrir(w, b, msg){
+  if(!confirm('¿Volver a abrir la semana ' + w.week + ' (' + fmtRange(w.monday) + ')?\n\nSus productos regresan a la lista de compras para que sigas marcándolos o cambiándolos.')) return;
+  b.disabled = true;
+  msg.textContent = 'Abriendo…';
+  const { error } = await CTX.sb.rpc('reabrir_semana', { p_compra: w.id });
+  b.disabled = false;
+  if(error){
+    const m = String(error.message || '') + ' ' + (error.code || '');
+    msg.textContent = /LISTA_CON_PRODUCTOS/.test(m) ? 'Tu lista de compras tiene productos de otra semana. Ciérrala o vacíala primero.'
+      : /PGRST202|42883/.test(m) ? 'Falta activar esta función en Supabase (archivo 06-cerrar-semana.sql).'
+      : 'No se pudo abrir: ' + WM.traducir(error);
+    return;
+  }
+  location.href = 'lista-compras.html';
 }
 
 function state(iconId, title, text){
@@ -1378,11 +1412,13 @@ async function load(){
   }
   try{
     const { data, error } = await CTX.sb.from('compras')
-      .select('fecha, semana_inicio, total, tipo, ingredientes_texto, compra_items(nombre, precio, comprado, categoria)')
+      .select('*, compra_items(nombre, precio, comprado, categoria)')
       .order('fecha');
     if(error) throw error;
     // Mismo formato que usaba el historial de Google Sheets (+ tipo de compra)
     const registros = data.map(c => ({
+      id: c.id,
+      cerrada: !!c.cerrada,
       fecha: c.fecha,
       tipo: c.tipo,
       semanaInicio: c.semana_inicio,

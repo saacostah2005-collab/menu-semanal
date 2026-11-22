@@ -166,6 +166,17 @@
   @media (hover:hover){ .tab:hover:not([aria-selected="true"]){background:var(--surface-2); color:var(--ink);} }
   @media (prefers-reduced-motion:reduce){ .tabs.ready::before, .tab .ico{transition:none;} }
   .tab-hint{font-size:13.5px; color:var(--ink-2); margin:0 0 16px; max-width:540px;}
+  /* Semana de la lista */
+  .week-bar{display:flex; align-items:center; gap:6px; max-width:540px; margin:-4px 0 16px; padding:6px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow-sm);}
+  .week-bar .row-btn{background:var(--surface-2); color:var(--ink-2);}
+  .week-bar .row-btn:disabled{opacity:.4; cursor:not-allowed;}
+  .week-info{flex:1; min-width:0; display:flex; align-items:center; justify-content:center; gap:10px;}
+  .week-ico{width:36px; height:36px; border-radius:11px; background:var(--brand-soft); color:var(--brand); display:grid; place-items:center; flex:none;}
+  :root[data-theme="dark"] .week-ico{color:var(--leaf);}
+  .week-ico .ico{width:18px; height:18px;}
+  .week-txt{display:flex; flex-direction:column; line-height:1.25; min-width:0;}
+  .week-txt strong{font-size:15.5px; font-weight:800;}
+  .week-txt span{font-size:13px; font-weight:600; color:var(--ink-2);}
   .empty .btn{margin-top:14px;}
 
   /* ---------- Distribución ---------- */
@@ -407,6 +418,7 @@
   <symbol id="i-device" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
   <symbol id="i-unlock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
   <symbol id="i-leaf"viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
 </svg>
 
@@ -443,6 +455,16 @@
     </button>
   </div>
   <p class="tab-hint" id="tabHint">Verduras, pollo, fruta… lo que compran cada semana.</p>
+
+  <!-- Semana a la que pertenece la lista semanal -->
+  <div class="week-bar" id="weekBar">
+    <button class="row-btn" id="weekPrev" type="button" aria-label="Semana anterior"><svg class="ico" aria-hidden="true"><use href="#i-left"/></svg></button>
+    <div class="week-info">
+      <span class="week-ico" aria-hidden="true"><svg class="ico"><use href="#i-calendar"/></svg></span>
+      <span class="week-txt"><strong id="weekNum">Semana —</strong><span id="weekRange">&nbsp;</span></span>
+    </div>
+    <button class="row-btn" id="weekNext" type="button" aria-label="Semana siguiente"><svg class="ico" aria-hidden="true" style="transform:scaleX(-1)"><use href="#i-left"/></svg></button>
+  </div>
 
   <div class="layout">
 
@@ -515,6 +537,7 @@
         <h3 id="emptyTitle">Tu lista está vacía</h3>
         <p id="emptyText">Escribe arriba lo que necesitas comprar y cuánto cuesta.</p>
         <button class="btn" id="btnPrev" type="button" hidden><svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg><span>Traer la compra del mes pasado</span></button>
+        <button class="btn" id="btnReopen" type="button" hidden><svg class="ico" aria-hidden="true"><use href="#i-rotate"/></svg><span id="btnReopenText">Volver a abrir la semana</span></button>
       </div>
       <div class="list-foot" id="listFoot" hidden>
         <button class="btn ghost" id="btnUncheck" type="button"><svg class="ico" aria-hidden="true"><use href="#i-rotate"/></svg><span>Desmarcar todo</span></button>
@@ -531,7 +554,10 @@
             <h2 id="actTitle">Historial de gastos</h2>
           </div>
           <p id="actText">Cuando termines de comprar, guarda la lista con sus precios en tu historial para llevar la cuenta de lo que gastas cada semana.</p>
-          <button class="btn primary" id="btnSave" type="button">
+          <button class="btn primary" id="btnClose" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg><span>Guardar y cerrar la semana</span>
+          </button>
+          <button class="btn" id="btnSave" type="button">
             <svg class="ico" aria-hidden="true"><use href="#i-sheet"/></svg><span>Guardar en historial</span>
           </button>
           <a class="btn" href="historial.html">
@@ -636,14 +662,34 @@ function fmtRange(monday){
   return monday.toLocaleDateString('es-PE', opts) + ' – ' + sunday.toLocaleDateString('es-PE', opts) + ', ' + sunday.getFullYear();
 }
 
-/* Semana para el historial: la que estabas viendo en el menú, o la actual */
-const WEEK = (function(){
-  const data = readJSON('wmShoppingWeek', null);
-  if(data && data.monday) return { monday: data.monday, sunday: data.sunday, label: data.weekLabel || '' };
-  const monday = getMonday(new Date());
-  const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
-  return { monday: isoDate(monday), sunday: isoDate(sunday), label: fmtRange(monday) };
-})();
+/* ---------- semana de la lista semanal ----------
+   La guarda el hogar (hogares.lista_semana), la misma en todos los celulares.
+   Si todavía no tiene una: sábado y domingo se compra para la semana que
+   viene; los demás días, para la semana actual. */
+function parseISO(s){ const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, (m || 1) - 1, d || 1); }
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function isoWeek(date){
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d - yearStart) / 864e5 + 1) / 7);
+}
+function semanaPorDefecto(){
+  const hoy = new Date();
+  const lunes = getMonday(hoy);
+  return isoDate(hoy.getDay() === 6 || hoy.getDay() === 0 ? addDays(lunes, 7) : lunes);
+}
+function weekInfo(mondayISO){
+  const monday = parseISO(mondayISO);
+  const sunday = addDays(monday, 6);
+  const f = d => d.toLocaleDateString('es-PE', { day:'numeric', month:'short' }).replace('.', '');
+  return { monday: mondayISO, sunday: isoDate(sunday), num: isoWeek(monday), range: f(monday) + ' – ' + f(sunday) };
+}
+let SEMANA = semanaPorDefecto();   // lunes (AAAA-MM-DD) de la semana de la lista
+let SEMANA_OK = true;              // falso si falta el archivo 06 en Supabase
+let ULTIMA_CERRADA = null;         // { id, semana } la última semana cerrada (para reabrirla)
+function W(){ return weekInfo(SEMANA); }
 
 /* ============================================================
    LISTA COMPARTIDA (Supabase)
@@ -814,14 +860,18 @@ async function pull(){
   if(!SYNC.ready) setSync('busy');
   let ok = false;
   try{
-    const [li, ho] = await Promise.all([
+    const [li, ho, ce] = await Promise.all([
       CTX.sb.from('lista_items').select('id,nombre,precio,comprado,categoria,orden,tipo').eq('hogar_id', H).order('orden'),
-      CTX.sb.from('hogares').select('lista_bloqueada,activo_hasta').eq('id', H).single()
+      CTX.sb.from('hogares').select('*').eq('id', H).single(),
+      CTX.sb.from('compras').select('id,semana_inicio').eq('tipo', 'semanal').eq('cerrada', true).order('semana_inicio', { ascending:false }).limit(1)
     ]);
     if(li.error) throw li.error;
     if(ho.error) throw ho.error;
     SYNC.ready = true;
+    setSemana(ho.data);
+    ULTIMA_CERRADA = !ce.error && ce.data && ce.data.length ? { id: ce.data[0].id, semana: ce.data[0].semana_inicio } : null;
     applyServer(li.data.map(fromDb), ho.data.lista_bloqueada, ho.data.activo_hasta < WM.hoyISO());
+    updateSummary();
     ok = true;
     setSync('ok');
   }catch(e){
@@ -909,8 +959,49 @@ function updateSummary(){
   document.getElementById('listFoot').hidden = count === 0 || BLOCKED();
   document.getElementById('btnUncheck').disabled = doneCount === 0;
   document.getElementById('btnSave').disabled = count === 0 || READONLY;
+  document.getElementById('btnClose').hidden = LISTA === 'mensual';
+  document.getElementById('btnClose').disabled = count === 0 || READONLY;
   document.getElementById('btnCopy').disabled = count === 0;
+  const reab = document.getElementById('btnReopen');
+  reab.hidden = !(LISTA === 'semanal' && count === 0 && ULTIMA_CERRADA && !READONLY);
+  if(!reab.hidden) document.getElementById('btnReopenText').textContent = 'Volver a abrir la semana ' + weekInfo(ULTIMA_CERRADA.semana).num;
+  renderWeekBar();
 }
+
+/* ---------- barra de la semana ---------- */
+function setSemana(hogar){
+  if(!hogar) return;
+  SEMANA_OK = Object.prototype.hasOwnProperty.call(hogar, 'lista_semana');
+  SEMANA = hogar.lista_semana ? String(hogar.lista_semana).slice(0, 10) : (readJSON(k('semana'), null) || semanaPorDefecto());
+  writeJSON(k('semana'), SEMANA);
+  renderWeekBar();
+}
+function renderWeekBar(){
+  const bar = document.getElementById('weekBar');
+  bar.hidden = LISTA === 'mensual';
+  const w = W();
+  document.getElementById('weekNum').textContent = 'Semana ' + w.num;
+  document.getElementById('weekRange').textContent = w.range;
+  const fijo = READONLY || !SYNC.ready || !SEMANA_OK;
+  document.getElementById('weekPrev').disabled = fijo;
+  document.getElementById('weekNext').disabled = fijo;
+}
+async function moverSemana(n){
+  if(READONLY || !CTX || !SEMANA_OK) return;
+  const nueva = isoDate(addDays(parseISO(SEMANA), n * 7));
+  const antes = SEMANA;
+  SEMANA = nueva; renderWeekBar();
+  const { error } = await CTX.sb.rpc('fijar_semana_lista', { p_semana: nueva });
+  if(error){
+    SEMANA = antes; renderWeekBar();
+    setStatus(WM.esDeRed(error) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.' : 'No se pudo cambiar la semana: ' + WM.traducir(error), 'err');
+    return;
+  }
+  writeJSON(k('semana'), SEMANA);
+  setStatus('Esta lista ahora es de la semana ' + W().num + ' (' + W().range + ').', 'ok');
+}
+document.getElementById('weekPrev').addEventListener('click', () => moverSemana(-1));
+document.getElementById('weekNext').addEventListener('click', () => moverSemana(1));
 
 /* ---------- filas ---------- */
 function finishEditing(){
@@ -1022,7 +1113,7 @@ function applyTab(){
     : 'Escribe arriba lo que necesitas comprar y cuánto cuesta.';
   document.getElementById('actText').textContent = m
     ? 'Cuando terminen la compra del mes, guárdenla: su monto se suma a ' + mesActual() + ' en el historial. Si la guardan otra vez este mes, se reemplaza por la nueva.'
-    : 'Cuando termines de comprar, guarda la lista con sus precios en tu historial para llevar la cuenta de lo que gastas cada semana.';
+    : 'Cuando terminen de comprar, toquen «Guardar y cerrar la semana»: queda en el historial y la lista se vacía para la semana siguiente. «Guardar en historial» guarda cómo va la semana sin cerrarla.';
   document.querySelector('#btnSave span').textContent = m ? 'Guardar compra del mes' : 'Guardar en historial';
   render();
 }
@@ -1164,36 +1255,122 @@ document.getElementById('btnCopy').addEventListener('click', function(){
   });
 });
 
-/* Guarda una copia de la lista con precios en el historial del hogar */
+/* Antes de guardar o cerrar, todo lo anotado en este celular debe haber llegado a la base */
+async function listoParaGuardar(){
+  if(QUEUE.length) await flush();
+  return !QUEUE.length;
+}
+function errorGuardar(err, archivo){
+  const m = String((err && err.message) || '') + ' ' + ((err && err.code) || '');
+  return WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.'
+    : /PGRST202|42883|42703|function|cerrada|lista_semana/.test(m) && archivo ? 'Falta activar esta función en Supabase (archivo ' + archivo + ').'
+    : 'No se pudo guardar: ' + WM.traducir(err);
+}
+function itemsParaGuardar(){
+  return CUR().map(i => ({ nombre: i.name, precio: i.price, comprado: !!i.done, categoria: i.category || '' }));
+}
+function setActBusy(b){
+  ['btnSave', 'btnClose'].forEach(id => { document.getElementById(id).disabled = b; });
+  if(!b) updateSummary();
+}
+
+/* Guarda una copia de la lista con precios en el historial del hogar.
+   La semanal reemplaza lo que ya estaba guardado para esa misma semana. */
 document.getElementById('btnSave').addEventListener('click', async function(){
-  const saveBtn = this;
-  if(READONLY) return;
-  saveBtn.disabled = true;
-  setStatus('Guardando en el historial…');
+  if(READONLY || !CTX) return;
   const mensual = LISTA === 'mensual';
-  // La compra del mes se guarda en el mes de hoy (del día 1 al último día)
-  const hoy = new Date();
-  const desde = mensual ? isoDate(new Date(hoy.getFullYear(), hoy.getMonth(), 1)) : WEEK.monday;
-  const hasta = mensual ? isoDate(new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)) : WEEK.sunday;
+  if(!mensual && !SEMANA_OK){ setStatus('Falta activar la semana de la lista en Supabase (archivo 06-cerrar-semana.sql).', 'err'); return; }
+  setActBusy(true);
+  setStatus('Guardando en el historial…');
   try{
-    const { error } = await CTX.sb.rpc('guardar_compra', {
-      p_semana_inicio: desde,
-      p_semana_fin: hasta,
-      p_items: CUR().map(i => ({ nombre: i.name, precio: i.price, comprado: !!i.done, categoria: i.category || '' })),
-      p_tipo: LISTA
-    });
-    if(error) throw error;
+    if(!(await listoParaGuardar())) throw new Error('network');
+    let r;
+    if(mensual){
+      // La compra del mes se guarda en el mes de hoy (del día 1 al último día)
+      const hoy = new Date();
+      r = await CTX.sb.rpc('guardar_compra', {
+        p_semana_inicio: isoDate(new Date(hoy.getFullYear(), hoy.getMonth(), 1)),
+        p_semana_fin: isoDate(new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)),
+        p_items: itemsParaGuardar(),
+        p_tipo: 'mensual'
+      });
+    } else {
+      r = await CTX.sb.rpc('guardar_semana', { p_semana: SEMANA, p_items: itemsParaGuardar(), p_cerrar: false });
+    }
+    if(r.error) throw r.error;
     const hora = new Date().toLocaleTimeString('es-PE', { hour:'numeric', minute:'2-digit' });
-    setStatus((mensual ? 'Guardado en el gasto de ' + mesActual() : 'Guardado en tu historial') + ' · ' + hora, 'ok');
+    setStatus((mensual ? 'Guardado en el gasto de ' + mesActual() : 'Guardado en la semana ' + W().num + ' (' + W().range + ')') + ' · ' + hora, 'ok');
   }catch(err){
-    const m = String((err && err.message) || '') + ' ' + ((err && err.code) || '');
-    setStatus(WM.esDeRed(err) ? 'No hay conexión. Revisa tu internet e inténtalo otra vez.'
-      : /p_tipo|PGRST202|42883/.test(m) ? 'Falta activar las compras del mes en Supabase (archivo 04-compras-del-mes.sql).'
-      : 'No se pudo guardar: ' + WM.traducir(err), 'err');
+    setStatus(errorGuardar(err, mensual ? '04-compras-del-mes.sql' : '06-cerrar-semana.sql'), 'err');
   }finally{
-    saveBtn.disabled = CUR().length === 0 || READONLY;
+    setActBusy(false);
   }
 });
+
+/* Guardar y cerrar: la semana queda en el historial y la lista se vacía
+   para anotar la semana siguiente. */
+document.getElementById('btnClose').addEventListener('click', async function(){
+  if(READONLY || !CTX || LISTA !== 'semanal') return;
+  if(!SEMANA_OK){ setStatus('Falta activar «cerrar semana» en Supabase (archivo 06-cerrar-semana.sql).', 'err'); return; }
+  const list = CUR();
+  if(!list.length) return;
+  const w = W();
+  const sinMarcar = list.filter(i => !i.done).length;
+  const aviso = '¿Guardar y cerrar la semana ' + w.num + ' (' + w.range + ')?\n\n' +
+    (sinMarcar ? '⚠ ' + sinMarcar + (sinMarcar === 1 ? ' producto no está marcado' : ' productos no están marcados') + ' como comprado' + (sinMarcar === 1 ? '' : 's') + '.\n\n' : '') +
+    'La lista se vaciará en todos los celulares para anotar la semana ' + weekInfo(isoDate(addDays(parseISO(SEMANA), 7))).num + '. Si te equivocas, puedes volver a abrirla.';
+  if(!confirm(aviso)) return;
+  setActBusy(true);
+  setStatus('Cerrando la semana ' + w.num + '…');
+  try{
+    if(!(await listoParaGuardar())) throw new Error('network');
+    const { data, error } = await CTX.sb.rpc('guardar_semana', { p_semana: SEMANA, p_items: itemsParaGuardar(), p_cerrar: true });
+    if(error) throw error;
+    EDITING = null;
+    ULTIMA_CERRADA = { id: data, semana: SEMANA };
+    ITEMS = ITEMS.filter(i => i.tipo !== 'semanal');
+    SEMANA = isoDate(addDays(parseISO(SEMANA), 7));
+    writeJSON(k('semana'), SEMANA);
+    saveLocal();
+    render();
+    setStatus('Semana ' + w.num + ' cerrada y guardada. La lista ya es de la semana ' + W().num + '.', 'ok', { label:'Volver a abrir', run: reabrirSemana });
+    pull();
+  }catch(err){
+    setStatus(errorGuardar(err, '06-cerrar-semana.sql'), 'err');
+  }finally{
+    setActBusy(false);
+  }
+});
+
+/* Volver a abrir la última semana cerrada: sus productos regresan a la lista */
+async function reabrirSemana(){
+  if(READONLY || !CTX || !ULTIMA_CERRADA) return;
+  const w = weekInfo(ULTIMA_CERRADA.semana);
+  if(ITEMS.some(i => i.tipo === 'semanal')){
+    setStatus('Tu lista tiene productos. Ciérrala o vacíala antes de volver a abrir la semana ' + w.num + '.', 'err');
+    return;
+  }
+  const b = document.getElementById('btnReopen');
+  b.disabled = true;
+  setStatus('Abriendo otra vez la semana ' + w.num + '…');
+  try{
+    if(!(await listoParaGuardar())) throw new Error('network');
+    const { error } = await CTX.sb.rpc('reabrir_semana', { p_compra: ULTIMA_CERRADA.id });
+    if(error) throw error;
+    if(LISTA !== 'semanal'){ LISTA = 'semanal'; writeJSON('wmListaTipo', LISTA); applyTab(); }
+    SEMANA = ULTIMA_CERRADA.semana;
+    ULTIMA_CERRADA = null;
+    await pull();
+    setStatus('La semana ' + w.num + ' está abierta otra vez con sus productos.', 'ok');
+  }catch(err){
+    const m = String((err && err.message) || '');
+    setStatus(/LISTA_CON_PRODUCTOS/.test(m) ? 'Tu lista tiene productos. Ciérrala o vacíala antes de volver a abrir la semana ' + w.num + '.'
+      : errorGuardar(err, '06-cerrar-semana.sql').replace('No se pudo guardar', 'No se pudo abrir'), 'err');
+  }finally{
+    b.disabled = false;
+  }
+}
+document.getElementById('btnReopen').addEventListener('click', reabrirSemana);
 
 /* ---------- bloquear / desbloquear edición ---------- */
 function applyLock(){
@@ -1266,6 +1443,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('
   ITEMS = cleanItems(readJSON(k('items'), []));
   QUEUE = readJSON(k('cola'), []);
   LOCKED = CTX.sinConexion ? !!readJSON(k('bloqueo'), false) : !!CTX.hogar.lista_bloqueada;
+  setSemana(CTX.hogar);
   READONLY = CTX.soloLectura;
   applyLock();
   applyTab();
