@@ -273,6 +273,10 @@
   .rows .r-name{font-weight:600; min-width:0; overflow-wrap:anywhere;}
   .rows .r-price{font-weight:700; white-space:nowrap;}
   .rows .r-price.none{color:var(--ink-3); font-weight:500; font-size:13.5px;}
+  .rows .r-date{font-size:12px; font-weight:600; color:var(--ink-3); margin-left:6px; white-space:nowrap;}
+  .rows .r-tag.stock{color:var(--brand); background:var(--leaf-soft);}
+  :root[data-theme="dark"] .rows .r-tag.stock{color:var(--leaf);}
+  .rows .r-tag.dur{color:var(--ink-2); background:var(--surface-2);}
   .rows .r-tag{font-size:11.5px; font-weight:700; color:var(--sun); background:var(--sun-soft); padding:2px 7px; border-radius:999px; margin-left:6px; white-space:nowrap;}
   .rows mark{background:var(--leaf-soft); color:inherit; border-radius:4px; padding:0 2px;}
   .old-text{font-size:14px; color:var(--ink-2); margin:6px 0 8px;}
@@ -648,8 +652,34 @@ function buildWeeks(registros){
     return Object.assign(w, { monday, end: isoDate(addDays(monday, 6)), week: wk.week, year: wk.year, orden: monday });
   }).sort((a, b) => b.orden - a.orden);
 }
-function setData(registros){
-  ALL = buildWeeks(registros);
+/* Compra del mes = lo que marcaron como comprado en la lista «Del mes»,
+   en el mes de su fecha de compra. Si un mes no tiene productos así,
+   se usa lo que guardaron antes con «Guardar compra del mes». */
+function mesesDeDespensa(despensa){
+  const map = new Map();
+  (despensa || []).filter(i => i && i.comprado && i.nombre).forEach(i => {
+    const dia = String(i.comprado_en || WM.hoyISO()).slice(0, 10);
+    const key = 'm-' + dia.slice(0, 7) + '-01';
+    const e = map.get(key) || { key, tipo:'mensual', start: dia.slice(0, 7) + '-01', items: [], ultimo: dia, auto: true, saves: 1, texto: '' };
+    e.items.push({ nombre: i.nombre, precio: i.precio == null ? null : Number(i.precio), comprado: true, categoria: i.categoria,
+                   compradoEn: dia, terminadoEn: i.terminado_en ? String(i.terminado_en).slice(0, 10) : null });
+    if(dia > e.ultimo) e.ultimo = dia;
+    map.set(key, e);
+  });
+  return Array.from(map.values()).map(e => {
+    const monday = parseISO(e.start);
+    const fecha = parseISO(e.ultimo);
+    e.items.sort((a, b) => a.compradoEn.localeCompare(b.compradoEn));
+    return Object.assign(e, { monday, fecha, end: isoDate(new Date(monday.getFullYear(), monday.getMonth() + 1, 0)), week: null, year: monday.getFullYear(), orden: fecha,
+      total: e.items.reduce((a, i) => a + (Number(i.precio) || 0), 0) });
+  });
+}
+let DESPENSA = [];
+function setData(registros, despensa){
+  if(despensa) DESPENSA = despensa;
+  const auto = mesesDeDespensa(DESPENSA);
+  const claves = new Set(auto.map(e => e.key));
+  ALL = buildWeeks(registros).filter(w => !claves.has(w.key)).concat(auto).sort((a, b) => b.orden - a.orden);
   WEEKS = ALL.filter(w => !esMensual(w));
   MENSUAL = ALL.filter(esMensual);
 }
@@ -815,7 +845,7 @@ function renderWeek(w, q){
   left.append(num, closed, el('p', 'week-range', esMensual(w) ? mayus(mesNombre(w.start.slice(0, 7)).toLowerCase()) : fmtRange(w.monday)));
   const bought = w.items.filter(i => i.comprado).length;
   const meta = [];
-  if(w.fecha) meta.push('Guardado el ' + w.fecha.toLocaleDateString('es-PE', { weekday:'short', day:'numeric', month:'short' }).replace('.', ''));
+  if(w.fecha) meta.push((w.auto ? 'Última compra el ' : 'Guardado el ') + w.fecha.toLocaleDateString('es-PE', { weekday:'short', day:'numeric', month:'short' }).replace('.', ''));
   if(w.items.length) meta.push(w.items.length + (w.items.length === 1 ? ' ingrediente' : ' ingredientes'));
   if(w.saves > 1) meta.push((esMensual(w) ? 'guardada ' + w.saves + ' veces en el mes' : 'guardada ' + w.saves + ' veces') + ', se muestra la última');
   left.appendChild(el('p', 'week-meta', meta.join(' · ')));
@@ -837,6 +867,11 @@ function renderWeek(w, q){
       const li = el('li');
       const name = highlight(i.nombre, q);
       if(i.comprado === false) name.appendChild(el('span', 'r-tag', 'No comprado'));
+      if(i.compradoEn){
+        const dur = i.terminadoEn ? Math.max(1, Math.round((parseISO(i.terminadoEn) - parseISO(i.compradoEn)) / 864e5)) : 0;
+        name.appendChild(el('span', 'r-date', fmtDiaCorto(i.compradoEn)));
+        name.appendChild(el('span', 'r-tag ' + (i.terminadoEn ? 'dur' : 'stock'), i.terminadoEn ? 'Duró ' + plural(dur, 'día', 'días') : 'Aún en stock'));
+      }
       const price = el('span', 'r-price num' + (i.precio == null ? ' none' : ''), i.precio == null ? 'Sin precio' : fmt(i.precio));
       li.append(name, price);
       ul.appendChild(li);
@@ -978,6 +1013,8 @@ function mesDe(w){ return w.start.slice(0, 7); }
 function mesMas(m, n){ const [y, mm] = m.split('-').map(Number); const d = new Date(y, mm - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
 function mesNombre(m, corto){ const [y, mm] = m.split('-').map(Number); return new Date(y, mm - 1, 1).toLocaleDateString('es-PE', corto ? { month:'short' } : { month:'long', year:'numeric' }).replace('.', ''); }
 function mesSolo(m){ const [y, mm] = m.split('-').map(Number); return new Date(y, mm - 1, 1).toLocaleDateString('es-PE', { month:'long' }).toLowerCase(); }
+function plural(n, uno, varios){ return n + ' ' + (n === 1 ? uno : varios); }
+function fmtDiaCorto(iso){ return parseISO(iso).toLocaleDateString('es-PE', { day:'numeric', month:'short' }).replace('.', ''); }
 function mayus(t){ return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
 function montoSemana(w){ if(w.total != null) return Number(w.total); return w.items.length ? w.items.reduce((a, i) => a + (Number(i.precio) || 0), 0) : null; }
 function semanasDel(m){ return WEEKS.filter(w => mesDe(w) === m); }
@@ -1083,7 +1120,7 @@ function pintarStats(){
     tile('', 'i-scale', 'Promedio semanal', ws.length ? fmt(totalSem / ws.length) : '—', subProm),
     tile('', 'i-up', 'Semana más cara', max ? fmt(montoSemana(max)) : '—', max ? 'Semana del ' + max.monday.toLocaleDateString('es-PE', { day:'numeric', month:'short' }).replace('.', '') : '—'),
     tile('wide-sm', 'i-package', 'Compra del mes', cm ? fmt(mensual) : '—',
-      cm ? (cm.fecha ? 'Guardada el ' + cm.fecha.toLocaleDateString('es-PE', { day:'numeric', month:'short' }).replace('.', '') : 'Guardada')
+      cm ? (cm.fecha ? (cm.auto ? plural(cm.items.length, 'producto', 'productos') + ' · última compra el ' : 'Guardada el ') + cm.fecha.toLocaleDateString('es-PE', { day:'numeric', month:'short' }).replace('.', '') : 'Guardada')
          : 'Arroz, aceite… en «Lista de compras › Del mes»')
   );
 }
@@ -1406,16 +1443,18 @@ window.addEventListener('resize', () => { clearTimeout(rzTimer); rzTimer = setTi
 async function load(){
   const cache = readJSON(cacheKey(), null);
   if(cache && Array.isArray(cache.registros) && !ALL.length){
-    setData(cache.registros);
+    setData(cache.registros, cache.despensa || []);
     render();
     renderMes();
     setUpdated(cache.at, true);
   }
   try{
-    const { data, error } = await CTX.sb.from('compras')
-      .select('*, compra_items(nombre, precio, comprado, categoria)')
-      .order('fecha');
+    const [{ data, error }, desp] = await Promise.all([
+      CTX.sb.from('compras').select('*, compra_items(nombre, precio, comprado, categoria)').order('fecha'),
+      CTX.sb.from('lista_items').select('*').eq('tipo', 'mensual')
+    ]);
     if(error) throw error;
+    const despensa = desp.error ? [] : (desp.data || []);
     // Mismo formato que usaba el historial de Google Sheets (+ tipo de compra)
     const registros = data.map(c => ({
       id: c.id,
@@ -1427,8 +1466,8 @@ async function load(){
       ingredientes: c.ingredientes_texto || '',
       items: (c.compra_items || []).map(i => ({ nombre: i.nombre, precio: i.precio == null ? null : Number(i.precio), comprado: i.comprado, categoria: i.categoria }))
     }));
-    setData(registros);
-    writeJSON(cacheKey(), { at: Date.now(), registros });
+    setData(registros, despensa);
+    writeJSON(cacheKey(), { at: Date.now(), registros, despensa });
     showNote('');
     render();
     renderMes();
